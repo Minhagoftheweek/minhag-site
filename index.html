@@ -339,6 +339,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 .ft-lnk:hover{color:rgba(255,255,255,.9)}
 .ft-copy{font-size:.6rem;color:rgba(255,255,255,.22);text-align:center}
 </style>
+<script src="https://c.sproutvideo.com/player_api.js"></script>
 </head>
 <body>
 
@@ -1276,6 +1277,7 @@ function openEp(id,push){
   window.scrollTo({top:0,behavior:'smooth'});
   const vEl=document.querySelector('#epContent video');
   if(vEl)attachWatchTracking(vEl,id);
+  else if(streamId&&streamId.startsWith('SPROUT:'))attachSproutTracking(streamId.slice(7),id);
 }
 
 function closeEp(){
@@ -1378,6 +1380,26 @@ function removeUpNextOverlay(finishedId){
 // Stored locally in the visitor's own browser — nothing sent to a server,
 // no login required. Keyed by episode id, stores last position + duration.
 const WATCH_KEY='scaMinhagWatchHistory';
+// Separate, non-expiring record of which episodes have been substantially
+// watched — WATCH_KEY entries get deleted once an episode is basically
+// finished (so "Continue Watching" doesn't clutter up), but we still want
+// to remember "watched" status permanently for the played/unplayed markers.
+const WATCHED_KEY='scaMinhagWatchedEps';
+function getWatchedSet(){
+  try{
+    const raw=localStorage.getItem(WATCHED_KEY);
+    return raw?new Set(JSON.parse(raw)):new Set();
+  }catch(e){return new Set();}
+}
+function markWatched(epId){
+  try{
+    const s=getWatchedSet();
+    if(s.has(epId))return;
+    s.add(epId);
+    localStorage.setItem(WATCHED_KEY,JSON.stringify([...s]));
+  }catch(e){/* fail silently */}
+}
+function isWatched(epId){return getWatchedSet().has(epId);}
 function getWatchHistory(){
   try{
     const raw=localStorage.getItem(WATCH_KEY);
@@ -1386,9 +1408,10 @@ function getWatchHistory(){
 }
 function saveWatchProgress(epId,currentTime,duration){
   if(!duration||duration<5)return; // ignore clips too short to bother tracking
+  const pct=currentTime/duration;
+  if(pct>=0.85)markWatched(epId); // permanent "seen this" flag, independent of resume history below
   try{
     const hist=getWatchHistory();
-    const pct=currentTime/duration;
     // Drop it from history once basically finished, so it doesn't clutter "Continue Watching"
     if(pct>=0.96){
       delete hist[epId];
@@ -1423,6 +1446,88 @@ function attachWatchTracking(videoEl,epId){
   });
   videoEl.addEventListener('pause',()=>saveWatchProgress(epId,videoEl.currentTime,videoEl.duration));
   setupMediaSession(videoEl,epId);
+}
+
+// ── SPROUTVIDEO (IFRAME EMBED) WATCH TRACKING ────────────────────────────
+// Every real episode on this site plays through a cross-origin SproutVideo
+// iframe, not a native <video> tag — so attachWatchTracking above (which
+// needs direct DOM access to a <video> element) never fires for actual
+// content. SproutVideo exposes its own postMessage-based JS Player API
+// (https://c.sproutvideo.com/player_api.js, loaded in <head>) which is what
+// makes resume-position and watched-tracking actually work here.
+function attachSproutTracking(embedUrl,epId,retries){
+  retries=retries||0;
+  const m=embedUrl.match(/\/embed\/([^/]+)\//);
+  if(!m)return;
+  if(typeof SV==='undefined'||!SV.Player){
+    // player_api.js occasionally hasn't finished initializing yet on slow connections
+    if(retries<20)setTimeout(()=>attachSproutTracking(embedUrl,epId,retries+1),150);
+    return;
+  }
+  const videoId=m[1];
+  let player,duration=0,seeked=false;
+  try{player=new SV.Player({videoId});}
+  catch(e){
+    // iframe not yet present in the DOM — retry briefly
+    if(retries<20)setTimeout(()=>attachSproutTracking(embedUrl,epId,retries+1),150);
+    return;
+  }
+  const hist=getWatchHistory();
+  const saved=hist[epId];
+  player.bind('ready',function(e){
+    duration=(e&&e.data&&e.data.duration)||0;
+    setupSproutMediaSession(player,epId,duration);
+  });
+  player.bind('play',function(){
+    // Seek once, the first time playback actually starts — seeking before
+    // 'play' can be unreliable on some browsers/connections.
+    if(!seeked&&saved&&saved.t>2&&(!duration||saved.t<duration-3)){
+      seeked=true;
+      player.seek(saved.t);
+    }
+  });
+  let lastSaved=0;
+  player.bind('progress',function(e){
+    const t=e&&e.data&&e.data.time;
+    if(t==null)return;
+    if(!duration&&e.data.percent)duration=t/e.data.percent;
+    const now=Date.now();
+    if(now-lastSaved>4000){
+      lastSaved=now;
+      saveWatchProgress(epId,t,duration);
+    }
+  });
+  player.bind('pause',function(){
+    try{saveWatchProgress(epId,player.getCurrentTime(),duration||player.getDuration());}catch(e){}
+  });
+  player.bind('completed',function(){
+    saveWatchProgress(epId,duration||1,duration||1); // marks watched + clears from Continue Watching
+    showUpNext(epId);
+  });
+}
+function setupSproutMediaSession(player,epId,duration){
+  if(!('mediaSession' in navigator))return;
+  const ep=EPS.find(x=>E.id(x)===epId);
+  if(!ep)return;
+  const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+  navigator.mediaSession.metadata=new MediaMetadata({
+    title:E.t(ep),
+    artist:numDisplay+' · SCA Minhag of the Week',
+    album:'SCA Minhag of the Week'
+  });
+  navigator.mediaSession.setActionHandler('play',()=>player.play());
+  navigator.mediaSession.setActionHandler('pause',()=>player.pause());
+  navigator.mediaSession.setActionHandler('seekbackward',()=>{
+    try{player.seek(Math.max(0,player.getCurrentTime()-10));}catch(e){}
+  });
+  navigator.mediaSession.setActionHandler('seekforward',()=>{
+    try{player.seek(Math.min(duration||Infinity,player.getCurrentTime()+10));}catch(e){}
+  });
+  navigator.mediaSession.setActionHandler('previoustrack',null);
+  navigator.mediaSession.setActionHandler('nexttrack',()=>{
+    const nextId=getNextEpId(epId);
+    if(nextId!=null)confirmUpNext(epId,nextId);
+  });
 }
 
 // ── LOCK-SCREEN / BACKGROUND PLAYBACK ───────────────────────────────────
