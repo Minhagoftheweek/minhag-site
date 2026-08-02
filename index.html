@@ -224,9 +224,12 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
   .mobile-cat-bar{display:block}
 }
 
+.mobile-cat-label{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);padding:0 .85rem;margin-bottom:.4rem}
 .mobile-cat-row{display:flex;gap:.5rem;overflow-x:auto;padding:0 .85rem;scrollbar-width:none}
 .mobile-cat-row::-webkit-scrollbar{display:none}
-.mobile-cat-chip{flex:0 0 auto;padding:.45rem .85rem;background:var(--hpl);color:var(--hpd);border:1.5px solid rgba(139,84,178,.3);border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap;transition:all .15s}
+.mobile-cat-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:.3rem;padding:.45rem .75rem .45rem .85rem;background:var(--hpl);color:var(--hpd);border:1.5px solid rgba(139,84,178,.3);border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap;transition:all .15s}
+.mobile-cat-chip .mcc-arr{font-size:.6rem;transition:transform .15s}
+.mobile-cat-chip.open .mcc-arr{transform:rotate(180deg)}
 .mobile-cat-chip.open{background:var(--hp);color:#fff;border-color:var(--hp)}
 .mobile-cat-panel{display:none;padding:0 .85rem}
 .mobile-cat-panel.open{display:block;padding:.6rem .85rem .1rem;border-top:1px solid var(--bd);margin-top:.55rem}
@@ -243,6 +246,7 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .play-ico{width:34px;height:34px;border-radius:50%;background:rgba(139,84,178,.32);border:1.5px solid rgba(139,84,178,.65);display:flex;align-items:center;justify-content:center;transition:transform .12s}
 .card:hover .play-ico{transform:scale(1.1)}
 .ep-num{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.62);color:#fff;font-size:.58rem;padding:1px 5px;border-radius:3px;font-weight:700}
+.watched-badge{position:absolute;bottom:5px;right:5px;width:16px;height:16px;border-radius:50%;background:#2e9e5b;color:#fff;font-size:.6rem;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .ep-who{position:absolute;top:5px;right:5px;font-size:.58rem;padding:1px 5px;border-radius:3px;font-weight:600;background:rgba(0,0,0,.58);color:#fff;cursor:pointer;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(255,255,255,.1)}
 .ep-who:hover{background:rgba(139,84,178,.8)}
 .card-body{padding:.58rem .65rem;flex:1;display:flex;flex-direction:column}
@@ -547,6 +551,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 
 <!-- Mobile-only category browser — outside body-wrap so it doesn't disrupt flex layout -->
 <div class="mobile-cat-bar" id="mobileCatBar">
+  <div class="mobile-cat-label">Browse by Category</div>
   <div class="mobile-cat-row" id="mobileCatRow"></div>
   <div class="mobile-cat-panel" id="mobileCatPanel"></div>
 </div>
@@ -911,7 +916,7 @@ function buildSB(){
 let mCatOpen=null,mSGOpen=null;
 function buildMobileCatBar(){
   document.getElementById('mobileCatRow').innerHTML=CATS.map(cat=>
-    `<button class="mobile-cat-chip" id="mchip-${cat.id}" onclick="toggleMobileCat('${cat.id}')">${cat.label}</button>`
+    `<button class="mobile-cat-chip" id="mchip-${cat.id}" onclick="toggleMobileCat('${cat.id}')">${cat.label}<span class="mcc-arr">&#9662;</span></button>`
   ).join('');
 }
 function closeMobileCatBar(){
@@ -1185,10 +1190,11 @@ function render(){
       ?`<img src="https://img.youtube.com/vi/${ytid}/mqdefault.jpg" alt="" onerror="this.outerHTML='<div class=thumb-ph><div class=play-ico><svg width=10 height=10 viewBox=\\'0 0 24 24\\' fill=white><polygon points=\\'5,3 19,12 5,21\\'/></svg></div></div>'">`
       :`<div class="thumb-ph"><div class="play-ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div></div>`;
     const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+    const watchedBadge=isWatched(E.id(ep))?'<span class="watched-badge" title="Watched">&#10003;</span>':'';
     return `<div class="card" onclick="openEp(${E.id(ep)})">
       <div class="thumb">${th}
         <span class="ep-num">${numDisplay}</span>
-        
+        ${watchedBadge}
       </div>
       <div class="card-body">
         <div class="cat-tags">${catHtml}</div>
