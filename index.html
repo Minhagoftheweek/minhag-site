@@ -1245,7 +1245,7 @@ function openEp(id,push){
     ?(streamId.startsWith('DATAURI:')
       ?`<video src="${streamId.slice(8)}" controls style="width:100%;height:100%;background:#000" controlsList="nodownload" onended="showUpNext(${id})"></video>`
       :streamId.startsWith('SPROUT:')
-      ?`<iframe src="${streamId.slice(7)}" style="width:100%;height:100%;border:none" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Video Player"></iframe>`
+      ?`<iframe class="sproutvideo-player" src="${streamId.slice(7)}" style="width:100%;height:100%;border:none" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Video Player"></iframe>`
       :`<iframe src="https://customer-XXXX.cloudflarestream.com/${streamId}/iframe" style="width:100%;height:100%;border:none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`)
     :`<div class="vid-ph"><div class="play-lg"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div><p style="color:rgba(255,255,255,.4);font-size:.72rem;margin-top:6px">Video coming soon</p></div>`;
   const pdfBtn=pdfUrl
