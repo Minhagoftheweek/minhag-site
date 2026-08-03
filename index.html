@@ -789,6 +789,7 @@ function getSubsForCat(ep,catId){
 const PS=20;
 let fil=[...EPS],pg=1;
 let currentEpId=null;
+let activeSproutPlayer=null;
 
 // ── URL SLUGS ────────────────────────────────────────────────────────────
 function slugify(str){
@@ -1224,10 +1225,11 @@ function goP(p){
 // ── EPISODE PAGE ───────────────────────────────────────────────────────────
 function openEp(id,push){
   const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
+  hidePgs(); // pauses & saves progress for whatever was previously playing, while currentEpId/activeSproutPlayer still point to it
   currentEpId=id;
+  activeSproutPlayer=null;
   audioOnlyMode=false;
   if(push!==false)routeEpisode(id,push==='replace');
-  hidePgs();
   document.getElementById('epPage').classList.add('show');
   document.getElementById('heroWrap').style.display='none';
   document.getElementById('listView').style.display='none';
@@ -1472,7 +1474,7 @@ function attachSproutTracking(embedUrl,epId,retries){
   }
   const videoId=m[1];
   let player,duration=0,seeked=false;
-  try{player=new SV.Player({videoId});}
+  try{player=new SV.Player({videoId});activeSproutPlayer=player;}
   catch(e){
     // iframe not yet present in the DOM — retry briefly
     if(retries<20)setTimeout(()=>attachSproutTracking(embedUrl,epId,retries+1),150);
@@ -1690,8 +1692,23 @@ function minimizeVideo(){
   const vidBox=epPage.querySelector('.vid');
   if(!vidBox)return;
   const videoEl=vidBox.querySelector('video');
+  if(!videoEl){
+    // No native <video> — this is a SproutVideo iframe. There's no mini-player
+    // support for it (moving a cross-origin iframe mid-playback is unreliable),
+    // but we still need to actually stop it — otherwise it just keeps playing
+    // invisibly in the background after the page is hidden.
+    if(activeSproutPlayer){
+      try{
+        const t=activeSproutPlayer.getCurrentTime();
+        const d=activeSproutPlayer.getDuration();
+        if(d)saveWatchProgress(currentEpId,t,d);
+        activeSproutPlayer.pause();
+      }catch(e){/* player may already be torn down */}
+    }
+    return;
+  }
   // Only worth minimizing if it's a real <video> that's actually playing (data URI / Stream native player)
-  if(!videoEl||videoEl.paused)return;
+  if(videoEl.paused)return;
 
   const mini=document.getElementById('miniPlayer');
   mini.innerHTML='';
