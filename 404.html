@@ -711,9 +711,21 @@ function getCL(id){return(CATS.find(c=>c.id===id)||{label:id}).label;}
 
 const STOP=new Set(['the','a','an','of','on','in','at','to','for','and','or','is','are','was','were','do','we','why','how','what','when','where','who','i','my','our','its','this','that','these','those','with','from','by','as','be','been','have','has','had','not','but','so','if','he','she','they','it','about','does','can','will','would','should','your','their','his','her']);
 
+// Hand-tagged topic keywords for episodes whose content isn't findable from the
+// title/category alone and don't have a transcript to search (most episodes don't —
+// only a couple currently have real transcript text). Add an entry here — keyed by
+// episode number — whenever a search should surface an episode based on something it
+// covers that isn't reflected in its title. This never touches the real `subs` field,
+// so it can't affect category filtering or the "related episodes" logic.
+const MANUAL_KEYWORDS={
+  39:'Alenu standing sitting'
+};
+
 const AL={
 'brit':['berit milah'],'bris':['berit milah'],'beris':['berit milah'],'brith':['berit milah'],'circumcision':['berit milah'],
 'kiddush':['qiddush'],'kidush':['qiddush'],'kidish':['qiddush'],
+'beracha':['blessing'],'berachah':['blessing'],'berakhah':['blessing'],'brachah':['blessing'],'brocha':['blessing'],
+'lachmagine':['lahm'],'lachmajun':['lahm'],'lahmajun':['lahm'],'lahmacun':['lahm'],
 'kabbalat':['qabbalat'],'kabalat':['qabbalat'],'kabbalat-shabbat':['qabbalat shabbat'],
 'havdalah':['habdalah'],'havdala':['habdalah'],'havdolah':['habdalah'],
 'kaddish':['qaddish'],'kadish':['qaddish'],
@@ -1209,7 +1221,8 @@ function handleSearch(){
       return best;
     }
     function scoreEp(ep,groups){
-      const title=E.t(ep).toLowerCase(),subs=E.subs(ep).toLowerCase(),
+      const title=E.t(ep).toLowerCase(),
+            subs=(E.subs(ep)+' '+(MANUAL_KEYWORDS[E.id(ep)]||'')).toLowerCase(),
             pres=(E.w(ep)+' '+fn(E.w(ep))).toLowerCase(),don=(E.d(ep)||'').toLowerCase(),
             txt=(E.txt(ep)||'').toLowerCase();
       let score=0,matchedCount=0;
@@ -1236,24 +1249,22 @@ function handleSearch(){
       return {score,matchedCount};
     }
 
-    // Prefer every query word matching (AND). If that's too sparse — e.g. one word
-    // has a spelling variant the strict match missed — relax by one word at a time.
-    // But only accept a relaxed tier if it stays reasonably small: a rare word like
-    // "nedarim" relaxing away leaves only a handful of episodes, while a word that's
-    // basically a series name (like "missvah", present in every Bar Missvah episode)
-    // would explode the result count — that explosion is the signal to stop relaxing
-    // and trust the stricter, smaller tier instead, even if it's just one result.
+    // Prefer every query word matching (AND). If that comes up completely empty —
+    // e.g. a word wasn't in the transcript, or the full-sentence AND was too strict —
+    // relax by one word at a time. But only accept a relaxed tier if it stays
+    // reasonably small: a common word (like "blessing," which is in a dozen titles)
+    // relaxing away would explode the result count — that explosion is the signal to
+    // stop and accept there's just no match, rather than flooding back in.
     function bestMatches(groups){
       const scored=EPS.map(ep=>({ep,...scoreEp(ep,groups)}));
       const total=groups.length;
       const floor=total<=2?1:Math.max(2,Math.ceil(total*0.4));
       const CAP=10;
       let need=total,m=scored.filter(s=>s.matchedCount>=need);
-      while(need>floor){
+      while(!m.length&&need>floor){
         const next=scored.filter(s=>s.matchedCount>=need-1);
         if(next.length>CAP)break;
         need--;m=next;
-        if(m.length>=2)break;
       }
       return m;
     }
