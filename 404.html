@@ -1140,7 +1140,10 @@ function buildVocab(){
 function fuzzyExpand(word){
   if(!VOCAB)buildVocab();
   if(word.length<4)return [];
-  const maxDist=word.length<=5?1:2;
+  // Distance 1 catches genuine typos/close spellings (hatarat/hatarah, speaches/
+  // speeches) without also catching unrelated-but-similar-length words (hatarat/
+  // haftarah, shofar/shomer are distance 2 — same length, different word).
+  const maxDist=1;
   return VOCAB.filter(v=>Math.abs(v.length-word.length)<=maxDist&&lev(word,v)<=maxDist);
 }
 
@@ -1176,13 +1179,20 @@ function handleSearch(){
     }
 
     // Group search terms by the query word that produced them (word + its own aliases
-    // stay together as an OR group), so different query words are required together (AND)
-    // instead of any single word matching being enough. This is what keeps "arking" +
-    // a topic word from each independently pulling in every Arking episode.
+    // + close-spelling variants stay together as an OR group), so different query
+    // words are required together (AND) instead of any single word being enough.
+    // This is what keeps "arking" + a topic word from each independently pulling in
+    // every Arking episode, while still catching "hatarat" for an episode titled
+    // "Hatarah" via the built-in typo-tolerant matching.
     const queryWords=qL.split(/[\s,;!?.]+/).filter(w=>w.length>=2&&!STOP.has(w));
+    function wordGroup(w){
+      const g=new Set([w,...(AL[w]||[])]);
+      fuzzyExpand(w).forEach(v=>{g.add(v);(AL[v]||[]).forEach(a=>g.add(a));});
+      return [...g];
+    }
     const wordGroups=[];
     if(AL[qL])wordGroups.push([qL,...AL[qL]]);
-    queryWords.forEach(w=>{wordGroups.push([w,...(AL[w]||[])]);});
+    queryWords.forEach(w=>{wordGroups.push(wordGroup(w));});
     if(!wordGroups.length)wordGroups.push([qL]);
 
     // Score a group against an episode's short fields (title/subcategory/presenter/
@@ -1226,34 +1236,31 @@ function handleSearch(){
       return {score,matchedCount};
     }
 
-    // Prefer every query word matching (AND). If that's empty — e.g. one word has a
-    // spelling the site doesn't use, or wasn't quite in the transcript — relax down
-    // one word at a time, but never below "most of the words," so a single common
-    // word matching somewhere can't stand in for the whole query the way plain OR did.
+    // Prefer every query word matching (AND). If that's too sparse — e.g. one word
+    // has a spelling variant the strict match missed — relax by one word at a time.
+    // But only accept a relaxed tier if it stays reasonably small: a rare word like
+    // "nedarim" relaxing away leaves only a handful of episodes, while a word that's
+    // basically a series name (like "missvah", present in every Bar Missvah episode)
+    // would explode the result count — that explosion is the signal to stop relaxing
+    // and trust the stricter, smaller tier instead, even if it's just one result.
     function bestMatches(groups){
       const scored=EPS.map(ep=>({ep,...scoreEp(ep,groups)}));
       const total=groups.length;
       const floor=total<=2?1:Math.max(2,Math.ceil(total*0.4));
-      for(let need=total;need>=floor;need--){
-        const m=scored.filter(s=>s.matchedCount>=need);
-        if(m.length)return m;
+      const CAP=10;
+      let need=total,m=scored.filter(s=>s.matchedCount>=need);
+      while(need>floor){
+        const next=scored.filter(s=>s.matchedCount>=need-1);
+        if(next.length>CAP)break;
+        need--;m=next;
+        if(m.length>=2)break;
       }
-      return [];
+      return m;
     }
 
     let matched=bestMatches(wordGroups);
 
-    // If still nothing, try fuzzy/typo-tolerant matching on each query word
-    if(!matched.length&&queryWords.length){
-      const fuzzyGroups=queryWords.map(w=>{
-        const g=new Set([w,...(AL[w]||[])]);
-        fuzzyExpand(w).forEach(v=>{g.add(v);(AL[v]||[]).forEach(a=>g.add(a));});
-        return [...g];
-      });
-      matched=bestMatches(fuzzyGroups);
-    }
-
-    matched.sort((a,b)=>b.score-a.score||E.id(b.ep)-E.id(a.ep));
+    matched.sort((a,b)=>b.matchedCount-a.matchedCount||b.score-a.score||E.id(b.ep)-E.id(a.ep));
     fil=matched.map(s=>s.ep);
     trackSearch(q,fil.length);
     document.getElementById('viewTitle').textContent='Results for "'+q+'"';
