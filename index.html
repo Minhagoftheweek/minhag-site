@@ -227,6 +227,8 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .mobile-cat-label{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);padding:0 .85rem;margin-bottom:.4rem}
 .mobile-cat-row{display:flex;gap:.5rem;overflow-x:auto;padding:0 .85rem;scrollbar-width:none}
 .mobile-cat-row::-webkit-scrollbar{display:none}
+.mobile-cat-scroll{position:relative}
+.mobile-cat-fade{position:absolute;top:0;right:0;bottom:0;width:38px;background:linear-gradient(to right,transparent,var(--w) 60%);display:flex;align-items:center;justify-content:flex-end;padding-right:3px;pointer-events:none;color:var(--hpd);font-size:1.1rem;font-weight:900;opacity:1;transition:opacity .2s}
 .mobile-cat-chip{flex:0 0 auto;display:inline-flex;align-items:center;gap:.3rem;padding:.45rem .75rem .45rem .85rem;background:var(--hpl);color:var(--hpd);border:1.5px solid rgba(139,84,178,.3);border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:Arial,sans-serif;white-space:nowrap;transition:all .15s}
 .mobile-cat-chip .mcc-arr{font-size:.6rem;transition:transform .15s}
 .mobile-cat-chip.open .mcc-arr{transform:rotate(180deg)}
@@ -552,7 +554,10 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 <!-- Mobile-only category browser — outside body-wrap so it doesn't disrupt flex layout -->
 <div class="mobile-cat-bar" id="mobileCatBar">
   <div class="mobile-cat-label">Browse by Category</div>
-  <div class="mobile-cat-row" id="mobileCatRow"></div>
+  <div class="mobile-cat-scroll">
+    <div class="mobile-cat-row" id="mobileCatRow"></div>
+    <div class="mobile-cat-fade" id="mobileCatFade">&#8250;</div>
+  </div>
   <div class="mobile-cat-panel" id="mobileCatPanel"></div>
 </div>
 
@@ -916,9 +921,22 @@ function buildSB(){
 // ── MOBILE CATEGORY BAR ─────────────────────────────────────────────────────
 let mCatOpen=null,mSGOpen=null;
 function buildMobileCatBar(){
-  document.getElementById('mobileCatRow').innerHTML=CATS.map(cat=>
+  const row=document.getElementById('mobileCatRow');
+  row.innerHTML=CATS.map(cat=>
     `<button class="mobile-cat-chip" id="mchip-${cat.id}" onclick="toggleMobileCat('${cat.id}')">${cat.label}<span class="mcc-arr">&#9662;</span></button>`
   ).join('');
+  updateMobileCatFade();
+  row.addEventListener('scroll',updateMobileCatFade,{passive:true});
+  window.addEventListener('resize',updateMobileCatFade);
+}
+function updateMobileCatFade(){
+  const row=document.getElementById('mobileCatRow');
+  const fade=document.getElementById('mobileCatFade');
+  if(!row||!fade)return;
+  // Hide the "more to see" hint once there's nothing left to scroll to (a couple px of
+  // slack for sub-pixel rounding), or if the chips already fit without scrolling at all.
+  const atEnd=row.scrollLeft+row.clientWidth>=row.scrollWidth-2;
+  fade.style.opacity=atEnd?'0':'1';
 }
 function closeMobileCatBar(){
   if(mCatOpen)document.getElementById('mchip-'+mCatOpen)?.classList.remove('open');
