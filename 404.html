@@ -706,6 +706,7 @@ const STOP=new Set(['the','a','an','of','on','in','at','to','for','and','or','is
 const AL={
 'brit':['berit milah'],'bris':['berit milah'],'beris':['berit milah'],'brith':['berit milah'],'circumcision':['berit milah'],
 'kiddush':['qiddush'],'kidush':['qiddush'],'kidish':['qiddush'],
+'kabbalat':['qabbalat'],'kabalat':['qabbalat'],'kabbalat-shabbat':['qabbalat shabbat'],
 'havdalah':['habdalah'],'havdala':['habdalah'],'havdolah':['habdalah'],
 'kaddish':['qaddish'],'kadish':['qaddish'],
 'amida':['amidah'],'shmone esrei':['amidah'],
@@ -1160,37 +1161,86 @@ function handleSearch(){
       return;
     }
 
-    // Collect all search terms: full phrase + aliases + each meaningful word + their aliases
-    const terms=new Set();
-    terms.add(qL);
-    (AL[qL]||[]).forEach(a=>terms.add(a));
-
+    // Group search terms by the query word that produced them (word + its own aliases
+    // stay together as an OR group), so different query words are required together (AND)
+    // instead of any single word matching being enough. This is what keeps "arking" +
+    // a topic word from each independently pulling in every Arking episode.
     const queryWords=qL.split(/[\s,;!?.]+/).filter(w=>w.length>=2&&!STOP.has(w));
-    queryWords.forEach(w=>{
-      terms.add(w);
-      (AL[w]||[]).forEach(a=>terms.add(a));
-    });
+    const wordGroups=[];
+    if(AL[qL])wordGroups.push([qL,...AL[qL]]);
+    queryWords.forEach(w=>{wordGroups.push([w,...(AL[w]||[])]);});
+    if(!wordGroups.length)wordGroups.push([qL]);
 
-    fil=EPS.filter(ep=>{
-      const hay=(E.t(ep)+' '+E.w(ep)+' '+fn(E.w(ep))+' '+E.num(ep)+' '+(E.d(ep)||'')+' '+E.subs(ep)+' '+(E.txt(ep)||'')).toLowerCase();
-      return [...terms].some(t=>hay.includes(t));
-    });
-
-    // If nothing found, try fuzzy/typo-tolerant matching on each query word
-    if(!fil.length&&queryWords.length){
-      const fuzzyTerms=new Set();
-      queryWords.forEach(w=>{
-        fuzzyExpand(w).forEach(v=>{fuzzyTerms.add(v);(AL[v]||[]).forEach(a=>fuzzyTerms.add(a));});
-      });
-      if(fuzzyTerms.size){
-        fil=EPS.filter(ep=>{
-          const hay=(E.t(ep)+' '+E.w(ep)+' '+fn(E.w(ep))+' '+E.num(ep)+' '+(E.d(ep)||'')+' '+E.subs(ep)+' '+(E.txt(ep)||'')).toLowerCase();
-          return [...fuzzyTerms].some(t=>hay.includes(t));
-        });
+    // Score a group against an episode's short fields (title/subcategory/presenter/
+    // donation) only — NOT the transcript. Title matches matter far more than an
+    // incidental mention elsewhere.
+    function shortFieldScore(group,title,subs,pres,don){
+      let best=0;
+      for(const t of group){
+        if(!t)continue;
+        if(title.includes(t))best=Math.max(best,10);
+        if(subs.includes(t))best=Math.max(best,6);
+        if(pres.includes(t)||don.includes(t))best=Math.max(best,4);
       }
+      return best;
+    }
+    function scoreEp(ep,groups){
+      const title=E.t(ep).toLowerCase(),subs=E.subs(ep).toLowerCase(),
+            pres=(E.w(ep)+' '+fn(E.w(ep))).toLowerCase(),don=(E.d(ep)||'').toLowerCase(),
+            txt=(E.txt(ep)||'').toLowerCase();
+      let score=0,matchedCount=0;
+      const transcriptOnly=[];
+      groups.forEach(group=>{
+        const s=shortFieldScore(group,title,subs,pres,don);
+        score+=s;
+        if(s)matchedCount++;else transcriptOnly.push(group);
+      });
+      if(transcriptOnly.length&&txt){
+        // Any group not already anchored by a short field (title/category/presenter/
+        // donation) has to be found in the transcript — but a word appearing ANYWHERE
+        // in a ~2000-word transcript is nearly meaningless (that's what let "turn"
+        // and "around" match almost every episode). Instead require all such words
+        // to co-occur in the SAME paragraph, which actually means they're being
+        // discussed together rather than just coincidentally both present somewhere.
+        const paras=txt.split(/\n\s*\n/);
+        const paraHasAll=paras.some(p=>{
+          const pl=p.toLowerCase();
+          return transcriptOnly.every(g=>g.some(t=>t&&pl.includes(t)));
+        });
+        if(paraHasAll){score+=1;matchedCount+=transcriptOnly.length;}
+      }
+      return {score,matchedCount};
     }
 
-    fil=fil.slice().reverse();
+    // Prefer every query word matching (AND). If that's empty — e.g. one word has a
+    // spelling the site doesn't use, or wasn't quite in the transcript — relax down
+    // one word at a time, but never below "most of the words," so a single common
+    // word matching somewhere can't stand in for the whole query the way plain OR did.
+    function bestMatches(groups){
+      const scored=EPS.map(ep=>({ep,...scoreEp(ep,groups)}));
+      const total=groups.length;
+      const floor=total<=2?1:Math.max(2,Math.ceil(total*0.4));
+      for(let need=total;need>=floor;need--){
+        const m=scored.filter(s=>s.matchedCount>=need);
+        if(m.length)return m;
+      }
+      return [];
+    }
+
+    let matched=bestMatches(wordGroups);
+
+    // If still nothing, try fuzzy/typo-tolerant matching on each query word
+    if(!matched.length&&queryWords.length){
+      const fuzzyGroups=queryWords.map(w=>{
+        const g=new Set([w,...(AL[w]||[])]);
+        fuzzyExpand(w).forEach(v=>{g.add(v);(AL[v]||[]).forEach(a=>g.add(a));});
+        return [...g];
+      });
+      matched=bestMatches(fuzzyGroups);
+    }
+
+    matched.sort((a,b)=>b.score-a.score||E.id(b.ep)-E.id(a.ep));
+    fil=matched.map(s=>s.ep);
     document.getElementById('viewTitle').textContent='Results for "'+q+'"';
     document.getElementById('presBar').classList.remove('show');
     document.querySelectorAll('.cat-btn,.sb-all,.sub-btn').forEach(b=>b.classList.remove('on'));
