@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SCA Minhag of the Week</title>
+<!-- Google Analytics — replace G-XXXXXXXXXX with your real Measurement ID -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 <meta name="description" content="Preserving Our Rich Heritage, One Minhag at a Time">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SCA Minhag of the Week">
@@ -1136,6 +1144,11 @@ function fuzzyExpand(word){
   return VOCAB.filter(v=>Math.abs(v.length-word.length)<=maxDist&&lev(word,v)<=maxDist);
 }
 
+function trackSearch(q,resultCount){
+  if(typeof gtag==='function'){
+    gtag('event','search',{search_term:q,result_count:resultCount});
+  }
+}
 function handleSearch(){
   const q=document.getElementById('searchInput').value.trim();
   if(!q){return;}
@@ -1157,6 +1170,7 @@ function handleSearch(){
       ['opp','question'].forEach(p=>document.getElementById(p+'Page').classList.remove('show'));
       document.getElementById('heroWrap').style.display='none';
       document.getElementById('listView').style.display='block';
+      trackSearch(q,fil.length);
       pg=1; render();
       return;
     }
@@ -1241,6 +1255,7 @@ function handleSearch(){
 
     matched.sort((a,b)=>b.score-a.score||E.id(b.ep)-E.id(a.ep));
     fil=matched.map(s=>s.ep);
+    trackSearch(q,fil.length);
     document.getElementById('viewTitle').textContent='Results for "'+q+'"';
     document.getElementById('presBar').classList.remove('show');
     document.querySelectorAll('.cat-btn,.sb-all,.sub-btn').forEach(b=>b.classList.remove('on'));
