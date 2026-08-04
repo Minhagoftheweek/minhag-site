@@ -846,6 +846,22 @@ const PS=48;
 let fil=[...EPS],pg=1;
 let currentEpId=null;
 let activeSproutPlayer=null;
+// iOS Safari sometimes leaves the picture frozen on a stale frame after the
+// phone is locked/unlocked while a SproutVideo iframe is playing in
+// Picture-in-Picture (audio keeps going, the image doesn't update). There's
+// no direct access to the video element inside the cross-origin iframe to
+// force a redraw, so as a best-effort nudge we re-seek to the current time
+// once the page becomes visible again, which typically kicks the decoder
+// into repainting. Not guaranteed on every device/OS version — this is a
+// WebKit-level quirk with cross-origin iframe PiP, not something under our
+// or SproutVideo's direct control.
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden||!activeSproutPlayer)return;
+  try{
+    const t=activeSproutPlayer.getCurrentTime();
+    if(t!=null)activeSproutPlayer.seek(t);
+  }catch(e){}
+});
 
 // ── URL SLUGS ────────────────────────────────────────────────────────────
 function slugify(str){
@@ -1784,15 +1800,18 @@ function minimizeVideo(){
   const videoEl=vidBox.querySelector('video');
   if(!videoEl){
     // No native <video> — this is a SproutVideo iframe. There's no mini-player
-    // support for it (moving a cross-origin iframe mid-playback is unreliable),
-    // but we still need to actually stop it — otherwise it just keeps playing
-    // invisibly in the background after the page is hidden.
+    // support for it (moving a cross-origin iframe mid-playback is unreliable).
+    // We deliberately do NOT call pause() here: if the viewer put the video into
+    // native Picture-in-Picture before navigating away, pausing here would kill
+    // that PiP session. We just save progress; if they're not in PiP the audio
+    // will keep playing briefly in the background, which is the acceptable
+    // trade-off for letting PiP survive in-app navigation. Opening a new episode
+    // replaces this iframe entirely, which naturally stops the old one.
     if(activeSproutPlayer){
       try{
         const t=activeSproutPlayer.getCurrentTime();
         const d=activeSproutPlayer.getDuration();
         if(d)saveWatchProgress(currentEpId,t,d);
-        activeSproutPlayer.pause();
       }catch(e){/* player may already be torn down */}
     }
     return;
