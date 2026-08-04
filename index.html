@@ -642,9 +642,9 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
           <div class="f-row"><label>Your Question</label><textarea id="qMsg" placeholder="Describe the topic, minhag, or question you would like addressed..."></textarea></div>
           <div class="err-msg" id="qErr"></div>
           <div class="f-div"></div>
-          <button class="sub-btn-f" onclick="submitQ()">Submit Question</button>
+          <button class="sub-btn-f" id="qSubmitBtn" onclick="submitQ()">Submit Question</button>
         </div>
-        <div class="ok-box" id="qOk"><h3>Thank You</h3><p>Thank you for submitting your question. The team will receive a copy of it and add it to our list of ongoing potential topics to address in the future.</p></div>
+        <div class="ok-box" id="qOk"><h3>Thank You</h3><p>Thank you for submitting your question. The team will receive a copy of it and add it to our list of ongoing potential topics to address in the future. A copy has also been sent to your email.</p></div>
       </div>
     </div>
 
@@ -1859,8 +1859,30 @@ function submitQ(){
   const err=document.getElementById('qErr');
   if(!n||!em||!m){err.textContent='Please fill in all fields.';err.style.display='block';return;}
   err.style.display='none';
-  document.getElementById('qForm').style.display='none';
-  document.getElementById('qOk').style.display='block';
+  const btn=document.getElementById('qSubmitBtn');
+  if(btn){btn.disabled=true;btn.textContent='Submitting…';}
+  fetch('https://formsubmit.co/ajax/minhag@scaupdates.org',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({
+      'Name':n,
+      'Email':em,
+      'Question':m,
+      '_subject':'New Question Submitted — SCA Minhag of the Week',
+      '_cc':em,
+      '_template':'table'
+    })
+  })
+  .then(r=>{if(!r.ok)throw new Error('Request failed');return r.json();})
+  .then(()=>{
+    document.getElementById('qForm').style.display='none';
+    document.getElementById('qOk').style.display='block';
+  })
+  .catch(()=>{
+    if(btn){btn.disabled=false;btn.textContent='Submit Question';}
+    err.textContent='Something went wrong sending your question — please try again, or email minhag@scaupdates.org directly.';
+    err.style.display='block';
+  });
 }
 
 // ── PDF ────────────────────────────────────────────────────────────────────
