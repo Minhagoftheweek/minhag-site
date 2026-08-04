@@ -1763,27 +1763,41 @@ function renderRelatedEpisodes(epId){
 }
 
 // ── AUDIO-ONLY MODE ───────────────────────────────────────────────────────
-// Toggles the visible video element off and shows a simple audio-player-style
-// placeholder instead, while the underlying <video> keeps playing its audio
-// track in the background — useful for listening hands-free while cooking, etc.
+// Toggles the visible video off and shows a simple audio-player-style
+// placeholder instead. The player is a cross-origin iframe (SproutVideo), not
+// a native <video> element, so we can't reach inside it — we shrink/move the
+// iframe off-screen (never display:none, which reliably kills playback in
+// most browsers/iframes) so it keeps rendering and playing while the page
+// tab stays open. NOTE: this does not guarantee playback continues once the
+// phone is locked or the user switches to a different app — that requires
+// background-audio support from inside the player itself (Media Session
+// API), which isn't something we control from the parent page for a
+// third-party embed. This gets hands-free listening while browsing the rest
+// of the page; true lock-screen playback would need that on the player's end.
 let audioOnlyMode=false;
 function toggleAudioMode(epId){
   audioOnlyMode=!audioOnlyMode;
   const vidBox=document.getElementById('vidBox-'+epId);
   const btn=document.getElementById('audioToggleBtn-'+epId);
   if(!vidBox)return;
-  const videoEl=vidBox.querySelector('video');
+  const playerEl=vidBox.querySelector('iframe,video');
   if(audioOnlyMode){
     btn?.classList.add('on');
     if(btn)btn.innerHTML='&#127909; Switch to Video';
-    if(videoEl){
-      videoEl.dataset.wasPlaying=videoEl.paused?'0':'1';
-      videoEl.style.display='none';
+    if(playerEl){
+      playerEl.dataset.origStyle=playerEl.getAttribute('style')||'';
+      playerEl.style.position='absolute';
+      playerEl.style.width='2px';
+      playerEl.style.height='2px';
+      playerEl.style.left='-9999px';
+      playerEl.style.top='0';
+      playerEl.style.opacity='0';
+      playerEl.style.pointerEvents='none';
       let artEl=vidBox.querySelector('.audio-mode-art');
       if(!artEl){
         artEl=document.createElement('div');
         artEl.className='audio-mode-art';
-        artEl.innerHTML=`<svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg><p>Audio-only mode — playing in the background</p>`;
+        artEl.innerHTML=`<svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg><p>Audio-only mode — video hidden, audio still playing</p>`;
         vidBox.appendChild(artEl);
       }
       artEl.style.display='flex';
@@ -1791,8 +1805,8 @@ function toggleAudioMode(epId){
   }else{
     btn?.classList.remove('on');
     if(btn)btn.innerHTML='&#127909; Listen Only (Audio Mode)';
-    if(videoEl){
-      videoEl.style.display='block';
+    if(playerEl){
+      playerEl.setAttribute('style',playerEl.dataset.origStyle||'width:100%;height:100%;border:none');
       const artEl=vidBox.querySelector('.audio-mode-art');
       if(artEl)artEl.style.display='none';
     }
