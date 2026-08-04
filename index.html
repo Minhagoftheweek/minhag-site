@@ -1385,7 +1385,7 @@ function openEp(id,push){
     ?`<div class="tx-body" id="txBody-${id}">${txt.split(String.fromCharCode(10,10)).map(p=>'<p>'+p+'</p>').join('')}</div>`
     :`<div class="tx-cs">Transcript coming soon</div>`;
   const copyBtn=txt
-    ?`<button class="dl-btn dl-btn-ghost" onclick="copyTranscript(${id})">&#128203; Copy Text</button>`
+    ?`<button class="dl-btn dl-btn-ghost" onclick="copyTranscript(${id})">Copy Text</button>`
     :'';
   const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   document.getElementById('epContent').innerHTML=`
@@ -1712,7 +1712,7 @@ function renderContinueWatching(){
     </div>`;
   }).join('');
   row.innerHTML=`<div class="cw-row">
-    <h3>&#9654; Continue Watching <button class="cw-clear" onclick="clearWatchHistory()">Clear</button></h3>
+    <h3>Continue Watching <button class="cw-clear" onclick="clearWatchHistory()">Clear</button></h3>
     <div class="cw-scroll">${cards}</div>
   </div>`;
 }
