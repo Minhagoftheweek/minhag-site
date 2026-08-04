@@ -670,6 +670,23 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 
 <script>
 const NAMES={Mosseri:'Joseph Mosseri',Arking:'Morris Arking',Harari:'Joey Harari','All 3':'Joseph Mosseri, Morris Arking & Joey Harari','Harari ft Arking':'Joey Harari & Morris Arking'};
+const PRESENTER_EMAILS={Mosseri:'joseph.mosseri@verizon.net',Arking:'morris@arcadeorder.com',Harari:'joey@joeyharari.com'};
+function getPresenterCcList(w){
+  if(!w)return [];
+  if(w==='All 3')return [PRESENTER_EMAILS.Mosseri,PRESENTER_EMAILS.Arking,PRESENTER_EMAILS.Harari];
+  const parts=w.split(/,|\sft\s?/i).map(p=>p.trim()).filter(Boolean);
+  const emails=parts.map(p=>PRESENTER_EMAILS[p]).filter(Boolean);
+  return [...new Set(emails)];
+}
+function buildEpisodeQuestionMailto(ep){
+  const numPart=E.num(ep).replace(/^Ep\.\s*/,'');
+  const subject=`Question on episode ${numPart}, ${E.t(ep)}`;
+  const body=`Hi, I was just watching an episode of Minhag of the Week and have a question...`;
+  const cc=getPresenterCcList(E.w(ep));
+  let mailto=`mailto:minhag@scaupdates.org?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  if(cc.length)mailto+=`&cc=${encodeURIComponent(cc.join(','))}`;
+  return mailto;
+}
 const fn=w=>{
   if(!w)return '';
   // Handle comma-separated multi-presenter (panels)
@@ -1376,6 +1393,7 @@ function openEp(id,push){
     <div class="ep-title">${E.t(ep)}</div>
     <div class="ep-meta">${numDisplay}<span style="color:var(--bd)">·</span>${E.dt(ep)}<span style="color:var(--bd)">·</span>${presLinks(E.w(ep),'meta')}</div>
     ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
+    <a class="dl-btn dl-btn-ghost" href="${buildEpisodeQuestionMailto(ep)}" style="margin:.4rem 0 .2rem">&#9993; Ask a Question About This Episode</a>
     <div class="vid size-m" id="vidBox-${id}">${vidH}</div>
     <div class="vid-size-row">
       <span class="vid-size-label">Video Size:</span>
