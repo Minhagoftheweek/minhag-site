@@ -82,12 +82,6 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .related-card:hover{border-color:var(--hp);transform:translateY(-2px)}
 .related-card .rc-num{font-size:.78rem;font-weight:700;color:var(--hpd);margin-bottom:.4rem}
 .related-card .rc-title{font-size:.95rem;font-weight:600;color:var(--tx);line-height:1.4;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.audio-toggle-row{display:flex;justify-content:center;margin-bottom:.5rem}
-.audio-toggle-btn{font-size:.68rem;font-weight:600;padding:.3rem .75rem;border-radius:5px;border:1.5px solid var(--bd);background:var(--w);color:var(--mu);cursor:pointer;font-family:Arial,sans-serif;display:inline-flex;align-items:center;gap:.35rem}
-.audio-toggle-btn.on{border-color:var(--hp);color:var(--hpd);background:var(--hpl)}
-.audio-mode-art{width:100%;aspect-ratio:16/9;background:linear-gradient(150deg,var(--nd) 0%,var(--navy) 60%,#1e4a7a 100%);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff}
-.audio-mode-art svg{margin-bottom:.5rem;opacity:.85}
-.audio-mode-art p{font-size:.7rem;color:rgba(255,255,255,.6)}
 .upnext-overlay{position:absolute;inset:0;background:rgba(10,18,30,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;z-index:10;text-align:center;padding:1rem}
 .upnext-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(201,160,232,.9);margin-bottom:.5rem}
 .upnext-title{font-size:.95rem;font-weight:700;max-width:90%;line-height:1.3;margin-bottom:.85rem}
@@ -1345,7 +1339,6 @@ function openEp(id,push){
   hidePgs(); // pauses & saves progress for whatever was previously playing, while currentEpId/activeSproutPlayer still point to it
   currentEpId=id;
   activeSproutPlayer=null;
-  audioOnlyMode=false;
   if(push!==false)routeEpisode(id,push==='replace');
   document.getElementById('epPage').classList.add('show');
   document.getElementById('heroWrap').style.display='none';
@@ -1374,9 +1367,6 @@ function openEp(id,push){
   const copyBtn=txt
     ?`<button class="dl-btn dl-btn-ghost" onclick="copyTranscript(${id})">&#128203; Copy Text</button>`
     :'';
-  const audioToggleBtn=streamId&&(streamId.startsWith('DATAURI:')||streamId.startsWith('SPROUT:'))
-    ?`<button class="audio-toggle-btn" id="audioToggleBtn-${id}" onclick="toggleAudioMode(${id})">&#127909; Listen Only (Audio Mode)</button>`
-    :'';
   const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   document.getElementById('epContent').innerHTML=`
     <div class="ep-cats-hdr">${catHtml}</div>
@@ -1390,7 +1380,6 @@ function openEp(id,push){
       <button class="vid-size-btn on" id="vsz-m-${id}" onclick="setVidSize(${id},'m')">Standard</button>
       <button class="vid-size-btn" id="vsz-l-${id}" onclick="setVidSize(${id},'l')">Full Width</button>
     </div>
-    ${audioToggleBtn?`<div class="audio-toggle-row">${audioToggleBtn}</div>`:''}
     <div class="tx-card">
       <div class="tx-hdr">
         <h3>Full Transcript</h3>
@@ -1760,57 +1749,6 @@ function renderRelatedEpisodes(epId){
     <h3>Related Episodes</h3>
     <div class="related-grid">${cards}</div>
   </div>`;
-}
-
-// ── AUDIO-ONLY MODE ───────────────────────────────────────────────────────
-// Toggles the visible video off and shows a simple audio-player-style
-// placeholder instead. The player is a cross-origin iframe (SproutVideo), not
-// a native <video> element, so we can't reach inside it — we shrink/move the
-// iframe off-screen (never display:none, which reliably kills playback in
-// most browsers/iframes) so it keeps rendering and playing while the page
-// tab stays open. NOTE: this does not guarantee playback continues once the
-// phone is locked or the user switches to a different app — that requires
-// background-audio support from inside the player itself (Media Session
-// API), which isn't something we control from the parent page for a
-// third-party embed. This gets hands-free listening while browsing the rest
-// of the page; true lock-screen playback would need that on the player's end.
-let audioOnlyMode=false;
-function toggleAudioMode(epId){
-  audioOnlyMode=!audioOnlyMode;
-  const vidBox=document.getElementById('vidBox-'+epId);
-  const btn=document.getElementById('audioToggleBtn-'+epId);
-  if(!vidBox)return;
-  const playerEl=vidBox.querySelector('iframe,video');
-  if(audioOnlyMode){
-    btn?.classList.add('on');
-    if(btn)btn.innerHTML='&#127909; Switch to Video';
-    if(playerEl){
-      playerEl.dataset.origStyle=playerEl.getAttribute('style')||'';
-      playerEl.style.position='absolute';
-      playerEl.style.width='2px';
-      playerEl.style.height='2px';
-      playerEl.style.left='-9999px';
-      playerEl.style.top='0';
-      playerEl.style.opacity='0';
-      playerEl.style.pointerEvents='none';
-      let artEl=vidBox.querySelector('.audio-mode-art');
-      if(!artEl){
-        artEl=document.createElement('div');
-        artEl.className='audio-mode-art';
-        artEl.innerHTML=`<svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg><p>Audio-only mode — video hidden, audio still playing</p>`;
-        vidBox.appendChild(artEl);
-      }
-      artEl.style.display='flex';
-    }
-  }else{
-    btn?.classList.remove('on');
-    if(btn)btn.innerHTML='&#127909; Listen Only (Audio Mode)';
-    if(playerEl){
-      playerEl.setAttribute('style',playerEl.dataset.origStyle||'width:100%;height:100%;border:none');
-      const artEl=vidBox.querySelector('.audio-mode-art');
-      if(artEl)artEl.style.display='none';
-    }
-  }
 }
 
 // ── MINI / FLOATING PLAYER ───────────────────────────────────────────────
