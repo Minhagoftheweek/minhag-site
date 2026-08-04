@@ -618,19 +618,44 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
               <label class="ao"><input type="radio" name="amt" value="1001" onchange="chkOther()"><div class="ao-box"><span class="ao-price">$1,001</span><span class="ao-desc">Three episodes</span></div></label>
               <label class="ao"><input type="radio" name="amt" value="1800" onchange="chkOther()"><div class="ao-box"><span class="ao-price">$1,800</span><span class="ao-desc">Your Name, Front &amp; Center — One Week</span></div></label>
               <label class="ao"><input type="radio" name="amt" value="5200" onchange="chkOther()"><div class="ao-box"><span class="ao-price">$5,200</span><span class="ao-desc">Your Name, Front &amp; Center — One Month</span></div></label>
-              <label class="ao"><input type="radio" name="amt" value="10000" onchange="chkOther()"><div class="ao-box"><span class="ao-price">$10,000</span><span class="ao-desc">Your Name, Front &amp; Center — One Quarter</span></div></label>
+              <label class="ao"><input type="radio" name="amt" value="10000" onchange="chkOther()"><div class="ao-box"><span class="ao-price">$10,000</span><span class="ao-desc">Your Name, Front &amp; Center — Three Months</span></div></label>
               <label class="ao"><input type="radio" name="amt" value="26000" onchange="chkOther()"><div class="ao-box"><span class="ao-price">$26,000</span><span class="ao-desc">Your Name, Front &amp; Center — All Year</span></div></label>
               <label class="ao" style="grid-column:1/-1"><input type="radio" name="amt" value="other" onchange="chkOther()"><div class="ao-box"><span class="ao-price" style="font-size:.82rem">Other Amount</span><span class="ao-desc">Enter your own</span></div></label>
             </div>
             <div class="other-row" id="otherRow">
               <div class="f-row" style="margin-top:.6rem;margin-bottom:0"><label>Amount ($)</label><input type="number" id="oOther" placeholder="e.g. 250" min="1" style="max-width:130px"></div>
             </div>
+            <div style="font-size:.72rem;color:var(--mu);margin-top:.6rem;line-height:1.5">
+              <strong>What "Your Name, Front &amp; Center" means:</strong> your name or dedication is placed prominently across the site itself (for example, on the homepage) for the length of the sponsorship — it is not placed on the individual episode videos. Episode sponsorship (recognition tied to a specific episode) is the "One episode" and "Three episodes" options above.
+            </div>
+          </div>
+          <div class="f-row" id="wordingSection">
+            <label id="wordingLabel1">Sponsorship Wording</label>
+            <div style="font-size:.72rem;color:var(--mu);margin-bottom:.35rem">
+              Examples: "In honor of… by…", "In loving memory of… by…", "For the Refuah Shelema of… by…"
+            </div>
+            <textarea id="oWording1" placeholder="Enter your sponsorship wording exactly as you'd like it to appear..."></textarea>
+            <div style="font-size:.7rem;color:var(--mu);margin-top:.35rem">
+              We will use this wording verbatim, so please make sure all names are spelled correctly and everything you would like included is there.
+            </div>
+            <div id="multiWordingToggle" style="display:none;margin-top:.65rem">
+              <label style="display:flex;align-items:center;gap:.4rem;font-weight:500;cursor:pointer;font-size:.82rem">
+                <input type="checkbox" id="oMultiWording" onchange="toggleMultiWording()">
+                I would like different wording for each episode that is sponsored
+              </label>
+            </div>
+            <div id="wordingExtra" style="display:none">
+              <div class="f-row"><label>Second Episode Wording</label><textarea id="oWording2" placeholder="Enter your sponsorship wording exactly as you'd like it to appear..."></textarea></div>
+              <div class="f-row"><label>Third Episode Wording</label><textarea id="oWording3" placeholder="Enter your sponsorship wording exactly as you'd like it to appear..."></textarea></div>
+            </div>
           </div>
           <div class="err-msg" id="oppErr"></div>
           <div class="f-div"></div>
           <button class="sub-btn-f" id="oppSubmitBtn" onclick="submitOpp()">Submit Inquiry</button>
         </div>
-        <div class="ok-box" id="oppOk"><h3>Received</h3><p>Thank you — your sponsorship inquiry has been sent. Please allow up to 48 hours for someone to contact you regarding payment options. A copy has also been sent to your email.</p></div>
+        <div class="ok-box" id="oppOk"><h3>Received</h3><p>Thank you — your sponsorship inquiry has been sent. Please allow up to 48 hours for someone to contact you regarding payment options. A copy has also been sent to your email.</p>
+          <button class="sub-btn-f" onclick="resetOppForm()" style="margin-top:.9rem">Submit Another Sponsorship</button>
+        </div>
       </div>
     </div>
 
@@ -1884,8 +1909,39 @@ function closeDrawer(){
 
 // ── FORMS ──────────────────────────────────────────────────────────────────
 function chkOther(){
-  const otherChecked=document.querySelector('input[name="amt"][value="other"]').checked;
+  const amtInput=document.querySelector('input[name="amt"]:checked');
+  const otherChecked=amtInput&&amtInput.value==='other';
   document.getElementById('otherRow').classList.toggle('show',otherChecked);
+  const isThree=amtInput&&amtInput.value==='1001';
+  document.getElementById('multiWordingToggle').style.display=isThree?'block':'none';
+  if(!isThree){
+    const mw=document.getElementById('oMultiWording');
+    if(mw.checked){mw.checked=false;toggleMultiWording();}
+  }
+}
+function toggleMultiWording(){
+  const multi=document.getElementById('oMultiWording').checked;
+  document.getElementById('wordingExtra').style.display=multi?'block':'none';
+  document.getElementById('wordingLabel1').textContent=multi?'First Episode Wording':'Sponsorship Wording';
+}
+function resetOppForm(){
+  document.getElementById('oName').value='';
+  document.getElementById('oEmail').value='';
+  const def=document.querySelector('input[name="amt"][value="501"]');
+  if(def)def.checked=true;
+  document.getElementById('oOther').value='';
+  document.getElementById('oWording1').value='';
+  document.getElementById('oWording2').value='';
+  document.getElementById('oWording3').value='';
+  document.getElementById('oMultiWording').checked=false;
+  chkOther();
+  toggleMultiWording();
+  const btn=document.getElementById('oppSubmitBtn');
+  if(btn){btn.disabled=false;btn.textContent='Submit Inquiry';}
+  document.getElementById('oppErr').style.display='none';
+  document.getElementById('oppOk').style.display='none';
+  document.getElementById('oppForm').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 function submitOpp(){
   const n=document.getElementById('oName').value.trim(),em=document.getElementById('oEmail').value.trim();
@@ -1898,6 +1954,14 @@ function submitOpp(){
   err.style.display='none';
   const btn=document.getElementById('oppSubmitBtn');
   if(btn){btn.disabled=true;btn.textContent='Submitting…';}
+  const isMulti=amtVal==='1001'&&document.getElementById('oMultiWording').checked;
+  const wordingFields=isMulti?{
+    'First Episode Wording':document.getElementById('oWording1').value.trim(),
+    'Second Episode Wording':document.getElementById('oWording2').value.trim(),
+    'Third Episode Wording':document.getElementById('oWording3').value.trim()
+  }:{
+    'Sponsorship Wording':document.getElementById('oWording1').value.trim()
+  };
   fetch('https://formsubmit.co/ajax/minhag@scaupdates.org',{
     method:'POST',
     headers:{'Content-Type':'application/json','Accept':'application/json'},
@@ -1905,6 +1969,7 @@ function submitOpp(){
       'Name':n,
       'Email':em,
       'Sponsorship Amount':amount,
+      ...wordingFields,
       '_subject':'New Sponsorship Inquiry — SCA Minhag of the Week',
       '_cc':em,
       '_template':'table'
@@ -1914,6 +1979,7 @@ function submitOpp(){
   .then(()=>{
     document.getElementById('oppForm').style.display='none';
     document.getElementById('oppOk').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
   })
   .catch(()=>{
     if(btn){btn.disabled=false;btn.textContent='Submit Inquiry';}
