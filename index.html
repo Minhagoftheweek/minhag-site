@@ -1393,7 +1393,6 @@ function openEp(id,push){
     <div class="ep-title">${E.t(ep)}</div>
     <div class="ep-meta">${numDisplay}<span style="color:var(--bd)">·</span>${E.dt(ep)}<span style="color:var(--bd)">·</span>${presLinks(E.w(ep),'meta')}</div>
     ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
-    <a class="dl-btn dl-btn-ghost" href="${buildEpisodeQuestionMailto(ep)}" style="margin:.4rem 0 .2rem">&#9993; Ask a Question About This Episode</a>
     <div class="vid size-m" id="vidBox-${id}">${vidH}</div>
     <div class="vid-size-row">
       <span class="vid-size-label">Video Size:</span>
@@ -1401,6 +1400,7 @@ function openEp(id,push){
       <button class="vid-size-btn on" id="vsz-m-${id}" onclick="setVidSize(${id},'m')">Standard</button>
       <button class="vid-size-btn" id="vsz-l-${id}" onclick="setVidSize(${id},'l')">Full Width</button>
     </div>
+    <div style="text-align:center;margin:.9rem 0"><a class="dl-btn dl-btn-ghost" href="${buildEpisodeQuestionMailto(ep)}">Ask a Question About This Episode</a></div>
     <div class="tx-card">
       <div class="tx-hdr">
         <h3>Full Transcript</h3>
