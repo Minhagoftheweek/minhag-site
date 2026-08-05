@@ -103,53 +103,83 @@ def get_sproutvideo_total_plays(api_key):
     return total_plays, total_videos
 
 
+def fetch_media_view_count(media_id, access_token):
+    for metric in ("plays", "video_views", "reach"):
+        insights_url = (f"https://graph.instagram.com/{media_id}/insights"
+                         f"?metric={metric}"
+                         f"&access_token={urllib.parse.quote(access_token)}")
+        try:
+            idata = http_get_json(insights_url)
+            values = idata.get("data", [])
+            if values:
+                return int(values[0].get("values", [{}])[0].get("value", 0))
+        except urllib.error.HTTPError:
+            continue
+    return None
+
+
 def get_instagram_total_views(access_token, account_id):
     """
-    Walks every media item on the account, keeps only VIDEO/REELS posts
-    whose caption contains #SCAMinhagOfTheWeek (case-insensitive), and sums
-    their view counts via the insights endpoint. A single media item's
-    insights call failing (e.g. an old post insights no longer supports)
-    doesn't stop the run — it's just skipped and logged.
+    Keeps a cache (data/instagram-cache.json) of every #SCAMinhagOfTheWeek
+    video/reel found so far and its view count, so routine runs don't have
+    to re-walk the account's entire post history (which is slow and risks
+    Instagram's 200-calls/hour limit given this runs every 5 minutes).
+
+    First run ever (empty/missing cache): walks up to ~3,000 recent posts
+    (60 pages of 50) to backfill the cache — this one run may take a while.
+    Every run after that: only walks forward from the newest post until it
+    reaches a post it has already seen, so it's typically just 1-2 quick
+    page fetches. The running total is the sum of everything in the cache,
+    so already-found videos keep counting even on runs that find nothing new.
     """
+    cache_path = "data/instagram-cache.json"
+    try:
+        with open(cache_path) as f:
+            cache = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        cache = {"media": {}}
+
+    known_ids = set(cache["media"].keys())
+    is_first_run = len(known_ids) == 0
+    max_pages = 60 if is_first_run else 5
+
     media_items = []
     url = (f"https://graph.instagram.com/{account_id}/media"
-           f"?fields=id,caption,media_type,media_product_type"
+           f"?fields=id,caption,media_type&limit=50"
            f"&access_token={urllib.parse.quote(access_token)}")
-    while url:
+    pages = 0
+    while url and pages < max_pages:
         data = http_get_json(url)
-        media_items.extend(data.get("data", []))
+        items = data.get("data", [])
+        media_items.extend(items)
+        pages += 1
+        if not is_first_run and any(m["id"] in known_ids for m in items):
+            break  # caught up to posts we've already indexed
         url = data.get("paging", {}).get("next")
 
-    matching = [
+    matching_new = [
         m for m in media_items
-        if m.get("media_type") in ("VIDEO", "REELS")
+        if m["id"] not in known_ids
+        and m.get("media_type") in ("VIDEO", "REELS")
         and HASHTAG in (m.get("caption") or "").lower()
     ]
 
-    total_views = 0
-    counted = 0
-    for m in matching:
-        media_id = m["id"]
-        found = False
-        for metric in ("plays", "video_views", "reach"):
-            insights_url = (f"https://graph.instagram.com/{media_id}/insights"
-                             f"?metric={metric}"
-                             f"&access_token={urllib.parse.quote(access_token)}")
-            try:
-                idata = http_get_json(insights_url)
-                values = idata.get("data", [])
-                if values:
-                    val = values[0].get("values", [{}])[0].get("value", 0)
-                    total_views += int(val)
-                    counted += 1
-                    found = True
-                    break
-            except urllib.error.HTTPError:
-                continue
-        if not found:
-            print(f"Instagram: could not get view count for media {media_id}, skipped", file=sys.stderr)
+    for m in matching_new:
+        views = fetch_media_view_count(m["id"], access_token)
+        if views is not None:
+            cache["media"][m["id"]] = {
+                "views": views,
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+            }
+        else:
+            print(f"Instagram: could not get view count for media {m['id']}, skipped", file=sys.stderr)
 
-    return total_views, counted, len(matching)
+    os.makedirs("data", exist_ok=True)
+    with open(cache_path, "w") as f:
+        json.dump(cache, f, indent=2)
+
+    total_views = sum(v["views"] for v in cache["media"].values())
+    return total_views, len(cache["media"]), len(matching_new)
 
 
 def main():
@@ -183,7 +213,7 @@ def main():
     if ig_token and ig_account_id:
         try:
             ig_views, ig_counted, ig_matched = get_instagram_total_views(ig_token, ig_account_id)
-            ig_note = f"{ig_counted} of {ig_matched} matching posts counted"
+            ig_note = f"{ig_counted} total tagged videos indexed ({ig_matched} newly found this run)"
         except urllib.error.HTTPError as e:
             print(f"Instagram API error: {e.code} {e.read().decode()} — Instagram contributes 0 this run", file=sys.stderr)
             ig_note = "token/API error this run — contributed 0, check logs"
