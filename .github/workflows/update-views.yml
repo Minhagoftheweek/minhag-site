@@ -2,7 +2,7 @@ name: Update total view count
 
 on:
   schedule:
-    - cron: '0 8 * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
 permissions:
