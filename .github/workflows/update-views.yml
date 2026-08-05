@@ -33,7 +33,7 @@ jobs:
         run: |
           git config user.name "view-count-bot"
           git config user.email "actions@github.com"
-          git add data/view-count.json
+          git add data/view-count.json data/instagram-cache.json
           if ! git diff --cached --quiet; then
             git commit -m "Auto-update total view count"
             git push
