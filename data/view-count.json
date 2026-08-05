@@ -11,8 +11,8 @@
     },
     "instagram": {
       "views": 179485,
-      "note": "125 tagged videos indexed total (125 newly found this run); still backfilling \u2014 10511 posts scanned so far out of ~4,817 total on the account; NEW matches found during backfill this run (by type): {'VIDEO': 125, 'IMAGE': 2}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
+      "note": "125 tagged videos indexed total (0 newly found this run); backfilled back to 2023-12-19 so far (8 time-windows / 653 posts scanned this run); NEW matches found during backfill this run (by type): {'VIDEO': 65}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
     }
   },
-  "updated_at": "2026-08-05T20:58:51.795384+00:00"
+  "updated_at": "2026-08-05T21:19:48.467264+00:00"
 }

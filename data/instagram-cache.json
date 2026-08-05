@@ -1002,8 +1002,7 @@
     }
   },
   "newest_seen_id": "17895383994592225",
-  "backfill_cursor": "https://graph.instagram.com/v26.0/17841400272376865/media?fields=id,caption,media_type,timestamp&limit=50&access_token=IGAAZAa8h2cX11BZAFpjb194b3JRVmxpdzVmWlBINTVyV0VJY0xHREZAFZAW9oMEpDUHFhY1BSZAENSTWdfX3ZAvNTVoMXF4a0d4MkVuVmNiYl9KdzliR29XSnRUSjNOYjZAUTDZAFT0xyZA0pDWnhxQ3FsdWxhUGRGdHVCMHFXMnA3ZAHlndwZDZD&after=QVFIU216NldvWHNfSzlsZAGJJU24tUlRFVmNfd1pTck1KLVI4MTdRY202Y2QtXzNNRUhoV2Fsc25hclFxdzZAtU0JzX1B5NFNMb3cwQk9DY3FYTGt6VEl5QWd3",
   "backfill_complete": false,
-  "total_posts_scanned_ever": 10511,
-  "schema_version": 3
+  "schema_version": 4,
+  "backfill_until_ts": 1703020779
 }
