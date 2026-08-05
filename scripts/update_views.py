@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """
-Pulls total view counts from YouTube (a specific playlist) and SproutVideo
-(the whole library), sums them into one grand total, and writes it to
+Pulls total view counts from YouTube (a specific playlist), SproutVideo
+(the whole library), and Instagram (videos tagged #SCAMinhagOfTheWeek on
+@SCA_updates), sums them into one grand total, and writes it to
 data/view-count.json for the site to read.
-
-Instagram is not wired up yet — INSTAGRAM_VIEWS is a placeholder that gets
-added into the total once that integration exists, so the site doesn't
-need to change again when it's added.
 
 Required environment variables (set as GitHub Actions secrets):
   YOUTUBE_API_KEY
   YOUTUBE_PLAYLIST_ID
   SPROUTVIDEO_API_KEY
-Optional:
-  INSTAGRAM_VIEWS   (a static override int, until real Instagram pulling exists)
+  INSTAGRAM_ACCESS_TOKEN
+  INSTAGRAM_BUSINESS_ACCOUNT_ID
+
+Note on the Instagram token: it is not a classic long-lived Facebook token —
+attempts to run it through the standard ig_exchange_token flow failed, but
+the token itself works fine directly against the Instagram Graph API. Its
+real expiry behavior hasn't been independently confirmed. If it ever stops
+working, the workflow logs a clear warning and Instagram's contribution
+simply drops to 0 for that run (YouTube + SproutVideo still update normally)
+rather than the whole job failing silently.
 """
 import json
 import os
@@ -22,6 +27,8 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from datetime import datetime, timezone
+
+HASHTAG = "#scaminhagoftheweek"
 
 
 def http_get_json(url):
@@ -96,11 +103,61 @@ def get_sproutvideo_total_plays(api_key):
     return total_plays, total_videos
 
 
+def get_instagram_total_views(access_token, account_id):
+    """
+    Walks every media item on the account, keeps only VIDEO/REELS posts
+    whose caption contains #SCAMinhagOfTheWeek (case-insensitive), and sums
+    their view counts via the insights endpoint. A single media item's
+    insights call failing (e.g. an old post insights no longer supports)
+    doesn't stop the run — it's just skipped and logged.
+    """
+    media_items = []
+    url = (f"https://graph.instagram.com/{account_id}/media"
+           f"?fields=id,caption,media_type,media_product_type"
+           f"&access_token={urllib.parse.quote(access_token)}")
+    while url:
+        data = http_get_json(url)
+        media_items.extend(data.get("data", []))
+        url = data.get("paging", {}).get("next")
+
+    matching = [
+        m for m in media_items
+        if m.get("media_type") in ("VIDEO", "REELS")
+        and HASHTAG in (m.get("caption") or "").lower()
+    ]
+
+    total_views = 0
+    counted = 0
+    for m in matching:
+        media_id = m["id"]
+        found = False
+        for metric in ("plays", "video_views", "reach"):
+            insights_url = (f"https://graph.instagram.com/{media_id}/insights"
+                             f"?metric={metric}"
+                             f"&access_token={urllib.parse.quote(access_token)}")
+            try:
+                idata = http_get_json(insights_url)
+                values = idata.get("data", [])
+                if values:
+                    val = values[0].get("values", [{}])[0].get("value", 0)
+                    total_views += int(val)
+                    counted += 1
+                    found = True
+                    break
+            except urllib.error.HTTPError:
+                continue
+        if not found:
+            print(f"Instagram: could not get view count for media {media_id}, skipped", file=sys.stderr)
+
+    return total_views, counted, len(matching)
+
+
 def main():
     yt_key = os.environ.get("YOUTUBE_API_KEY")
     yt_playlist = os.environ.get("YOUTUBE_PLAYLIST_ID")
     sv_key = os.environ.get("SPROUTVIDEO_API_KEY")
-    instagram_views = int(os.environ.get("INSTAGRAM_VIEWS", "0"))
+    ig_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
+    ig_account_id = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")
 
     if not yt_key or not yt_playlist:
         print("Missing YOUTUBE_API_KEY or YOUTUBE_PLAYLIST_ID", file=sys.stderr)
@@ -121,14 +178,24 @@ def main():
         print(f"SproutVideo API error: {e.code} {e.read().decode()}", file=sys.stderr)
         sys.exit(1)
 
-    total = yt_views + sv_plays + instagram_views
+    ig_views, ig_counted, ig_matched = 0, 0, 0
+    ig_note = "not configured"
+    if ig_token and ig_account_id:
+        try:
+            ig_views, ig_counted, ig_matched = get_instagram_total_views(ig_token, ig_account_id)
+            ig_note = f"{ig_counted} of {ig_matched} matching posts counted"
+        except urllib.error.HTTPError as e:
+            print(f"Instagram API error: {e.code} {e.read().decode()} — Instagram contributes 0 this run", file=sys.stderr)
+            ig_note = "token/API error this run — contributed 0, check logs"
+
+    total = yt_views + sv_plays + ig_views
 
     out = {
         "total_views": total,
         "breakdown": {
             "youtube": {"views": yt_views, "video_count": yt_video_count},
             "sproutvideo": {"plays": sv_plays, "video_count": sv_video_count},
-            "instagram": {"views": instagram_views, "note": "placeholder until Instagram Graph API is wired up"},
+            "instagram": {"views": ig_views, "note": ig_note},
         },
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -142,3 +209,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
