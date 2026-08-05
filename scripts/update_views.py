@@ -113,9 +113,15 @@ def fetch_media_view_count(media_id, access_token):
             values = idata.get("data", [])
             if values:
                 return int(values[0].get("values", [{}])[0].get("value", 0))
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
             continue
     return None
+
+
+def save_instagram_cache(cache):
+    os.makedirs("data", exist_ok=True)
+    with open("data/instagram-cache.json", "w") as f:
+        json.dump(cache, f, indent=2)
 
 
 def get_instagram_total_views(access_token, account_id):
@@ -131,6 +137,12 @@ def get_instagram_total_views(access_token, account_id):
     reaches a post it has already seen, so it's typically just 1-2 quick
     page fetches. The running total is the sum of everything in the cache,
     so already-found videos keep counting even on runs that find nothing new.
+
+    Robustness: any single network hiccup (timeout, connection reset, a bad
+    page) stops that stage early rather than crashing the whole script, and
+    whatever was already found gets saved to the cache immediately — a run
+    that dies partway through a big first-time backfill doesn't lose the
+    progress it already made; the next run just picks up from there.
     """
     cache_path = "data/instagram-cache.json"
     try:
@@ -149,7 +161,11 @@ def get_instagram_total_views(access_token, account_id):
            f"&access_token={urllib.parse.quote(access_token)}")
     pages = 0
     while url and pages < max_pages:
-        data = http_get_json(url)
+        try:
+            data = http_get_json(url)
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+            print(f"Instagram: pagination stopped early after {pages} page(s): {e}", file=sys.stderr)
+            break
         items = data.get("data", [])
         media_items.extend(items)
         pages += 1
@@ -164,6 +180,7 @@ def get_instagram_total_views(access_token, account_id):
         and HASHTAG in (m.get("caption") or "").lower()
     ]
 
+    found_this_run = 0
     for m in matching_new:
         views = fetch_media_view_count(m["id"], access_token)
         if views is not None:
@@ -171,15 +188,13 @@ def get_instagram_total_views(access_token, account_id):
                 "views": views,
                 "checked_at": datetime.now(timezone.utc).isoformat(),
             }
+            found_this_run += 1
+            save_instagram_cache(cache)  # persist after every single item — never lose progress
         else:
             print(f"Instagram: could not get view count for media {m['id']}, skipped", file=sys.stderr)
 
-    os.makedirs("data", exist_ok=True)
-    with open(cache_path, "w") as f:
-        json.dump(cache, f, indent=2)
-
     total_views = sum(v["views"] for v in cache["media"].values())
-    return total_views, len(cache["media"]), len(matching_new)
+    return total_views, len(cache["media"]), found_this_run
 
 
 def main():
@@ -214,9 +229,9 @@ def main():
         try:
             ig_views, ig_counted, ig_matched = get_instagram_total_views(ig_token, ig_account_id)
             ig_note = f"{ig_counted} total tagged videos indexed ({ig_matched} newly found this run)"
-        except urllib.error.HTTPError as e:
-            print(f"Instagram API error: {e.code} {e.read().decode()} — Instagram contributes 0 this run", file=sys.stderr)
-            ig_note = "token/API error this run — contributed 0, check logs"
+        except Exception as e:
+            print(f"Instagram step failed this run ({e}) — Instagram contributes 0, YouTube/SproutVideo unaffected", file=sys.stderr)
+            ig_note = "error this run — contributed 0, check logs"
 
     total = yt_views + sv_plays + ig_views
 
