@@ -109,6 +109,14 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .hero-desc{color:rgba(255,255,255,.62);font-size:.78rem;line-height:1.75;margin-bottom:.95rem;max-width:540px;margin-left:auto;margin-right:auto;font-family:'Inter',Arial,sans-serif}
 .pills{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
 .pill{font-size:.64rem;font-weight:600;padding:.2rem .6rem;border-radius:3px}
+.total-views-banner{margin:1.1rem 0;text-align:center}
+.total-views-num{display:block;font-size:4.2rem;font-weight:800;line-height:1;color:#fff;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(139,84,178,.55)}
+.total-views-label{display:block;margin-top:.35rem;font-size:1rem;font-weight:700;color:rgba(201,160,232,.95);letter-spacing:.02em}
+@media(max-width:640px){
+  .total-views-banner{margin:.8rem 0}
+  .total-views-num{font-size:2.4rem}
+  .total-views-label{font-size:.78rem}
+}
 .pill-p{background:rgba(139,84,178,.18);border:1px solid rgba(139,84,178,.32);color:rgba(201,160,232,.95)}
 .pill-w{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.58)}
 /* SEARCH — sticky, always shown */
@@ -560,9 +568,12 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
       <h1><em>Minhag of the Week</em></h1>
       <div class="hero-tag">"Preserving Our Rich Heritage, One Minhag at a Time"</div>
       <div class="hero-desc">A weekly video series featuring Joseph Mosseri, Morris Arking &amp; Joey Harari educating our community about its Syrian and Middle Eastern traditions. Minhag of the Week is a project of the Sephardic Community Alliance.</div>
+      <div class="total-views-banner" id="totalViewsBanner" style="display:none">
+        <span class="total-views-num" id="totalViewsNum">0</span>
+        <span class="total-views-label">Total Views and Counting!</span>
+      </div>
       <div class="pills">
         <span class="pill pill-p">New episodes premiere Wednesdays at 12:30pm ET (New York time)</span>
-        <span class="pill pill-p" id="totalViewsPill" style="display:none"></span>
       </div>
     </div>
   </div>
@@ -1120,20 +1131,39 @@ let mCatOpen=null,mSGOpen=null;
 // ── TOTAL VIEW COUNT (homepage banner) ──────────────────────────────────────
 // Reads data/view-count.json, which a scheduled GitHub Action keeps updated
 // by pulling from YouTube + SproutVideo (and eventually Instagram) and
-// summing them. If the file is missing/unreachable, the pill just stays
+// summing them. If the file is missing/unreachable, the banner just stays
 // hidden — never shows a broken or stale-looking number.
+// The underlying number itself only refreshes once a day (see the GitHub
+// Action) — polling the platforms' APIs more often than that wouldn't
+// surface fresher data anyway (YouTube in particular smooths/delays its own
+// view counts). The count-up animation below is purely a load-in visual
+// effect so the banner feels alive on every visit; it always lands on the
+// same real number from the daily pull, it's not simulating live growth.
+function animateCountUp(el,target){
+  const duration=1400;
+  const start=performance.now();
+  function tick(now){
+    const p=Math.min((now-start)/duration,1);
+    const eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(eased*target).toLocaleString();
+    if(p<1)requestAnimationFrame(tick);
+    else el.textContent=target.toLocaleString();
+  }
+  requestAnimationFrame(tick);
+}
 function loadTotalViews(){
   fetch('/data/view-count.json',{cache:'no-store'})
     .then(r=>r.ok?r.json():Promise.reject())
     .then(data=>{
       const total=data.total_views;
       if(typeof total!=='number'||total<=0)return;
-      const pill=document.getElementById('totalViewsPill');
-      if(!pill)return;
-      pill.textContent=`${total.toLocaleString()} Total Views`;
-      pill.style.display='inline-block';
+      const banner=document.getElementById('totalViewsBanner');
+      const numEl=document.getElementById('totalViewsNum');
+      if(!banner||!numEl)return;
+      banner.style.display='block';
+      animateCountUp(numEl,total);
     })
-    .catch(()=>{/* no data yet — leave the pill hidden */});
+    .catch(()=>{/* no data yet — leave the banner hidden */});
 }
 loadTotalViews();
 
