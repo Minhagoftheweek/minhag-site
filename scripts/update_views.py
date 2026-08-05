@@ -170,21 +170,23 @@ def get_instagram_total_views(access_token, account_id):
                        f"?fields=id,caption,media_type&limit=50"
                        f"&access_token={urllib.parse.quote(access_token)}")
 
-    diag_type_breakdown = {}  # media_type -> count of hashtag-matching posts of that type seen this run
+    diag_by_phase = {"front": {}, "backfill": {}}  # phase -> media_type -> count
 
-    def process_items(items):
+    def process_items(items, phase):
         """Filters for matching video/reel posts not already cached, fetches
         their view counts, and saves each one to the cache immediately.
-        Also tracks (for diagnostics) every hashtag-matching post regardless
-        of type, so a mismatch between 'total tagged posts' and 'counted
-        videos' is visible instead of silently dropped."""
+        Also tracks (for diagnostics, per phase) every hashtag-matching post
+        regardless of type, so a mismatch between 'total tagged posts' and
+        'counted videos' is visible instead of silently dropped — and so
+        front-check re-scans of the same top posts every run don't get
+        confused with genuinely new territory found during backfill."""
         found = 0
         for m in items:
             has_tag = HASHTAG in (m.get("caption") or "").lower()
             if not has_tag:
                 continue
             mtype = m.get("media_type", "UNKNOWN")
-            diag_type_breakdown[mtype] = diag_type_breakdown.get(mtype, 0) + 1
+            diag_by_phase[phase][mtype] = diag_by_phase[phase].get(mtype, 0) + 1
             if m["id"] not in cache["media"] and mtype in ("VIDEO", "REELS"):
                 views = fetch_media_view_count(m["id"], access_token)
                 if views is not None:
@@ -214,7 +216,7 @@ def get_instagram_total_views(access_token, account_id):
             newest_id_this_run = items[0]["id"]
         front_pages += 1
         reached_known = cache["newest_seen_id"] and any(m["id"] == cache["newest_seen_id"] for m in items)
-        front_new_found += process_items(items)
+        front_new_found += process_items(items, "front")
         if reached_known or not cache["newest_seen_id"]:
             break
         url = data.get("paging", {}).get("next")
@@ -226,6 +228,8 @@ def get_instagram_total_views(access_token, account_id):
     backfill_new_found = 0
     backfill_pages = 0
     stopped_early_reason = None
+    cache.setdefault("total_posts_scanned_ever", 0)
+    last_post_id_this_backfill = None
     if not cache["backfill_complete"]:
         url = cache["backfill_cursor"] or base_media_url
         while url and backfill_pages < 70:
@@ -236,7 +240,10 @@ def get_instagram_total_views(access_token, account_id):
                 print(f"Instagram: {stopped_early_reason}", file=sys.stderr)
                 break
             items = data.get("data", [])
-            backfill_new_found += process_items(items)
+            if items:
+                last_post_id_this_backfill = items[-1]["id"]
+            backfill_new_found += process_items(items, "backfill")
+            cache["total_posts_scanned_ever"] += len(items)
             backfill_pages += 1
             url = data.get("paging", {}).get("next")
             cache["backfill_cursor"] = url
@@ -250,7 +257,10 @@ def get_instagram_total_views(access_token, account_id):
         "backfill_complete": cache["backfill_complete"],
         "backfill_pages_this_run": backfill_pages,
         "stopped_early_reason": stopped_early_reason,
-        "hashtag_matches_by_type_this_run": diag_type_breakdown,
+        "front_check_hashtag_matches_by_type": diag_by_phase["front"],
+        "backfill_hashtag_matches_by_type": diag_by_phase["backfill"],
+        "total_posts_scanned_ever": cache["total_posts_scanned_ever"],
+        "last_post_id_reached_this_run": last_post_id_this_backfill,
     }
     return total_views, len(cache["media"]), front_new_found + backfill_new_found, diagnostics
 
@@ -289,10 +299,12 @@ def main():
             if ig_diag["backfill_complete"]:
                 backfill_status = "full history scan complete"
             else:
-                backfill_status = f"still backfilling older history ({ig_diag['backfill_pages_this_run']} pages scanned this run)"
+                backfill_status = (f"still backfilling — {ig_diag['total_posts_scanned_ever']} posts scanned "
+                                    f"so far out of ~4,817 total on the account")
             ig_note = (f"{ig_counted} tagged videos indexed total ({ig_matched} newly found this run); "
                        f"{backfill_status}; "
-                       f"hashtag matches by post type this run: {ig_diag['hashtag_matches_by_type_this_run']}"
+                       f"NEW matches found during backfill this run (by type): {ig_diag['backfill_hashtag_matches_by_type']}; "
+                       f"matches seen during front-check (mostly re-seeing already-known posts, by type): {ig_diag['front_check_hashtag_matches_by_type']}"
                        f"{' — ' + ig_diag['stopped_early_reason'] if ig_diag['stopped_early_reason'] else ''}")
         except Exception as e:
             print(f"Instagram step failed this run ({e}) — Instagram contributes 0, YouTube/SproutVideo unaffected", file=sys.stderr)
