@@ -164,6 +164,9 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
   /* Hide video size controls on mobile — full width is the only sensible option */
   .vid-size-row{display:none !important}
 
+  /* Further Insights: keep single-column stacked layout on mobile (desktop uses a side-by-side grid) */
+  .insights-list{display:flex !important;flex-direction:column !important}
+
   /* Hide sidebar on mobile — use hamburger menu instead */
   .sidebar{display:none !important;width:0 !important;padding:0 !important;overflow:hidden !important;position:absolute !important;pointer-events:none !important}
 
@@ -319,8 +322,8 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .ded{background:var(--hpl);border-left:3px solid var(--hp);padding:.65rem .85rem;margin-bottom:.88rem;font-size:.76rem;color:var(--hpd);font-style:italic;line-height:1.55}
 .tx-card{background:var(--w);border:1px solid var(--bd);border-top:2px solid var(--hp);border-radius:7px;padding:.95rem;margin-bottom:.88rem}
 .insights-hdr{font-size:1.35rem;font-weight:800;color:var(--navy);margin-bottom:.7rem}
-.insights-list{display:flex;flex-direction:column;gap:1rem}
-.insight-item{background:var(--hpl);border:1px solid rgba(139,84,178,.25);border-radius:8px;padding:.75rem .85rem}
+.insights-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.8rem;align-items:stretch}
+.insight-item{background:var(--hpl);border:1px solid rgba(139,84,178,.25);border-radius:8px;padding:.85rem .9rem;display:flex;flex-direction:column;justify-content:space-between}
 .insight-item-label{font-size:.85rem;font-weight:600;color:var(--hpd);line-height:1.4;margin-bottom:.55rem}
 .insight-item-cta{display:inline-flex;font-size:.72rem;padding:.4rem .8rem}
 .tx-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.62rem;padding-bottom:.62rem;border-bottom:1px solid var(--bd)}
