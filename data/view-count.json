@@ -11,8 +11,8 @@
     },
     "instagram": {
       "views": 36832,
-      "note": "123 total tagged videos indexed (123 newly found this run); scanned 3000 posts across 60 pages \u2014 hit the 60-page cap \u2014 there may be older posts beyond this point not yet scanned"
+      "note": "123 tagged videos indexed total (0 newly found this run); still backfilling older history (10 pages scanned this run)"
     }
   },
-  "updated_at": "2026-08-05T17:44:05.501725+00:00"
+  "updated_at": "2026-08-05T19:06:53.471499+00:00"
 }
