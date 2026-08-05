@@ -1,0 +1,18 @@
+{
+  "total_views": 131131,
+  "breakdown": {
+    "youtube": {
+      "views": 131074,
+      "video_count": 305
+    },
+    "sproutvideo": {
+      "plays": 57,
+      "video_count": 311
+    },
+    "instagram": {
+      "views": 0,
+      "note": "placeholder until Instagram Graph API is wired up"
+    }
+  },
+  "updated_at": "2026-08-05T13:09:33.020353+00:00"
+}
