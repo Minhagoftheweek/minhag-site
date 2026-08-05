@@ -323,9 +323,9 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .tx-card{background:var(--w);border:1px solid var(--bd);border-top:2px solid var(--hp);border-radius:7px;padding:.95rem;margin-bottom:.88rem}
 .insights-hdr{font-size:1.35rem;font-weight:800;color:var(--navy);margin-bottom:.7rem}
 .insights-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.8rem;align-items:stretch}
-.insight-item{background:var(--hpl);border:1px solid rgba(139,84,178,.25);border-radius:8px;padding:.85rem .9rem;display:flex;flex-direction:column;justify-content:space-between}
+.insight-item{background:var(--hpl);border:1px solid rgba(139,84,178,.25);border-radius:8px;padding:.85rem .9rem;display:flex;flex-direction:column}
 .insight-item-label{font-size:.85rem;font-weight:600;color:var(--hpd);line-height:1.4;margin-bottom:.55rem}
-.insight-item-cta{display:inline-flex;font-size:.72rem;padding:.4rem .8rem}
+.insight-item-cta{display:inline-flex;font-size:.72rem;padding:.4rem .8rem;margin-top:auto;align-self:flex-start}
 .tx-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.62rem;padding-bottom:.62rem;border-bottom:1px solid var(--bd)}
 .tx-hdr h3{font-size:.83rem;font-weight:700;color:var(--navy)}
 .dl-btn{display:inline-flex;align-items:center;gap:4px;font-size:.71rem;padding:.28rem .65rem;background:var(--hpl);border:1.5px solid rgba(139,84,178,.4);border-radius:4px;color:var(--hpd);cursor:pointer;font-family:Arial,sans-serif;font-weight:600;transition:all .12s}
@@ -755,7 +755,7 @@ const INSIGHTS={
   70:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-070-lighting-candles-for-yom-kippur.pdf'}],
   83:[{label:'Further insights on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-083-tefilin-in-minhah-of-a-fast-day-that-falls-on-friday.pdf'}],
   107:[{label:'Episode 8 "Hamossi"',type:'siteLink',epId:8}],
-  132:[{label:'Rabbi Yosef Bozo recording',type:'video',url:'https://www.youtube.com/watch?v=IwFUjkK-5a0'}],
+  132:[{label:'Rabbi Yosef Bozo recording',type:'embed',url:'https://videos.sproutvideo.com/embed/109addb51416e4c79a/408debdc5fe446f1'}],
   134:[{label:'Rabbi Yishak Tawil \u05e0\u05d8\u05d9\u05dc\u05d4 \u05e2\u05dc \u05d3\u05d1\u05e8 \u05e9\u05d8\u05d9\u05d1\u05d5\u05dc\u05d5 \u05d1\u05de\u05e9\u05e7\u05d4',type:'video',url:'https://www.youtube.com/watch?v=TgNxb0BXn7w'}],
   264:[{label:'Recording of Hazzan Shelomo Antebi- El Nora Alilah-Halabi Tradition:',type:'video',url:'https://www.youtube.com/watch?v=ESaLpm11Ifk'}],
   92:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-092-the-purim-meal-on-a-friday.pdf'}],
@@ -775,20 +775,40 @@ const INSIGHTS={
   189:[{label:'Rabbi Shayo Video: \u05e0\u05d9\u05d2\u05d5\u05df \u05e7\u05e8\u05d9\u05d0\u05ea "\u05de\u05d9 \u05dc\u05d0 \u05d9\u05d9\u05e8\u05d0\u05da" \u05dc\u05d9\u05de\u05d9\u05dd \u05d1\u05d4\u05dd \u05de\u05d5\u05e6\u05d9\u05d0\u05d9\u05df...',type:'video',url:'https://www.youtube.com/watch?v=SG7n_Jgs2IM'}],
   192:[{label:'Episode 149: "The Qaddishim and Haftarah When 3 Sifre\u2019 Torah are Read on Shabbat"',type:'siteLink',epId:149}]
 };
-function insightLinkHtml(item){
-  const typeLabel=item.type==='siteLink'?'View Episode':item.type==='pdf'?'View PDF':item.type==='video'?'Watch Video':item.type==='audio'?'Listen':'View';
+function insightLinkHtml(item,epId,idx){
+  const typeLabel=item.type==='siteLink'?'View Episode':item.type==='pdf'?'View PDF':item.type==='video'||item.type==='embed'?'Watch Video':item.type==='audio'?'Listen':'View';
   const labelHtml=item.label?`<div class="insight-item-label">${item.label}</div>`:'';
   if(item.type==='siteLink'){
     return `<div class="insight-item">${labelHtml}<button class="dl-btn dl-btn-ghost insight-item-cta" onclick="openEp(${item.epId},true);window.scrollTo({top:0,behavior:'smooth'})">${typeLabel}</button></div>`;
   }
+  if(item.type==='embed'){
+    const embedId=`insight-embed-${epId}-${idx}`;
+    return `<div class="insight-item">${labelHtml}<button class="dl-btn dl-btn-ghost insight-item-cta" id="${embedId}-btn" onclick="toggleInsightEmbed('${embedId}','${item.url.replace(/'/g,"\\'")}')">${typeLabel}</button><div class="insight-embed-wrap" id="${embedId}" style="display:none"></div></div>`;
+  }
   return `<div class="insight-item">${labelHtml}<a class="dl-btn dl-btn-ghost insight-item-cta" href="${item.url}" target="_blank" rel="noopener">${typeLabel}</a></div>`;
+}
+function toggleInsightEmbed(id,src){
+  const wrap=document.getElementById(id);
+  const btn=document.getElementById(id+'-btn');
+  if(!wrap||!btn)return;
+  const isHidden=wrap.style.display==='none'||!wrap.style.display;
+  if(isHidden){
+    wrap.innerHTML=`<iframe src="${src}" style="width:100%;aspect-ratio:16/9;border:none;border-radius:6px;display:block" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Video Player"></iframe>`;
+    wrap.style.display='block';
+    wrap.style.marginTop='.7rem';
+    btn.textContent='Hide Video';
+  }else{
+    wrap.style.display='none';
+    wrap.innerHTML=''; // removes the iframe so playback actually stops
+    btn.textContent='Watch Video';
+  }
 }
 function renderInsights(epId){
   const items=INSIGHTS[epId];
   if(!items||!items.length)return '';
   return `<div class="tx-card insights-card">
     <div class="insights-hdr">Further Insights</div>
-    <div class="insights-list">${items.map(insightLinkHtml).join('')}</div>
+    <div class="insights-list">${items.map((item,idx)=>insightLinkHtml(item,epId,idx)).join('')}</div>
   </div>`;
 }
 
