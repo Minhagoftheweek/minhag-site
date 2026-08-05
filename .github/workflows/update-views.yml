@@ -31,8 +31,8 @@ jobs:
         run: |
           git config user.name "view-count-bot"
           git config user.email "actions@github.com"
-          if ! git diff --quiet data/view-count.json; then
-            git add data/view-count.json
+          git add data/view-count.json
+          if ! git diff --cached --quiet; then
             git commit -m "Auto-update total view count"
             git push
           else
