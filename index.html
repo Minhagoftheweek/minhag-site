@@ -319,9 +319,10 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .ded{background:var(--hpl);border-left:3px solid var(--hp);padding:.65rem .85rem;margin-bottom:.88rem;font-size:.76rem;color:var(--hpd);font-style:italic;line-height:1.55}
 .tx-card{background:var(--w);border:1px solid var(--bd);border-top:2px solid var(--hp);border-radius:7px;padding:.95rem;margin-bottom:.88rem}
 .insights-hdr{font-size:1.35rem;font-weight:800;color:var(--navy);margin-bottom:.7rem}
-.insights-list{display:flex;flex-direction:column;gap:.5rem}
-.insight-item-btn{display:flex;align-items:center;justify-content:space-between;gap:.6rem;width:100%;text-align:left;padding:.6rem .8rem;white-space:normal;line-height:1.35}
-.insight-item-cta{flex-shrink:0;font-size:.68rem;font-weight:800;color:var(--hpd);text-transform:uppercase;letter-spacing:.04em}
+.insights-list{display:flex;flex-direction:column;gap:1rem}
+.insight-item{background:var(--hpl);border:1px solid rgba(139,84,178,.25);border-radius:8px;padding:.75rem .85rem}
+.insight-item-label{font-size:.85rem;font-weight:600;color:var(--hpd);line-height:1.4;margin-bottom:.55rem}
+.insight-item-cta{display:inline-flex;font-size:.72rem;padding:.4rem .8rem}
 .tx-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:.62rem;padding-bottom:.62rem;border-bottom:1px solid var(--bd)}
 .tx-hdr h3{font-size:.83rem;font-weight:700;color:var(--navy)}
 .dl-btn{display:inline-flex;align-items:center;gap:4px;font-size:.71rem;padding:.28rem .65rem;background:var(--hpl);border:1.5px solid rgba(139,84,178,.4);border-radius:4px;color:var(--hpd);cursor:pointer;font-family:Arial,sans-serif;font-weight:600;transition:all .12s}
@@ -738,44 +739,46 @@ function presLinks(w,context){
 // Keyed by episode id (E.id). Each entry is a list of {label, type, url|epId}.
 // type: 'pdf' | 'video' | 'audio' | 'siteLink' (siteLink uses epId to link to another episode on this site)
 const INSIGHTS={
-  13:[{label:'In-depth article written by Joseph Mosseri on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-013-hatarat-nedarim.pdf'}],
-  26:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-026-qaddish-and-mourners.pdf'}],
-  32:[{label:'Further insights on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-032-tefilin-in-minha-on-a-fast-day.pdf'}],
-  38:[{label:'Further insights on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-038-qaddish-and-mourners-part-3.pdf'}],
-  44:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-044-roasted-meat-and-the-shankbone-on-pesah-night.pdf'}],
-  46:[{label:'In-depth article written by Joseph Mosseri on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-046-misharotam.pdf'}],
-  53:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-053-arbit-and-qiddush-on-the-first-night-of-shabuot.pdf'}],
-  61:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-061-meat-leftovers-during-the-9-days.pdf'}],
+  13:[{label:'In-depth article written by Joseph Mosseri on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-013-hatarat-nedarim.pdf'}],
+  26:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-026-qaddish-and-mourners.pdf'}],
+  32:[{label:'Further insights on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-032-tefilin-in-minha-on-a-fast-day.pdf'}],
+  38:[{label:'Further insights on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-038-qaddish-and-mourners-part-3.pdf'}],
+  44:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-044-roasted-meat-and-the-shankbone-on-pesah-night.pdf'}],
+  46:[{label:'In-depth article written by Joseph Mosseri on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-046-misharotam.pdf'}],
+  53:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-053-arbit-and-qiddush-on-the-first-night-of-shabuot.pdf'}],
+  61:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-061-meat-leftovers-during-the-9-days.pdf'}],
   65:[{label:'For Eliyahu Menaged Recording of Selihot from 1952',type:'audio',url:'https://www.pizmonim.org/MP3/menaged%20full%20selihot%201952.mp3'}],
-  68:[{label:'Further insights on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-068-the-syrian-tradition-regarding-the-shofar-sounds.pdf'}],
-  70:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-070-lighting-candles-for-yom-kippur.pdf'}],
-  83:[{label:'Further insights on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-083-tefilin-in-minhah-of-a-fast-day-that-falls-on-friday.pdf'}],
+  68:[{label:'Further insights on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-068-the-syrian-tradition-regarding-the-shofar-sounds.pdf'}],
+  70:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-070-lighting-candles-for-yom-kippur.pdf'}],
+  83:[{label:'Further insights on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-083-tefilin-in-minhah-of-a-fast-day-that-falls-on-friday.pdf'}],
   107:[{label:'Episode 8 "Hamossi"',type:'siteLink',epId:8}],
   132:[{label:'Rabbi Yosef Bozo recording',type:'video',url:'https://www.youtube.com/watch?v=IwFUjkK-5a0'}],
   134:[{label:'Rabbi Yishak Tawil \u05e0\u05d8\u05d9\u05dc\u05d4 \u05e2\u05dc \u05d3\u05d1\u05e8 \u05e9\u05d8\u05d9\u05d1\u05d5\u05dc\u05d5 \u05d1\u05de\u05e9\u05e7\u05d4',type:'video',url:'https://www.youtube.com/watch?v=TgNxb0BXn7w'}],
   264:[{label:'Recording of Hazzan Shelomo Antebi- El Nora Alilah-Halabi Tradition:',type:'video',url:'https://www.youtube.com/watch?v=ESaLpm11Ifk'}],
-  92:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-092-the-purim-meal-on-a-friday.pdf'}],
+  92:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-092-the-purim-meal-on-a-friday.pdf'}],
   95:[{label:'For more on this topic from Morris Arking',type:'video',url:'https://www.youtube.com/watch?v=oVcq17kUqxQ'}],
   98:[{label:'Episode 47: "Shaving on the Omer"',type:'siteLink',epId:47}],
-  104:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-104-the-13th-of-sivan-ness-moussan.pdf'}],
+  104:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-104-the-13th-of-sivan-ness-moussan.pdf'}],
   269:[
     {label:'Episode 32 "Tefilin in Minhah on a Fast Day"',type:'siteLink',epId:32},
     {label:'Episode 83 "Tefilin in Minhah of a Fast Day on Friday"',type:'siteLink',epId:83},
     {label:'Hakham Baruch Ben-Haim: Wearing Tefilin in Minhah when 10th of Tebet falls on Friday',type:'video',url:'https://www.youtube.com/watch?v=s3SRaLiHmTc'}
   ],
-  164:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-164-when-to-add-anenu-to-the-amidah.pdf'}],
+  164:[{label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-164-when-to-add-anenu-to-the-amidah.pdf'}],
   173:[
     {label:'Episode 17: "Rosh Hashanah: Honey or Sugar?"',type:'siteLink',epId:17},
-    {label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'insights/sca-minhag-of-the-week-episode-173-the-special-foods-for-the-nights-of-rosh-hashanah.pdf'}
+    {label:'In-depth article written by Morris Arking on this topic:',type:'pdf',url:'/insights/sca-minhag-of-the-week-episode-173-the-special-foods-for-the-nights-of-rosh-hashanah.pdf'}
   ],
   189:[{label:'Rabbi Shayo Video: \u05e0\u05d9\u05d2\u05d5\u05df \u05e7\u05e8\u05d9\u05d0\u05ea "\u05de\u05d9 \u05dc\u05d0 \u05d9\u05d9\u05e8\u05d0\u05da" \u05dc\u05d9\u05de\u05d9\u05dd \u05d1\u05d4\u05dd \u05de\u05d5\u05e6\u05d9\u05d0\u05d9\u05df...',type:'video',url:'https://www.youtube.com/watch?v=SG7n_Jgs2IM'}],
   192:[{label:'Episode 149: "The Qaddishim and Haftarah When 3 Sifre\u2019 Torah are Read on Shabbat"',type:'siteLink',epId:149}]
 };
 function insightLinkHtml(item){
-  if(item.type==='siteLink')return `<button class="dl-btn dl-btn-ghost insight-item-btn" onclick="openEp(${item.epId},true);window.scrollTo({top:0,behavior:'smooth'})">${item.label} <span class="insight-item-cta">View Episode</span></button>`;
-  const typeLabel=item.type==='pdf'?'View PDF':item.type==='video'?'Watch Video':item.type==='audio'?'Listen':'View';
-  const text=item.label?`${item.label} <span class="insight-item-cta">${typeLabel}</span>`:typeLabel;
-  return `<a class="dl-btn dl-btn-ghost insight-item-btn" href="${item.url}" target="_blank" rel="noopener">${text}</a>`;
+  const typeLabel=item.type==='siteLink'?'View Episode':item.type==='pdf'?'View PDF':item.type==='video'?'Watch Video':item.type==='audio'?'Listen':'View';
+  const labelHtml=item.label?`<div class="insight-item-label">${item.label}</div>`:'';
+  if(item.type==='siteLink'){
+    return `<div class="insight-item">${labelHtml}<button class="dl-btn dl-btn-ghost insight-item-cta" onclick="openEp(${item.epId},true);window.scrollTo({top:0,behavior:'smooth'})">${typeLabel}</button></div>`;
+  }
+  return `<div class="insight-item">${labelHtml}<a class="dl-btn dl-btn-ghost insight-item-cta" href="${item.url}" target="_blank" rel="noopener">${typeLabel}</a></div>`;
 }
 function renderInsights(epId){
   const items=INSIGHTS[epId];
