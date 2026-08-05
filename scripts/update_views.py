@@ -172,35 +172,44 @@ def get_instagram_total_views(access_token, account_id):
         cache = {}
     cache.setdefault("media", {})
     cache.setdefault("newest_seen_id", None)
-    cache.setdefault("backfill_cursor", None)
     cache.setdefault("backfill_complete", False)
-    if cache.get("schema_version") != 2:
+    if cache.get("schema_version", 0) < 2:
         # Upgrading from the old schema (view-count-only, no caption/date,
         # and posts that failed their insights lookup were silently never
-        # recorded at all). Re-walk the full history once more so those
-        # posts get a second chance to be captured — already-cached entries
-        # are left alone, so this doesn't re-spend API calls on them.
-        cache["backfill_cursor"] = None
+        # recorded at all). Already-cached entries are left alone, so this
+        # doesn't re-spend API calls on them.
         cache["backfill_complete"] = False
         cache["schema_version"] = 2
         save_instagram_cache(cache)
-    if cache.get("schema_version") != 3:
+    if cache.get("schema_version", 0) < 3:
         # The 'plays'/'video_views' metrics used until now are deprecated
         # (April 2025) and were silently falling back to 'reach', a
         # different and much-lower number than real view counts. Every
         # previously-recorded view count is therefore suspect — clear just
         # the view numbers (keep captions/dates, no need to re-fetch those)
-        # and re-walk the full history once more to re-pull every view
-        # count fresh using the correct 'views' metric.
+        # and re-pull every view count fresh using the correct 'views' metric.
         for entry in cache["media"].values():
             entry["views"] = 0
             entry["views_unavailable"] = True
-            entry.pop("_needs_view_refetch", None)
-        cache["backfill_cursor"] = None
         cache["backfill_complete"] = False
         cache["newest_seen_id"] = None
         cache["schema_version"] = 3
         save_instagram_cache(cache)
+    if cache.get("schema_version", 0) < 4:
+        # The cursor-based ("next" link) pagination used until now turned
+        # out to be unreliable — verified posts from 2019/2020 that should
+        # have been found were never reached, even after "scanning" far more
+        # pages than the account actually has. Switched to Meta's documented
+        # since/until time-window pagination instead, which is deterministic
+        # (walk backward through calendar time, not an opaque cursor) and
+        # can't silently skip a chunk of history the way the cursor did.
+        cache.pop("backfill_cursor", None)
+        cache.pop("total_posts_scanned_ever", None)
+        cache["backfill_until_ts"] = None  # None = start from "now"
+        cache["backfill_complete"] = False
+        cache["schema_version"] = 4
+        save_instagram_cache(cache)
+    cache.setdefault("backfill_until_ts", None)
 
     known_ids = set(cache["media"].keys())
     base_media_url = (f"https://graph.instagram.com/{account_id}/media"
@@ -289,44 +298,68 @@ def get_instagram_total_views(access_token, account_id):
         cache["newest_seen_id"] = newest_id_this_run
         save_instagram_cache(cache)
 
-    # ── 2. Backfill: continue deeper into history, a bounded chunk at a time ──
+    # ── 2. Backfill: walk backward through calendar time in fixed windows ──
+    # Far more reliable than the old "next"-cursor approach: each window is
+    # an explicit, deterministic date range, so there's no opaque pagination
+    # state that can silently go stale or loop. A window is fully paginated
+    # (via normal "next" links, but bounded to just that narrow date range)
+    # before moving to the next, older window. Stops once a window that
+    # extends before 2015 comes back completely empty.
+    WINDOW_DAYS = 120
+    HARD_FLOOR = datetime(2015, 1, 1, tzinfo=timezone.utc)
     backfill_new_found = 0
-    backfill_pages = 0
+    windows_this_run = 0
+    posts_scanned_this_run = 0
     stopped_early_reason = None
-    cache.setdefault("total_posts_scanned_ever", 0)
-    last_post_id_this_backfill = None
     if not cache["backfill_complete"]:
-        url = cache["backfill_cursor"] or base_media_url
-        while url and backfill_pages < 70:
-            try:
-                data = http_get_json(url)
-            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
-                stopped_early_reason = f"network error during backfill after {backfill_pages} page(s): {e}"
-                print(f"Instagram: {stopped_early_reason}", file=sys.stderr)
+        until_ts = cache["backfill_until_ts"] or int(datetime.now(timezone.utc).timestamp())
+        while windows_this_run < 8:
+            window_until = until_ts
+            window_since = window_until - WINDOW_DAYS * 86400
+            window_had_any_posts = False
+            page_url = (f"https://graph.instagram.com/{account_id}/media"
+                        f"?fields=id,caption,media_type,timestamp&limit=50"
+                        f"&since={window_since}&until={window_until}"
+                        f"&access_token={urllib.parse.quote(access_token)}")
+            pages_in_window = 0
+            while page_url and pages_in_window < 20:
+                try:
+                    data = http_get_json(page_url)
+                except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+                    stopped_early_reason = f"network error during backfill window: {e}"
+                    print(f"Instagram: {stopped_early_reason}", file=sys.stderr)
+                    break
+                items = data.get("data", [])
+                if items:
+                    window_had_any_posts = True
+                posts_scanned_this_run += len(items)
+                backfill_new_found += process_items(items, "backfill")
+                pages_in_window += 1
+                page_url = data.get("paging", {}).get("next")
+            if stopped_early_reason:
                 break
-            items = data.get("data", [])
-            if items:
-                last_post_id_this_backfill = items[-1]["id"]
-            backfill_new_found += process_items(items, "backfill")
-            cache["total_posts_scanned_ever"] += len(items)
-            backfill_pages += 1
-            url = data.get("paging", {}).get("next")
-            cache["backfill_cursor"] = url
+            windows_this_run += 1
+            until_ts = window_since
+            cache["backfill_until_ts"] = until_ts
             save_instagram_cache(cache)
-        if not url and stopped_early_reason is None:
-            cache["backfill_complete"] = True
-            save_instagram_cache(cache)
+            window_start_date = datetime.fromtimestamp(window_since, tz=timezone.utc)
+            if not window_had_any_posts and window_start_date < HARD_FLOOR:
+                cache["backfill_complete"] = True
+                save_instagram_cache(cache)
+                break
 
     total_views = sum(v["views"] for v in cache["media"].values())
     views_unavailable_count = sum(1 for v in cache["media"].values() if v.get("views_unavailable"))
+    current_until_date = (datetime.fromtimestamp(cache["backfill_until_ts"], tz=timezone.utc).date().isoformat()
+                           if cache["backfill_until_ts"] else "now")
     diagnostics = {
         "backfill_complete": cache["backfill_complete"],
-        "backfill_pages_this_run": backfill_pages,
+        "windows_scanned_this_run": windows_this_run,
+        "posts_scanned_this_run": posts_scanned_this_run,
+        "backfilled_back_to_date": current_until_date,
         "stopped_early_reason": stopped_early_reason,
         "front_check_hashtag_matches_by_type": diag_by_phase["front"],
         "backfill_hashtag_matches_by_type": diag_by_phase["backfill"],
-        "total_posts_scanned_ever": cache["total_posts_scanned_ever"],
-        "last_post_id_reached_this_run": last_post_id_this_backfill,
         "insights_failed_this_run": insights_failed_count,
         "views_unavailable_total": views_unavailable_count,
     }
@@ -365,10 +398,11 @@ def main():
         try:
             ig_views, ig_counted, ig_matched, ig_diag = get_instagram_total_views(ig_token, ig_account_id)
             if ig_diag["backfill_complete"]:
-                backfill_status = "full history scan complete"
+                backfill_status = "full history scan complete (walked back to 2015)"
             else:
-                backfill_status = (f"still backfilling — {ig_diag['total_posts_scanned_ever']} posts scanned "
-                                    f"so far out of ~4,817 total on the account")
+                backfill_status = (f"backfilled back to {ig_diag['backfilled_back_to_date']} so far "
+                                    f"({ig_diag['windows_scanned_this_run']} time-windows / "
+                                    f"{ig_diag['posts_scanned_this_run']} posts scanned this run)")
             ig_note = (f"{ig_counted} tagged videos indexed total ({ig_matched} newly found this run); "
                        f"{backfill_status}; "
                        f"NEW matches found during backfill this run (by type): {ig_diag['backfill_hashtag_matches_by_type']}; "
