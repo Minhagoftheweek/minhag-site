@@ -127,93 +127,123 @@ def save_instagram_cache(cache):
 def get_instagram_total_views(access_token, account_id):
     """
     Keeps a cache (data/instagram-cache.json) of every #SCAMinhagOfTheWeek
-    video/reel found so far and its view count, so routine runs don't have
-    to re-walk the account's entire post history (which is slow and risks
-    Instagram's 200-calls/hour limit given this runs every 5 minutes).
+    video/reel found so far and its view count. Two separate things happen
+    each run, so brand-new episodes are caught quickly AND the full account
+    history eventually gets scanned completely, without ever doing a slow
+    full re-walk more than once:
 
-    First run ever (empty/missing cache): walks up to ~3,000 recent posts
-    (60 pages of 50) to backfill the cache — this one run may take a while.
-    Every run after that: only walks forward from the newest post until it
-    reaches a post it has already seen, so it's typically just 1-2 quick
-    page fetches. The running total is the sum of everything in the cache,
-    so already-found videos keep counting even on runs that find nothing new.
+    1. FRONT CHECK (every run, fast): looks at the newest posts and stops
+       as soon as it reaches one already indexed. Catches new episodes
+       within minutes of being posted.
+
+    2. BACKFILL (every run, until done once): continues walking older and
+       older posts using a saved resume-point ("backfill_cursor"), a
+       bounded chunk at a time (10 pages / ~500 posts per run), until it
+       reaches the very end of the account's history — at which point
+       "backfill_complete" is set and this step does nothing on every
+       future run. This is what makes sure genuinely old episodes (posted
+       further back than a single run could reach) all eventually get
+       counted, a little at a time, without one run ever taking too long
+       or risking Instagram's rate limit.
+
+    The running total is always the sum of everything found so far in the
+    cache, so it only grows over time — it's never wrong-but-shrinking,
+    just possibly still-growing until the one-time backfill finishes.
 
     Robustness: any single network hiccup (timeout, connection reset, a bad
     page) stops that stage early rather than crashing the whole script, and
-    whatever was already found gets saved to the cache immediately — a run
-    that dies partway through a big first-time backfill doesn't lose the
-    progress it already made; the next run just picks up from there.
-
-    Returns a diagnostics dict alongside the totals so a shortfall (fewer
-    matches than expected) can be explained from the output data itself
-    instead of needing to dig through logs.
+    whatever was already found gets saved immediately — no lost progress.
     """
     cache_path = "data/instagram-cache.json"
     try:
         with open(cache_path) as f:
             cache = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        cache = {"media": {}}
+        cache = {}
+    cache.setdefault("media", {})
+    cache.setdefault("newest_seen_id", None)
+    cache.setdefault("backfill_cursor", None)
+    cache.setdefault("backfill_complete", False)
 
     known_ids = set(cache["media"].keys())
-    is_first_run = len(known_ids) == 0
-    max_pages = 60 if is_first_run else 5
+    base_media_url = (f"https://graph.instagram.com/{account_id}/media"
+                       f"?fields=id,caption,media_type&limit=50"
+                       f"&access_token={urllib.parse.quote(access_token)}")
 
-    media_items = []
-    url = (f"https://graph.instagram.com/{account_id}/media"
-           f"?fields=id,caption,media_type&limit=50"
-           f"&access_token={urllib.parse.quote(access_token)}")
-    pages = 0
-    stopped_early_reason = None
-    while url and pages < max_pages:
+    def process_items(items):
+        """Filters for matching video/reel posts not already cached, fetches
+        their view counts, and saves each one to the cache immediately."""
+        found = 0
+        for m in items:
+            if (m["id"] not in cache["media"]
+                    and m.get("media_type") in ("VIDEO", "REELS")
+                    and HASHTAG in (m.get("caption") or "").lower()):
+                views = fetch_media_view_count(m["id"], access_token)
+                if views is not None:
+                    cache["media"][m["id"]] = {
+                        "views": views,
+                        "checked_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                    found += 1
+                    save_instagram_cache(cache)
+                else:
+                    print(f"Instagram: could not get view count for media {m['id']}, skipped", file=sys.stderr)
+        return found
+
+    # ── 1. Front check: newest posts, stop at the first one we already know ──
+    front_new_found = 0
+    front_pages = 0
+    url = base_media_url
+    newest_id_this_run = None
+    while url and front_pages < 3:
         try:
             data = http_get_json(url)
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
-            stopped_early_reason = f"network error after {pages} page(s): {e}"
-            print(f"Instagram: pagination stopped early — {stopped_early_reason}", file=sys.stderr)
+            print(f"Instagram front check stopped early: {e}", file=sys.stderr)
             break
         items = data.get("data", [])
-        media_items.extend(items)
-        pages += 1
-        if not is_first_run and any(m["id"] in known_ids for m in items):
-            stopped_early_reason = None  # expected/normal stop, not a problem
+        if items and newest_id_this_run is None:
+            newest_id_this_run = items[0]["id"]
+        front_pages += 1
+        reached_known = cache["newest_seen_id"] and any(m["id"] == cache["newest_seen_id"] for m in items)
+        front_new_found += process_items(items)
+        if reached_known or not cache["newest_seen_id"]:
             break
         url = data.get("paging", {}).get("next")
-    else:
-        if pages >= max_pages:
-            stopped_early_reason = f"hit the {max_pages}-page cap — there may be older posts beyond this point not yet scanned"
+    if newest_id_this_run:
+        cache["newest_seen_id"] = newest_id_this_run
+        save_instagram_cache(cache)
 
-    hit_cap = pages >= max_pages
-
-    matching_new = [
-        m for m in media_items
-        if m["id"] not in known_ids
-        and m.get("media_type") in ("VIDEO", "REELS")
-        and HASHTAG in (m.get("caption") or "").lower()
-    ]
-
-    found_this_run = 0
-    for m in matching_new:
-        views = fetch_media_view_count(m["id"], access_token)
-        if views is not None:
-            cache["media"][m["id"]] = {
-                "views": views,
-                "checked_at": datetime.now(timezone.utc).isoformat(),
-            }
-            found_this_run += 1
-            save_instagram_cache(cache)  # persist after every single item — never lose progress
-        else:
-            print(f"Instagram: could not get view count for media {m['id']}, skipped", file=sys.stderr)
+    # ── 2. Backfill: continue deeper into history, a bounded chunk at a time ──
+    backfill_new_found = 0
+    backfill_pages = 0
+    stopped_early_reason = None
+    if not cache["backfill_complete"]:
+        url = cache["backfill_cursor"] or base_media_url
+        while url and backfill_pages < 10:
+            try:
+                data = http_get_json(url)
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+                stopped_early_reason = f"network error during backfill after {backfill_pages} page(s): {e}"
+                print(f"Instagram: {stopped_early_reason}", file=sys.stderr)
+                break
+            items = data.get("data", [])
+            backfill_new_found += process_items(items)
+            backfill_pages += 1
+            url = data.get("paging", {}).get("next")
+            cache["backfill_cursor"] = url
+            save_instagram_cache(cache)
+        if not url and stopped_early_reason is None:
+            cache["backfill_complete"] = True
+            save_instagram_cache(cache)
 
     total_views = sum(v["views"] for v in cache["media"].values())
     diagnostics = {
-        "pages_scanned": pages,
-        "posts_scanned": len(media_items),
-        "hit_page_cap": hit_cap,
+        "backfill_complete": cache["backfill_complete"],
+        "backfill_pages_this_run": backfill_pages,
         "stopped_early_reason": stopped_early_reason,
-        "was_first_run": is_first_run,
     }
-    return total_views, len(cache["media"]), found_this_run, diagnostics
+    return total_views, len(cache["media"]), front_new_found + backfill_new_found, diagnostics
 
 
 def main():
@@ -247,8 +277,12 @@ def main():
     if ig_token and ig_account_id:
         try:
             ig_views, ig_counted, ig_matched, ig_diag = get_instagram_total_views(ig_token, ig_account_id)
-            ig_note = (f"{ig_counted} total tagged videos indexed ({ig_matched} newly found this run); "
-                       f"scanned {ig_diag['posts_scanned']} posts across {ig_diag['pages_scanned']} pages"
+            if ig_diag["backfill_complete"]:
+                backfill_status = "full history scan complete"
+            else:
+                backfill_status = f"still backfilling older history ({ig_diag['backfill_pages_this_run']} pages scanned this run)"
+            ig_note = (f"{ig_counted} tagged videos indexed total ({ig_matched} newly found this run); "
+                       f"{backfill_status}"
                        f"{' — ' + ig_diag['stopped_early_reason'] if ig_diag['stopped_early_reason'] else ''}")
         except Exception as e:
             print(f"Instagram step failed this run ({e}) — Instagram contributes 0, YouTube/SproutVideo unaffected", file=sys.stderr)
