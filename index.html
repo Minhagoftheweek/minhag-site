@@ -1530,7 +1530,7 @@ function openEp(id,push){
     ${renderInsights(id)}
     <div class="tx-card">
       <div class="tx-hdr">
-        <h3>Full Transcript</h3>
+        <h3>Episode Transcript</h3>
         <div class="tx-btns">${copyBtn}${pdfBtn}</div>
       </div>
       ${txHtml}
@@ -2126,7 +2126,7 @@ function printPDF(id){
   <div class="hdr"><div class="logo"><b>HERITAGE</b><s>SCA</s></div><div class="htxt"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p></div></div>
   <div class="ephdr"><div class="ecat">${cats}</div><div class="etit">${E.t(ep)}</div><div class="emeta">${numDisplay} · ${E.dt(ep)} · Presented by ${fn(E.w(ep))}</div></div>
   ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
-  <hr><h2>Full Transcript</h2>
+  <hr><h2>Episode Transcript</h2>
   <div class="tx"><p style="color:#888;font-style:italic">Transcript coming soon.</p></div>
   <div class="footer"><strong>Courtesy of SCA Minhag of the Week · Sephardic Community Alliance</strong>minhag@scaupdates.org · minhagoftheweek.org</div>
   </div><scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt></body></html>`);
