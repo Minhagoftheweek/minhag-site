@@ -1013,9 +1013,13 @@ function buildSB(){
 let mCatOpen=null,mSGOpen=null;
 function buildMobileCatBar(){
   const row=document.getElementById('mobileCatRow');
-  row.innerHTML=CATS.map(cat=>
-    `<button class="mobile-cat-chip" id="mchip-${cat.id}" onclick="toggleMobileCat('${cat.id}')">${cat.label}<span class="mcc-arr">&#9662;</span></button>`
-  ).join('');
+  row.innerHTML=CATS.map(cat=>{
+    const hasSubs=(cat.subs&&cat.subs.length)||(cat.subGroups&&cat.subGroups.length);
+    if(!hasSubs){
+      return `<button class="mobile-cat-chip" id="mchip-${cat.id}" onclick="closeMobileCatBar();filterCat('${cat.id}')">${cat.label}</button>`;
+    }
+    return `<button class="mobile-cat-chip" id="mchip-${cat.id}" onclick="toggleMobileCat('${cat.id}')">${cat.label}<span class="mcc-arr">&#9662;</span></button>`;
+  }).join('');
   updateMobileCatFade();
   row.addEventListener('scroll',updateMobileCatFade,{passive:true});
   window.addEventListener('resize',updateMobileCatFade);
