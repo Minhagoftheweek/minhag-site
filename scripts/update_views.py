@@ -104,17 +104,27 @@ def get_sproutvideo_total_plays(api_key):
 
 
 def fetch_media_view_count(media_id, access_token):
-    for metric in ("plays", "video_views", "reach"):
-        insights_url = (f"https://graph.instagram.com/{media_id}/insights"
-                         f"?metric={metric}"
-                         f"&access_token={urllib.parse.quote(access_token)}")
-        try:
-            idata = http_get_json(insights_url)
-            values = idata.get("data", [])
-            if values:
-                return int(values[0].get("values", [{}])[0].get("value", 0))
-        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
-            continue
+    """
+    'views' is the current, correct metric as of Meta's April 2025 overhaul,
+    which consolidated the old 'plays'/'video_views'/'impressions' metrics
+    into one unified number that matches what's shown in the Instagram app
+    itself. Those old metric names are deprecated and were, in testing,
+    silently falling through to 'reach' — a fundamentally different number
+    (unique accounts reached, NOT total view count) that produced
+    plausible-looking but wrong results. 'reach' is intentionally NOT used
+    as a fallback here anymore for that reason: an honest "unavailable" is
+    better than a confident wrong number.
+    """
+    insights_url = (f"https://graph.instagram.com/{media_id}/insights"
+                     f"?metric=views"
+                     f"&access_token={urllib.parse.quote(access_token)}")
+    try:
+        idata = http_get_json(insights_url)
+        values = idata.get("data", [])
+        if values:
+            return int(values[0].get("values", [{}])[0].get("value", 0))
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+        pass
     return None
 
 
@@ -174,6 +184,23 @@ def get_instagram_total_views(access_token, account_id):
         cache["backfill_complete"] = False
         cache["schema_version"] = 2
         save_instagram_cache(cache)
+    if cache.get("schema_version") != 3:
+        # The 'plays'/'video_views' metrics used until now are deprecated
+        # (April 2025) and were silently falling back to 'reach', a
+        # different and much-lower number than real view counts. Every
+        # previously-recorded view count is therefore suspect — clear just
+        # the view numbers (keep captions/dates, no need to re-fetch those)
+        # and re-walk the full history once more to re-pull every view
+        # count fresh using the correct 'views' metric.
+        for entry in cache["media"].values():
+            entry["views"] = 0
+            entry["views_unavailable"] = True
+            entry.pop("_needs_view_refetch", None)
+        cache["backfill_cursor"] = None
+        cache["backfill_complete"] = False
+        cache["newest_seen_id"] = None
+        cache["schema_version"] = 3
+        save_instagram_cache(cache)
 
     known_ids = set(cache["media"].keys())
     base_media_url = (f"https://graph.instagram.com/{account_id}/media"
@@ -184,13 +211,14 @@ def get_instagram_total_views(access_token, account_id):
     insights_failed_count = 0
 
     def process_items(items, phase):
-        """Filters for matching video/reel posts not already cached. Every
-        match gets recorded in the cache with its caption and date — even
-        if the view-count (insights) lookup fails, so a post is never
-        silently dropped and forgotten just because Instagram wouldn't
-        return a number for it that particular time. Failed lookups are
-        tagged views=None and counted separately in diagnostics, rather
-        than being invisible."""
+        """Filters for matching video/reel posts. New posts get fully
+        recorded (caption/date/view-count). Posts already in the cache but
+        flagged views_unavailable get a fresh retry at just the view-count
+        lookup (this is how a metric-name fix or a transient failure gets
+        corrected on a later run, without re-doing the caption/date work).
+        Every match is recorded even if the view-count lookup fails, so a
+        post is never silently dropped and forgotten just because Instagram
+        wouldn't return a number for it that particular time."""
         nonlocal insights_failed_count
         found = 0
         for m in items:
@@ -199,21 +227,25 @@ def get_instagram_total_views(access_token, account_id):
                 continue
             mtype = m.get("media_type", "UNKNOWN")
             diag_by_phase[phase][mtype] = diag_by_phase[phase].get(mtype, 0) + 1
-            if m["id"] not in cache["media"] and mtype in ("VIDEO", "REELS"):
-                views = fetch_media_view_count(m["id"], access_token)
-                if views is None:
-                    insights_failed_count += 1
-                    print(f"Instagram: no view count available for media {m['id']} (type {mtype}) — recorded anyway with views=0", file=sys.stderr)
-                cache["media"][m["id"]] = {
-                    "views": views if views is not None else 0,
-                    "views_unavailable": views is None,
-                    "caption": (m.get("caption") or "")[:300],
-                    "timestamp": m.get("timestamp"),
-                    "media_type": mtype,
-                    "checked_at": datetime.now(timezone.utc).isoformat(),
-                }
-                found += 1
-                save_instagram_cache(cache)
+            if mtype not in ("VIDEO", "REELS"):
+                continue
+            existing = cache["media"].get(m["id"])
+            if existing is not None and not existing.get("views_unavailable"):
+                continue  # already have a real view count for this one
+            views = fetch_media_view_count(m["id"], access_token)
+            if views is None:
+                insights_failed_count += 1
+                print(f"Instagram: no view count available for media {m['id']} (type {mtype})", file=sys.stderr)
+            cache["media"][m["id"]] = {
+                "views": views if views is not None else 0,
+                "views_unavailable": views is None,
+                "caption": (m.get("caption") or "")[:300],
+                "timestamp": m.get("timestamp"),
+                "media_type": mtype,
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+            }
+            found += 1
+            save_instagram_cache(cache)
         return found
 
     # ── 0. One-time enrichment: add caption/date to older cache entries that
