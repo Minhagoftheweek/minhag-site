@@ -562,6 +562,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
       <div class="hero-desc">A weekly video series featuring Joseph Mosseri, Morris Arking &amp; Joey Harari educating our community about its Syrian and Middle Eastern traditions. Minhag of the Week is a project of the Sephardic Community Alliance.</div>
       <div class="pills">
         <span class="pill pill-p">New episodes premiere Wednesdays at 12:30pm ET (New York time)</span>
+        <span class="pill pill-p" id="totalViewsPill" style="display:none"></span>
       </div>
     </div>
   </div>
@@ -1116,6 +1117,26 @@ function buildSB(){
 
 // ── MOBILE CATEGORY BAR ─────────────────────────────────────────────────────
 let mCatOpen=null,mSGOpen=null;
+// ── TOTAL VIEW COUNT (homepage banner) ──────────────────────────────────────
+// Reads data/view-count.json, which a scheduled GitHub Action keeps updated
+// by pulling from YouTube + SproutVideo (and eventually Instagram) and
+// summing them. If the file is missing/unreachable, the pill just stays
+// hidden — never shows a broken or stale-looking number.
+function loadTotalViews(){
+  fetch('/data/view-count.json',{cache:'no-store'})
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(data=>{
+      const total=data.total_views;
+      if(typeof total!=='number'||total<=0)return;
+      const pill=document.getElementById('totalViewsPill');
+      if(!pill)return;
+      pill.textContent=`${total.toLocaleString()} Total Views`;
+      pill.style.display='inline-block';
+    })
+    .catch(()=>{/* no data yet — leave the pill hidden */});
+}
+loadTotalViews();
+
 function buildMobileCatBar(){
   const row=document.getElementById('mobileCatRow');
   row.innerHTML=CATS.map(cat=>{
