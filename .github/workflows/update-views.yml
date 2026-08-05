@@ -40,3 +40,35 @@ jobs:
           else
             echo "No change in view count, nothing to commit."
           fi
+
+  targeted-scan:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run targeted 2019-2021 scan
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+          SCAN_SINCE_DATE: '2019-01-01'
+          SCAN_UNTIL_DATE: '2022-01-01'
+        run: python scripts/targeted_instagram_scan.py
+
+      - name: Commit and push scan results
+        run: |
+          git config user.name "view-count-bot"
+          git config user.email "actions@github.com"
+          git add data/instagram-targeted-scan.csv
+          if ! git diff --cached --quiet; then
+            git commit -m "Targeted 2019-2021 Instagram scan results"
+            git push
+          else
+            echo "No results to commit."
+          fi
