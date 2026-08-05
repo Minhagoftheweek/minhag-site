@@ -1,0 +1,40 @@
+name: Update total view count
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-views:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Pull view counts and update data file
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YOUTUBE_PLAYLIST_ID: 'PLS3KTNjJqUerF8CfHShZg1HCKhgEiaJS8'
+          SPROUTVIDEO_API_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
+        run: python scripts/update_views.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "view-count-bot"
+          git config user.email "actions@github.com"
+          if ! git diff --quiet data/view-count.json; then
+            git add data/view-count.json
+            git commit -m "Auto-update total view count"
+            git push
+          else
+            echo "No change in view count, nothing to commit."
+          fi
