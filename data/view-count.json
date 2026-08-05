@@ -1,8 +1,8 @@
 {
-  "total_views": 167990,
+  "total_views": 167989,
   "breakdown": {
     "youtube": {
-      "views": 131097,
+      "views": 131096,
       "video_count": 305
     },
     "sproutvideo": {
@@ -11,8 +11,8 @@
     },
     "instagram": {
       "views": 36832,
-      "note": "123 tagged videos indexed total (0 newly found this run); full history scan complete; NEW matches found during backfill this run (by type): {}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}"
+      "note": "125 tagged videos indexed total (2 newly found this run); still backfilling \u2014 3511 posts scanned so far out of ~4,817 total on the account; NEW matches found during backfill this run (by type): {'VIDEO': 125, 'IMAGE': 2}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
     }
   },
-  "updated_at": "2026-08-05T20:12:41.696672+00:00"
+  "updated_at": "2026-08-05T20:22:37.729890+00:00"
 }
