@@ -1,5 +1,5 @@
 {
-  "total_views": 310634,
+  "total_views": 310643,
   "breakdown": {
     "youtube": {
       "views": 131097,
@@ -10,9 +10,9 @@
       "video_count": 311
     },
     "instagram": {
-      "views": 179476,
-      "note": "125 tagged videos indexed total (125 newly found this run); still backfilling \u2014 7011 posts scanned so far out of ~4,817 total on the account; NEW matches found during backfill this run (by type): {'VIDEO': 125, 'IMAGE': 2}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
+      "views": 179485,
+      "note": "125 tagged videos indexed total (125 newly found this run); still backfilling \u2014 10511 posts scanned so far out of ~4,817 total on the account; NEW matches found during backfill this run (by type): {'VIDEO': 125, 'IMAGE': 2}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
     }
   },
-  "updated_at": "2026-08-05T20:52:32.741884+00:00"
+  "updated_at": "2026-08-05T20:58:51.795384+00:00"
 }
