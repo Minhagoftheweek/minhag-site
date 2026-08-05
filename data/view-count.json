@@ -1,8 +1,8 @@
 {
-  "total_views": 167967,
+  "total_views": 167990,
   "breakdown": {
     "youtube": {
-      "views": 131074,
+      "views": 131097,
       "video_count": 305
     },
     "sproutvideo": {
@@ -11,8 +11,8 @@
     },
     "instagram": {
       "views": 36832,
-      "note": "123 tagged videos indexed total (0 newly found this run); still backfilling older history (70 pages scanned this run); hashtag matches by post type this run: {'VIDEO': 82, 'IMAGE': 2}"
+      "note": "123 tagged videos indexed total (0 newly found this run); full history scan complete; NEW matches found during backfill this run (by type): {}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}"
     }
   },
-  "updated_at": "2026-08-05T20:01:05.996792+00:00"
+  "updated_at": "2026-08-05T20:12:41.696672+00:00"
 }
