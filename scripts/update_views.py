@@ -143,6 +143,10 @@ def get_instagram_total_views(access_token, account_id):
     whatever was already found gets saved to the cache immediately — a run
     that dies partway through a big first-time backfill doesn't lose the
     progress it already made; the next run just picks up from there.
+
+    Returns a diagnostics dict alongside the totals so a shortfall (fewer
+    matches than expected) can be explained from the output data itself
+    instead of needing to dig through logs.
     """
     cache_path = "data/instagram-cache.json"
     try:
@@ -160,18 +164,26 @@ def get_instagram_total_views(access_token, account_id):
            f"?fields=id,caption,media_type&limit=50"
            f"&access_token={urllib.parse.quote(access_token)}")
     pages = 0
+    stopped_early_reason = None
     while url and pages < max_pages:
         try:
             data = http_get_json(url)
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
-            print(f"Instagram: pagination stopped early after {pages} page(s): {e}", file=sys.stderr)
+            stopped_early_reason = f"network error after {pages} page(s): {e}"
+            print(f"Instagram: pagination stopped early — {stopped_early_reason}", file=sys.stderr)
             break
         items = data.get("data", [])
         media_items.extend(items)
         pages += 1
         if not is_first_run and any(m["id"] in known_ids for m in items):
-            break  # caught up to posts we've already indexed
+            stopped_early_reason = None  # expected/normal stop, not a problem
+            break
         url = data.get("paging", {}).get("next")
+    else:
+        if pages >= max_pages:
+            stopped_early_reason = f"hit the {max_pages}-page cap — there may be older posts beyond this point not yet scanned"
+
+    hit_cap = pages >= max_pages
 
     matching_new = [
         m for m in media_items
@@ -194,7 +206,14 @@ def get_instagram_total_views(access_token, account_id):
             print(f"Instagram: could not get view count for media {m['id']}, skipped", file=sys.stderr)
 
     total_views = sum(v["views"] for v in cache["media"].values())
-    return total_views, len(cache["media"]), found_this_run
+    diagnostics = {
+        "pages_scanned": pages,
+        "posts_scanned": len(media_items),
+        "hit_page_cap": hit_cap,
+        "stopped_early_reason": stopped_early_reason,
+        "was_first_run": is_first_run,
+    }
+    return total_views, len(cache["media"]), found_this_run, diagnostics
 
 
 def main():
@@ -227,8 +246,10 @@ def main():
     ig_note = "not configured"
     if ig_token and ig_account_id:
         try:
-            ig_views, ig_counted, ig_matched = get_instagram_total_views(ig_token, ig_account_id)
-            ig_note = f"{ig_counted} total tagged videos indexed ({ig_matched} newly found this run)"
+            ig_views, ig_counted, ig_matched, ig_diag = get_instagram_total_views(ig_token, ig_account_id)
+            ig_note = (f"{ig_counted} total tagged videos indexed ({ig_matched} newly found this run); "
+                       f"scanned {ig_diag['posts_scanned']} posts across {ig_diag['pages_scanned']} pages"
+                       f"{' — ' + ig_diag['stopped_early_reason'] if ig_diag['stopped_early_reason'] else ''}")
         except Exception as e:
             print(f"Instagram step failed this run ({e}) — Instagram contributes 0, YouTube/SproutVideo unaffected", file=sys.stderr)
             ig_note = "error this run — contributed 0, check logs"
