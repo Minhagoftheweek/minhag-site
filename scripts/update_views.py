@@ -164,22 +164,34 @@ def get_instagram_total_views(access_token, account_id):
     cache.setdefault("newest_seen_id", None)
     cache.setdefault("backfill_cursor", None)
     cache.setdefault("backfill_complete", False)
+    if cache.get("schema_version") != 2:
+        # Upgrading from the old schema (view-count-only, no caption/date,
+        # and posts that failed their insights lookup were silently never
+        # recorded at all). Re-walk the full history once more so those
+        # posts get a second chance to be captured — already-cached entries
+        # are left alone, so this doesn't re-spend API calls on them.
+        cache["backfill_cursor"] = None
+        cache["backfill_complete"] = False
+        cache["schema_version"] = 2
+        save_instagram_cache(cache)
 
     known_ids = set(cache["media"].keys())
     base_media_url = (f"https://graph.instagram.com/{account_id}/media"
-                       f"?fields=id,caption,media_type&limit=50"
+                       f"?fields=id,caption,media_type,timestamp&limit=50"
                        f"&access_token={urllib.parse.quote(access_token)}")
 
     diag_by_phase = {"front": {}, "backfill": {}}  # phase -> media_type -> count
+    insights_failed_count = 0
 
     def process_items(items, phase):
-        """Filters for matching video/reel posts not already cached, fetches
-        their view counts, and saves each one to the cache immediately.
-        Also tracks (for diagnostics, per phase) every hashtag-matching post
-        regardless of type, so a mismatch between 'total tagged posts' and
-        'counted videos' is visible instead of silently dropped — and so
-        front-check re-scans of the same top posts every run don't get
-        confused with genuinely new territory found during backfill."""
+        """Filters for matching video/reel posts not already cached. Every
+        match gets recorded in the cache with its caption and date — even
+        if the view-count (insights) lookup fails, so a post is never
+        silently dropped and forgotten just because Instagram wouldn't
+        return a number for it that particular time. Failed lookups are
+        tagged views=None and counted separately in diagnostics, rather
+        than being invisible."""
+        nonlocal insights_failed_count
         found = 0
         for m in items:
             has_tag = HASHTAG in (m.get("caption") or "").lower()
@@ -189,16 +201,37 @@ def get_instagram_total_views(access_token, account_id):
             diag_by_phase[phase][mtype] = diag_by_phase[phase].get(mtype, 0) + 1
             if m["id"] not in cache["media"] and mtype in ("VIDEO", "REELS"):
                 views = fetch_media_view_count(m["id"], access_token)
-                if views is not None:
-                    cache["media"][m["id"]] = {
-                        "views": views,
-                        "checked_at": datetime.now(timezone.utc).isoformat(),
-                    }
-                    found += 1
-                    save_instagram_cache(cache)
-                else:
-                    print(f"Instagram: could not get view count for media {m['id']}, skipped", file=sys.stderr)
+                if views is None:
+                    insights_failed_count += 1
+                    print(f"Instagram: no view count available for media {m['id']} (type {mtype}) — recorded anyway with views=0", file=sys.stderr)
+                cache["media"][m["id"]] = {
+                    "views": views if views is not None else 0,
+                    "views_unavailable": views is None,
+                    "caption": (m.get("caption") or "")[:300],
+                    "timestamp": m.get("timestamp"),
+                    "media_type": mtype,
+                    "checked_at": datetime.now(timezone.utc).isoformat(),
+                }
+                found += 1
+                save_instagram_cache(cache)
         return found
+
+    # ── 0. One-time enrichment: add caption/date to older cache entries that
+    #      predate this fields update, without re-fetching their view counts ──
+    for media_id, entry in cache["media"].items():
+        if "caption" not in entry:
+            try:
+                detail_url = (f"https://graph.instagram.com/{media_id}"
+                               f"?fields=caption,timestamp,media_type"
+                               f"&access_token={urllib.parse.quote(access_token)}")
+                detail = http_get_json(detail_url)
+                entry["caption"] = (detail.get("caption") or "")[:300]
+                entry["timestamp"] = detail.get("timestamp")
+                entry["media_type"] = detail.get("media_type")
+                entry.setdefault("views_unavailable", False)
+                save_instagram_cache(cache)
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+                print(f"Instagram: couldn't enrich older entry {media_id}: {e}", file=sys.stderr)
 
     # ── 1. Front check: newest posts, stop at the first one we already know ──
     front_new_found = 0
@@ -253,6 +286,7 @@ def get_instagram_total_views(access_token, account_id):
             save_instagram_cache(cache)
 
     total_views = sum(v["views"] for v in cache["media"].values())
+    views_unavailable_count = sum(1 for v in cache["media"].values() if v.get("views_unavailable"))
     diagnostics = {
         "backfill_complete": cache["backfill_complete"],
         "backfill_pages_this_run": backfill_pages,
@@ -261,6 +295,8 @@ def get_instagram_total_views(access_token, account_id):
         "backfill_hashtag_matches_by_type": diag_by_phase["backfill"],
         "total_posts_scanned_ever": cache["total_posts_scanned_ever"],
         "last_post_id_reached_this_run": last_post_id_this_backfill,
+        "insights_failed_this_run": insights_failed_count,
+        "views_unavailable_total": views_unavailable_count,
     }
     return total_views, len(cache["media"]), front_new_found + backfill_new_found, diagnostics
 
@@ -304,7 +340,8 @@ def main():
             ig_note = (f"{ig_counted} tagged videos indexed total ({ig_matched} newly found this run); "
                        f"{backfill_status}; "
                        f"NEW matches found during backfill this run (by type): {ig_diag['backfill_hashtag_matches_by_type']}; "
-                       f"matches seen during front-check (mostly re-seeing already-known posts, by type): {ig_diag['front_check_hashtag_matches_by_type']}"
+                       f"matches seen during front-check (mostly re-seeing already-known posts, by type): {ig_diag['front_check_hashtag_matches_by_type']}; "
+                       f"posts with no view-count available (still counted in the list, contribute 0 views): {ig_diag['views_unavailable_total']}"
                        f"{' — ' + ig_diag['stopped_early_reason'] if ig_diag['stopped_early_reason'] else ''}")
         except Exception as e:
             print(f"Instagram step failed this run ({e}) — Instagram contributes 0, YouTube/SproutVideo unaffected", file=sys.stderr)
