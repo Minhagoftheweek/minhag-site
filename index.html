@@ -938,6 +938,29 @@ const E={
   pdf:    e=>e[9]||'',
   txt:    e=>e[10]||''
 };
+// ── SCHEDULING ───────────────────────────────────────────────────────────
+// Add an entry here to hold an episode back until a specific future moment.
+// Key = episode id (E.id). Value = ISO 8601 datetime WITH a timezone offset
+// (e.g. '2026-09-10T09:00:00-04:00' for 9am Eastern). Until that moment
+// passes, the episode is invisible everywhere on the site — homepage grid,
+// category pages, search, "Up Next", related episodes, and even direct
+// links to its URL (it 404s to the custom not-found page, same as any
+// other unknown episode). No further action is needed once this is set:
+// every visitor's own browser clock decides when it flips to visible, so
+// the episode goes live automatically at that instant without a new
+// deploy. Remove the entry (or let its date pass) once it's live — leaving
+// a past-dated entry here is harmless but unnecessary.
+const SCHEDULE={
+  // Example — remove or edit before real use:
+  // 298: '2026-09-10T09:00:00-04:00',
+};
+(function hideScheduledEpisodes(){
+  const now=new Date();
+  for(let i=EPS.length-1;i>=0;i--){
+    const pub=SCHEDULE[E.id(EPS[i])];
+    if(pub && new Date(pub)>now) EPS.splice(i,1);
+  }
+})();
 function getSubsForCat(ep,catId){
   const s=E.subs(ep);
   if(!s)return null; // null = no sub data, not empty
