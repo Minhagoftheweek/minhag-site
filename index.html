@@ -639,6 +639,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
         <button class="pres-clr" onclick="showHome()">Clear</button>
       </div>
       <div class="ch"><h2 id="viewTitle">All Episodes</h2><span class="ep-ct" id="epCt"></span></div>
+      <div id="watchedCounter" style="font-size:.72rem;color:var(--mu);margin:-.3rem 0 .8rem"></div>
       <div class="grid" id="epGrid"></div>
       <div class="no-r" id="noResults" style="display:none">No episodes found.</div>
       <div class="pag" id="pagination"></div>
@@ -1412,6 +1413,7 @@ function showHome(push){
   document.getElementById('heroWrap').style.display='block';
   render();
   renderContinueWatching();
+  renderWatchedCounter();
   window.scrollTo({top:0,behavior:'smooth'});
   if(push!==false)routeHome();
 }
@@ -1858,9 +1860,16 @@ function markWatched(epId){
     if(s.has(epId))return;
     s.add(epId);
     localStorage.setItem(WATCHED_KEY,JSON.stringify([...s]));
+    renderWatchedCounter();
   }catch(e){/* fail silently */}
 }
 function isWatched(epId){return getWatchedSet().has(epId);}
+function renderWatchedCounter(){
+  const el=document.getElementById('watchedCounter');
+  if(!el)return;
+  const n=getWatchedSet().size;
+  el.textContent=n?`${n} episode${n===1?'':'s'} watched on this device`:'';
+}
 function getWatchHistory(){
   try{
     const raw=localStorage.getItem(WATCH_KEY);
@@ -2456,6 +2465,7 @@ buildSB();
 buildMobileCatBar();
 render();
 renderContinueWatching();
+renderWatchedCounter();
 updateDrawerPlaylistCount();
 // Load whatever page the URL points to (episode / category / presenter / etc.)
 // so shared and bookmarked links, and the browser back/forward buttons, work.
