@@ -13,6 +13,10 @@ on:
         description: 'Run full export of every post + view counts (resumable, set to true)'
         required: false
         default: 'false'
+      check_account:
+        description: 'Check account media_count (diagnostic, set to true)'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
@@ -75,6 +79,7 @@ jobs:
           SCAN_SINCE_DATE: '2019-01-01'
           SCAN_UNTIL_DATE: '2022-01-01'
           LOOKUP_POST_URL: ${{ github.event.inputs.lookup_post_url }}
+          CHECK_ACCOUNT: ${{ github.event.inputs.check_account }}
         run: python scripts/targeted_instagram_scan.py
         continue-on-error: true
 
