@@ -61,9 +61,26 @@ def run():
     account_id = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")
     since_date = os.environ.get("SCAN_SINCE_DATE")
     until_date = os.environ.get("SCAN_UNTIL_DATE")
+    lookup_url = os.environ.get("LOOKUP_POST_URL")
 
     log(f"access_token present: {bool(access_token)} (len={len(access_token) if access_token else 0})")
     log(f"account_id: {account_id!r}")
+
+    if lookup_url:
+        log(f"=== ONE-OFF LOOKUP MODE for {lookup_url} ===")
+        oembed_url = ("https://graph.facebook.com/v20.0/instagram_oembed"
+                      f"?url={urllib.parse.quote(lookup_url, safe='')}"
+                      f"&access_token={urllib.parse.quote(access_token)}")
+        try:
+            odata = http_get_json(oembed_url)
+            log(f"oEmbed result: {json.dumps(odata, indent=2)}")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", "replace")
+            log(f"oEmbed HTTPError: {e.code} {e.reason} — body: {body[:2000]}")
+        except Exception as e:
+            log(f"oEmbed exception: {e!r}")
+        return
+
     log(f"since_date: {since_date!r}  until_date: {until_date!r}")
 
     if not all([access_token, account_id, since_date, until_date]):
