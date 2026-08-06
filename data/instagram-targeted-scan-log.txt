@@ -1,4 +1,4 @@
-Run at 2026-08-06T01:26:23.854428+00:00
+Run at 2026-08-06T01:29:38.321462+00:00
 Exit code: 0
 
 access_token present: True (len=186)
@@ -9,20 +9,28 @@ account_id: '17841400272376865'
   ...30 pages, 1500 items so far
   ...40 pages, 2000 items so far
   ...50 pages, 2500 items so far
-Network error after 56 page(s): The read operation timed out
-Scanned 2800 total posts across 56 page(s) (full history, no date filter).
-Earliest post timestamp in pull: 2018-08-06T19:59:50+0000
+  ...60 pages, 3000 items so far
+  ...70 pages, 3500 items so far
+  ...80 pages, 4000 items so far
+Scanned 4012 total posts across 81 page(s) (full history, no date filter).
+Earliest post timestamp in pull: 2013-06-28T04:21:06+0000
 Latest post timestamp in pull: 2026-08-05T20:04:08+0000
 10 oldest posts in the pull:
-  2018-08-06T19:59:50+0000 id=17954812756101973 type=IMAGE permalink=https://www.instagram.com/p/BmJmnhun3iK/
-  2018-08-06T22:05:25+0000 id=17894179078230185 type=CAROUSEL_ALBUM permalink=https://www.instagram.com/p/BmJ0_VWnkRN/
-  2018-08-07T15:19:52+0000 id=17946588085087472 type=IMAGE permalink=https://www.instagram.com/p/BmLrX0snMTf/
-  2018-08-07T15:23:31+0000 id=17952906892103447 type=IMAGE permalink=https://www.instagram.com/p/BmLryn1HgG4/
-  2018-08-07T17:44:32+0000 id=17942874760188144 type=CAROUSEL_ALBUM permalink=https://www.instagram.com/p/BmL77donMNi/
-  2018-08-08T16:04:19+0000 id=17894441950227517 type=IMAGE permalink=https://www.instagram.com/p/BmOVQTNnJvj/
-  2018-08-08T16:06:18+0000 id=17925176794197137 type=IMAGE permalink=https://www.instagram.com/p/BmOVeyen_SI/
-  2018-08-08T20:36:00+0000 id=17905243567219035 type=CAROUSEL_ALBUM permalink=https://www.instagram.com/p/BmO0WJhnP95/
-  2018-08-09T17:13:25+0000 id=17878536097249524 type=CAROUSEL_ALBUM permalink=https://www.instagram.com/p/BmRB9RPHmFJ/
-  2018-08-09T19:13:01+0000 id=17967355675012281 type=CAROUSEL_ALBUM permalink=https://www.instagram.com/p/BmRPpPxnxZf/
+  2013-06-28T04:21:06+0000 id=17841693106009080 type=IMAGE permalink=https://www.instagram.com/p/bFsqN1P8CY/
+  2013-06-28T15:49:48+0000 id=17841693100009080 type=IMAGE permalink=https://www.instagram.com/p/bG7eaTv8BG/
+  2013-07-01T15:42:07+0000 id=17841693103009080 type=IMAGE permalink=https://www.instagram.com/p/bOo-v8P8GL/
+  2013-07-02T16:36:03+0000 id=17841693109009080 type=IMAGE permalink=https://www.instagram.com/p/bRT8kQP8BB/
+  2013-07-02T18:52:56+0000 id=17841693097009080 type=IMAGE permalink=https://www.instagram.com/p/bRjnJtv8MH/
+  2013-07-02T20:27:36+0000 id=17841693094009080 type=IMAGE permalink=https://www.instagram.com/p/bRucjYP8O1/
+  2013-07-07T13:07:01+0000 id=17841856369009080 type=IMAGE permalink=https://www.instagram.com/p/bdz_9Nv8DK/
+  2013-07-07T13:07:15+0000 id=17841693067009080 type=IMAGE permalink=https://www.instagram.com/p/bd0Brsv8DM/
+  2013-07-08T10:56:47+0000 id=17841693088009080 type=IMAGE permalink=https://www.instagram.com/p/bgJ5ANv8Nq/
+  2013-07-09T13:40:03+0000 id=17841693076009080 type=IMAGE permalink=https://www.instagram.com/p/bjBXogP8H4/
+Gaps of 21+ days between consecutive posts (possible missing history windows):
+  GAP: 91 days between 2013-08-13T15:22:24+0000 (id=17841692848009080) and 2013-11-13T13:02:35+0000 (id=17841692845009080)
+  GAP: 69 days between 2013-12-15T17:21:46+0000 (id=17841692842009080) and 2014-02-23T01:15:20+0000 (id=17841856414009080)
+  GAP: 106 days between 2014-02-23T01:15:20+0000 (id=17841856414009080) and 2014-06-09T01:50:09+0000 (id=17841692806009080)
+  GAP: 46 days between 2014-08-28T22:28:45+0000 (id=17841640249009080) and 2014-10-14T20:24:31+0000 (id=17841692668009080)
+  GAP: 23 days between 2014-11-20T16:04:27+0000 (id=17841692671009080) and 2014-12-13T22:38:05+0000 (id=17841640246009080)
 NO MATCH by exact permalink. Showing any permalinks containing similar shortcode fragment:
 Total items with a 'tv' or 'reel' style permalink: 578
