@@ -1,0 +1,1100 @@
+{
+  "total_views": 105764,
+  "post_count": 182,
+  "description": "Frozen floor for Instagram views from ~182 pre-2023 #SCAMinhagOfTheWeek episodes (mostly IGTV-era, 2019-2022) that Instagram's Graph API cannot retrieve by any method (confirmed: not in /media listing, no /reels edge, not resolvable by direct ID lookup, not resolvable by Meta Business Suite export Post ID). Sourced from Victor's own master episode-tracking Google Sheet (manually-observed Instagram view counts), cross-checked against the Instagram API to include ONLY episodes NOT already covered by live API data, avoiding double-counting. This number is added on top of whatever the live Instagram API scan finds for API-accessible posts (2023-onward, i.e. the growing data/instagram-cache.json total) to get the site's true Instagram total. This baseline never decreases and does not depend on continued access to Victor's Google Sheet \u2014 it is a permanent, one-time snapshot.",
+  "computed_at": "2026-08-06",
+  "episodes": [
+    {
+      "Date": "11/2/2022",
+      "episode": "180",
+      "topic": "Tefilla BeSibbur: Shabbat Beresheet, Noah & Lekh Lekha (Harari)",
+      "views": "415"
+    },
+    {
+      "Date": "10/26/2022",
+      "episode": "179",
+      "topic": "When Do We Recite Berikh Shemeh? (Arking)",
+      "views": "441"
+    },
+    {
+      "Date": "10/19/2022",
+      "episode": "178",
+      "topic": "Flowers on Sebbit Day (Mosseri)",
+      "views": "733"
+    },
+    {
+      "Date": "10/12/2022",
+      "episode": "177",
+      "topic": "Tefilla BeSibbur: Habdalah (Harari)",
+      "views": "440"
+    },
+    {
+      "Date": "10/2/2022",
+      "episode": "176",
+      "topic": "Kaparot (Arking)",
+      "views": "502"
+    },
+    {
+      "Date": "9/28/2022",
+      "episode": "175",
+      "topic": "The Morning of the Sebbit in Knis (Mosseri)",
+      "views": "721"
+    },
+    {
+      "Date": "9/21/2022",
+      "episode": "174",
+      "topic": "Tefilla BeSibbur: Arbit Mosa'e Shabbat Amida until Alenu (Harari)",
+      "views": "409"
+    },
+    {
+      "Date": "9/14/2022",
+      "episode": "173",
+      "topic": "The Special Foods for the Night(s) of Rosh Hashanah (Arking)",
+      "views": "330"
+    },
+    {
+      "Date": "9/7/2022",
+      "episode": "172",
+      "topic": "When do we make a Sebbit? (Mosseri)",
+      "views": "580"
+    },
+    {
+      "Date": "8/31/2022",
+      "episode": "171",
+      "topic": "Tefilla BeSibbur: Arbit Mosa'e Shabbat Until Amida (Harari)",
+      "views": "311"
+    },
+    {
+      "Date": "8/24/2022",
+      "episode": "170",
+      "topic": "Hatarah (Arking)",
+      "views": "386"
+    },
+    {
+      "Date": "8/17/2022",
+      "episode": "169",
+      "topic": "Introduction to the Sebbit (Mosseri)",
+      "views": "958"
+    },
+    {
+      "Date": "8/10/2022",
+      "episode": "168",
+      "topic": "Tefilla BeSibbur: Reading of Alpha Beta before Arbit Mosa'e Shabbat (Harari ft Arking)",
+      "views": "641"
+    },
+    {
+      "Date": "8/3/2022",
+      "episode": "167",
+      "topic": "Customs of the 9th of Ab (Arking)",
+      "views": "541"
+    },
+    {
+      "Date": "7/27/2022",
+      "episode": "166",
+      "topic": "Bar Missvah- Recap of the Tefilah (Mosseri)",
+      "views": "482"
+    },
+    {
+      "Date": "7/20/2022",
+      "episode": "165",
+      "topic": "Tefilla BeSibbur: Se'uda Shelishit and Customs Before Arbit (Harari)",
+      "views": "693"
+    },
+    {
+      "Date": "7/13/2022",
+      "episode": "164",
+      "topic": "When to add 'Anenu to the 'Amidah (Arking)",
+      "views": "384"
+    },
+    {
+      "Date": "7/6/2022",
+      "episode": "163",
+      "topic": "Bar Missvah- Celebrations & Attire (Mosseri)",
+      "views": "595"
+    },
+    {
+      "Date": "6/29/2022",
+      "episode": "162",
+      "topic": "Tefilla BeSibbur: Shabbat Minha Amida until Alenu (Harari)",
+      "views": "331"
+    },
+    {
+      "Date": "6/22/2022",
+      "episode": "161",
+      "topic": "Announcing Rosh Hodesh (Arking)",
+      "views": "409"
+    },
+    {
+      "Date": "6/15/2022",
+      "episode": "160",
+      "topic": "Bar Missvah- American Birthday Customs (Mosseri)",
+      "views": "517"
+    },
+    {
+      "Date": "6/8/2022",
+      "episode": "159",
+      "topic": "Tefilla BeSibbur: Sefer Torah of Shabbat Minha (Harari)",
+      "views": "410"
+    },
+    {
+      "Date": "6/1/2022",
+      "episode": "158",
+      "topic": "The Reading for the First Night of Shabuot (Arking)",
+      "views": "344"
+    },
+    {
+      "Date": "5/25/2022",
+      "episode": "157",
+      "topic": "The Bar Missvah Koracha (Mosseri)",
+      "views": "870"
+    },
+    {
+      "Date": "5/18/2022",
+      "episode": "156",
+      "topic": "Tefilla BeSibbur: First Half of Shabbat Minha (Harari)",
+      "views": "410"
+    },
+    {
+      "Date": "5/11/2022",
+      "episode": "155",
+      "topic": "Praying Arbit Before Sunset (Arking)",
+      "views": "482"
+    },
+    {
+      "Date": "5/4/2022",
+      "episode": "154",
+      "topic": "Bar Missvah Boy's Aliya at the Sefer Torah (Mosseri)",
+      "views": "281"
+    },
+    {
+      "Date": "4/27/2022",
+      "episode": "153",
+      "topic": "Tefilla BeSibbur: Shabbat Musaf Customs (Harari)",
+      "views": "328"
+    },
+    {
+      "Date": "4/18/2022",
+      "episode": "152",
+      "topic": "The Reading for the Seventh Day of Pesah (Arking)",
+      "views": "516"
+    },
+    {
+      "Date": "4/13/2022",
+      "episode": "151",
+      "topic": "Saying 'Barukh Shepetarani' at Bar Missvah (Mosseri)",
+      "views": "338"
+    },
+    {
+      "Date": "4/6/2022",
+      "episode": "150",
+      "topic": "Tefilla BeSibbur: Shabbat Musaf Textual Variants (Harari)",
+      "views": "266"
+    },
+    {
+      "Date": "3/30/2022",
+      "episode": "149",
+      "topic": "The Qaddishim and Haftarah When 3 Sifre' Torah are Read on Shabbat (Arking)",
+      "views": "329"
+    },
+    {
+      "Date": "3/23/2022",
+      "episode": "148",
+      "topic": "Yehi Shem on the Bar Missvah Day- Part 2 (Mosseri)",
+      "views": "289"
+    },
+    {
+      "Date": "3/16/2022",
+      "episode": "147",
+      "topic": "Tefilla BeSibbur: Shabbat Musaf Ashre - Returning the Sefer (Harari)",
+      "views": "240"
+    },
+    {
+      "Date": "3/9/2022",
+      "episode": "146",
+      "topic": "Mahassit HaSheqel (Arking)",
+      "views": "323"
+    },
+    {
+      "Date": "3/2/2022",
+      "episode": "145",
+      "topic": "Yehi Shem on the Bar Missvah Day (Mosseri)",
+      "views": "264"
+    },
+    {
+      "Date": "2/23/2022",
+      "episode": "144",
+      "topic": "Tefilla BeSibbur: Pre-Musaf Berakhot (Harari)",
+      "views": "223"
+    },
+    {
+      "Date": "2/16/2022",
+      "episode": "143",
+      "topic": "Omitting L'David in Minhah (Arking)",
+      "views": "472"
+    },
+    {
+      "Date": "2/9/2022",
+      "episode": "142",
+      "topic": "Tallet and Tefillin on the Bar Missvah Day (Mosseri)",
+      "views": "379"
+    },
+    {
+      "Date": "2/2/2022",
+      "episode": "141",
+      "topic": "Tefilla BeSibbur: Standing for Rabbis at the Sefer Torah (Harari)",
+      "views": "473"
+    },
+    {
+      "Date": "1/26/2022",
+      "episode": "140",
+      "topic": "Daytime Qiddush on Alcoholic Beverages (Arking)",
+      "views": "573"
+    },
+    {
+      "Date": "1/19/2022",
+      "episode": "139",
+      "topic": "Bar Missvah Speeches (Mosseri)",
+      "views": "618"
+    },
+    {
+      "Date": "1/12/2022",
+      "episode": "138",
+      "topic": "Tefilla BeSibbur: Hashkabot (Part 2) & Donations at the Sefer (Harari)",
+      "views": "408"
+    },
+    {
+      "Date": "1/5/2022",
+      "episode": "137",
+      "topic": "Celebrating Tu BiShbat (Arking)",
+      "views": "385"
+    },
+    {
+      "Date": "12/29/2021",
+      "episode": "136",
+      "topic": "Introduction to the Bar Misvah (Mosseri)",
+      "views": "571"
+    },
+    {
+      "Date": "12/22/2021",
+      "episode": "135",
+      "topic": "Tefilla Be'ssibur - Hashkabot and Refu'ah Prayers (Harari)",
+      "views": "393"
+    },
+    {
+      "Date": "12/15/2021",
+      "episode": "134",
+      "topic": "Washing Before a Wet Food (Arking)",
+      "views": "377"
+    },
+    {
+      "Date": "12/8/2021",
+      "episode": "133",
+      "topic": "Auctioning off the Coins of a Pidyon HaBen (Mosseri)",
+      "views": "629"
+    },
+    {
+      "Date": "12/1/2021",
+      "episode": "132",
+      "topic": "Tefilla BeSibbur: The Haftarah Reading (Harari)",
+      "views": "238"
+    },
+    {
+      "Date": "11/24/2021",
+      "episode": "131",
+      "topic": "Hanukkah Candles: The First Blessing and When to Begin Lighting (Arking)",
+      "views": "331"
+    },
+    {
+      "Date": "11/17/2021",
+      "episode": "130",
+      "topic": "The Pidyon HaBen Ceremony (Mosseri)",
+      "views": "578"
+    },
+    {
+      "Date": "11/10/2021",
+      "episode": "129",
+      "topic": "Tefilla BeSibbur: Standing for Relatives at the Sefer Torah (Harari)",
+      "views": "545"
+    },
+    {
+      "Date": "11/3/2021",
+      "episode": "128",
+      "topic": "Musaf for Rosh Hodesh during a Jewish Leap Year (Arking)",
+      "views": "481"
+    },
+    {
+      "Date": "10/27/2021",
+      "episode": "127",
+      "topic": "What is a Pidyon HaBen? (Mosseri)",
+      "views": "519"
+    },
+    {
+      "Date": "10/20/2021",
+      "episode": "126",
+      "topic": "Mon and Thu prayers and the extra VaYa'abor (Arking)",
+      "views": "385"
+    },
+    {
+      "Date": "10/13/2021",
+      "episode": "125",
+      "topic": "Tefilla BeSibBur: Aliyot Stops- Part 2 (Harari)",
+      "views": "358"
+    },
+    {
+      "Date": "10/6/2021",
+      "episode": "124",
+      "topic": "Berit Milah- Sandak Blessings?! (Mosseri)",
+      "views": "380"
+    },
+    {
+      "Date": "9/29/2021",
+      "episode": "123",
+      "topic": "Tefilla BeSibbur: Aliyot Stops (Harari)",
+      "views": "554"
+    },
+    {
+      "Date": "9/22/2021",
+      "episode": "122",
+      "topic": "Repeating Verses in Hallel (Arking)",
+      "views": "562"
+    },
+    {
+      "Date": "9/15/2021",
+      "episode": "121",
+      "topic": "Naming the Boy at the Berit Milah (Mosseri)",
+      "views": "312"
+    },
+    {
+      "Date": "9/8/2021",
+      "episode": "120",
+      "topic": "Tefilla BeSibbur: The Somekh (Harari)",
+      "views": "608"
+    },
+    {
+      "Date": "9/1/2021",
+      "episode": "119",
+      "topic": "Rosh Hashanah Seder V'Tashlikh (Arking)",
+      "views": "352"
+    },
+    {
+      "Date": "8/25/2021",
+      "episode": "118",
+      "topic": "Berakhot said at the Berit Milah (Mosseri)",
+      "views": "412"
+    },
+    {
+      "Date": "8/18/2021",
+      "episode": "117",
+      "topic": "Tefilla BeSibbur: Taking out the Sefer Torah- Part 2 (Harari)",
+      "views": "345"
+    },
+    {
+      "Date": "8/11/2021",
+      "episode": "116",
+      "topic": "Hand Gesturing Before the 'Amidah (Arking)",
+      "views": "736"
+    },
+    {
+      "Date": "8/4/2021",
+      "episode": "115",
+      "topic": "Pizmonim & Pesukim to Begin the Berit Milah (Mosseri)",
+      "views": "611"
+    },
+    {
+      "Date": "7/28/2021",
+      "episode": "114",
+      "topic": "Tefilla BeSibbur: Taking out the Sefer Torah (Harari)",
+      "views": "770"
+    },
+    {
+      "Date": "7/21/2021",
+      "episode": "113",
+      "topic": "The word Emet at the end of Qeriat Shema' (Arking)",
+      "views": "457"
+    },
+    {
+      "Date": "7/14/2021",
+      "episode": "112",
+      "topic": "Berit Milah Chair of Eliyahu Hanabi (Mosseri)",
+      "views": "750"
+    },
+    {
+      "Date": "7/7/2021",
+      "episode": "111",
+      "topic": "Tefilla BeSibbur: The Mesader- Part 3 (Harari)",
+      "views": "457"
+    },
+    {
+      "Date": "6/30/2021",
+      "episode": "110",
+      "topic": "Reciting V'Harah Af quietly in Qeriat Shema' (Arking)",
+      "views": "712"
+    },
+    {
+      "Date": "6/23/2021",
+      "episode": "109",
+      "topic": "The Mother & Grandmothers at the Berit Milah (Mosseri)",
+      "views": "1461"
+    },
+    {
+      "Date": "6/16/2021",
+      "episode": "108",
+      "topic": "Tefilla BeSibbur: The Mesader- Part 2 (Harari)",
+      "views": "511"
+    },
+    {
+      "Date": "6/9/2021",
+      "episode": "107",
+      "topic": "Throwing the Bread (Arking)",
+      "views": "784"
+    },
+    {
+      "Date": "6/2/2021",
+      "episode": "106",
+      "topic": "Berit Milah Candle Lighting Tray of Eliyahu HaNabi (Mosseri)",
+      "views": "1125"
+    },
+    {
+      "Date": "5/26/2021",
+      "episode": "105",
+      "topic": "Tefilla BeSibbur: The Mesader (Harari)",
+      "views": "502"
+    },
+    {
+      "Date": "5/19/2021",
+      "episode": "104",
+      "topic": "The 13th of Sivan: Ness Moussan (Arking)",
+      "views": "474"
+    },
+    {
+      "Date": "5/12/2021",
+      "episode": "103",
+      "topic": "Shahrit Prayers on the Day of the Berit Milah (Mosseri)",
+      "views": "421"
+    },
+    {
+      "Date": "5/5/2021",
+      "episode": "102",
+      "topic": "Tefilla BeSibbur: Grammar vs. Melodies (Harari)",
+      "views": "573"
+    },
+    {
+      "Date": "4/28/2021",
+      "episode": "101",
+      "topic": "Visiting Meron on Lag LaOmer (Arking)",
+      "views": "710"
+    },
+    {
+      "Date": "4/21/2021",
+      "episode": "100",
+      "topic": "When & Where to Have a Berit Milah (Mosseri)",
+      "views": "1049"
+    },
+    {
+      "Date": "4/14/2021",
+      "episode": "99",
+      "topic": "Tefilla BeSibbur: Shabbat Morning: Nishmat - End of Shahrit (Harari)",
+      "views": "482"
+    },
+    {
+      "Date": "4/7/2021",
+      "episode": "98",
+      "topic": "Customs Observed During the 'Omer (Arking)",
+      "views": "751"
+    },
+    {
+      "Date": "3/31/2021",
+      "episode": "97",
+      "topic": "Zohar Before the Berit Milah (Mosseri)",
+      "views": "1002"
+    },
+    {
+      "Date": "3/24/2021",
+      "episode": "96",
+      "topic": "Tefilla BeSibbur: Shabbat Nishmat Textual Customs (Harari)",
+      "views": "546"
+    },
+    {
+      "Date": "3/17/2021",
+      "episode": "95",
+      "topic": "The Bitter Lettuces for Maror and Korekh (Arking)",
+      "views": "605"
+    },
+    {
+      "Date": "3/10/2021",
+      "episode": "94",
+      "topic": "Introduction to Birth of a Baby Boy (Mosseri)",
+      "views": "1037"
+    },
+    {
+      "Date": "3/3/2021",
+      "episode": "93",
+      "topic": "Tefilla BeSibbur: Our Community Pizmonim Book: Shir Ushbaha Hallel veZimra (Harari)",
+      "views": "641"
+    },
+    {
+      "Date": "2/24/2021",
+      "episode": "92",
+      "topic": "The Purim Meal on a Friday (Arking)",
+      "views": "818"
+    },
+    {
+      "Date": "2/17/2021",
+      "episode": "91",
+      "topic": "Our Grandmother's Names and Their Meanings (Mosseri)",
+      "views": "930"
+    },
+    {
+      "Date": "2/10/2021",
+      "episode": "90",
+      "topic": "Tefilla Be'sibbur Shabbat Nishmat Hazzan / Qahal Interaction (Harari)",
+      "views": "473"
+    },
+    {
+      "Date": "2/3/2021",
+      "episode": "89",
+      "topic": "Zebed Habat- Naming a Baby Girl (Mosseri)",
+      "views": "888"
+    },
+    {
+      "Date": "1/27/2021",
+      "episode": "88",
+      "topic": "Reciting Shirat HaYam on Shabbat Shirah (Arking)",
+      "views": "440"
+    },
+    {
+      "Date": "1/20/2021",
+      "episode": "87",
+      "topic": "Tefilla BeSibbur: Shabbat Morning Zemirot Liturgy Customs (Harari)",
+      "views": "418"
+    },
+    {
+      "Date": "1/13/2021",
+      "episode": "86",
+      "topic": "Eating Fish with Dairy (Arking)",
+      "views": "714"
+    },
+    {
+      "Date": "1/6/2021",
+      "episode": "85",
+      "topic": "Naming a baby (Mosseri)",
+      "views": "813"
+    },
+    {
+      "Date": "12/30/2020",
+      "episode": "84",
+      "topic": "Tefilla BeSibbur: Shabbat Morning Zemirot (Harari)",
+      "views": "595"
+    },
+    {
+      "Date": "12/23/2020",
+      "episode": "83",
+      "topic": "Tefilin in Minhah of a Fast Day that Falls on Friday (Arking)",
+      "views": "593"
+    },
+    {
+      "Date": "12/16/2020",
+      "episode": "82",
+      "topic": "Introduction to Life Cycles (Mosseri)",
+      "views": "619"
+    },
+    {
+      "Date": "12/9/2020",
+      "episode": "81",
+      "topic": "Tefilla BeSibbur: Shabbat Morning- Vatitpallel Hanna- Hashem Melekh (Harari)",
+      "views": "331"
+    },
+    {
+      "Date": "12/2/2020",
+      "episode": "80",
+      "topic": "Birkat Kohanim in a House of Mourning (Arking)",
+      "views": "335"
+    },
+    {
+      "Date": "11/25/2020",
+      "episode": "79",
+      "topic": "Birkat HaMazon: Textual Variations (Mosseri)",
+      "views": "349"
+    },
+    {
+      "Date": "11/18/2020",
+      "episode": "78",
+      "topic": "Tefilla BeSibbur- Arbit of Shabbat, Part 2 (Harari)",
+      "views": "299"
+    },
+    {
+      "Date": "11/11/2020",
+      "episode": "77",
+      "topic": "Removing Shoes to Recite Birkat Kohanim (Arking)",
+      "views": "488"
+    },
+    {
+      "Date": "11/4/2020",
+      "episode": "76",
+      "topic": "Birkat HaMazon: Textual Additions (Mosseri)",
+      "views": "373"
+    },
+    {
+      "Date": "10/28/2020",
+      "episode": "75",
+      "topic": "Tefilla BeSibbur- Arbit of Shabbat, Part 1 (Harari)",
+      "views": "372"
+    },
+    {
+      "Date": "10/22/2020",
+      "episode": "74",
+      "topic": "Washing Hands Before Reciting Birkat Kohanim (Arking)",
+      "views": "395"
+    },
+    {
+      "Date": "10/15/2020",
+      "episode": "73",
+      "topic": "Birkat HaMazon: Zimmoon (Mosseri)",
+      "views": "426"
+    },
+    {
+      "Date": "10/8/2020",
+      "episode": "72",
+      "topic": "Tefilla BeSibbur- Friday Night Part 2- Qabbalat Shabbat (Harari)",
+      "views": "433"
+    },
+    {
+      "Date": "10/1/2020",
+      "episode": "71",
+      "topic": "Readings and Prayers for Hoshaana Rabba (Mosseri)",
+      "views": "333"
+    },
+    {
+      "Date": "9/24/2020",
+      "episode": "70",
+      "topic": "Lighting Candles for Yom Kippur (Arking)",
+      "views": "343"
+    },
+    {
+      "Date": "9/17/2020",
+      "episode": "69",
+      "topic": "Tefilla BeSibbur: Friday Night Part 1- Qabbalat Shabbat Overview & Shir Hashirim (Harari)",
+      "views": "263"
+    },
+    {
+      "Date": "9/10/2020",
+      "episode": "68",
+      "topic": "The Syrian Tradition Regarding the Shofar Sounds (Arking)",
+      "views": "362"
+    },
+    {
+      "Date": "9/3/2020",
+      "episode": "67",
+      "topic": "Rosh Hashanah Shofar Customs (Mosseri)",
+      "views": "288"
+    },
+    {
+      "Date": "8/27/2020",
+      "episode": "66",
+      "topic": "Tefilla BeSibbur: Rosh Hodesh - Shahrit / Musaf (Harari)",
+      "views": "387"
+    },
+    {
+      "Date": "8/20/2020",
+      "episode": "65",
+      "topic": "Selihot (Arking)",
+      "views": "301"
+    },
+    {
+      "Date": "8/13/2020",
+      "episode": "64",
+      "topic": "Yehi Shem Part 2 (Mosseri)",
+      "views": "388"
+    },
+    {
+      "Date": "8/6/2020",
+      "episode": "63",
+      "topic": "Tefilla BeSibbur: Rosh Hodesh Part 2 - Arbit (Harari)",
+      "views": "421"
+    },
+    {
+      "Date": "7/30/2020",
+      "episode": "62",
+      "topic": "Tefilla BeSibbur: Rosh Hodesh Part 1 - Barekhi Nafshi (Harari)",
+      "views": "451"
+    },
+    {
+      "Date": "7/23/2020",
+      "episode": "61",
+      "topic": "Meat Leftovers During the 9 Days (Arking)",
+      "views": "945"
+    },
+    {
+      "Date": "7/16/2020",
+      "episode": "60",
+      "topic": "Syrian & Egyptian Customs of 9 Days & Tisha BeAb (Mosseri)",
+      "views": "788"
+    },
+    {
+      "Date": "7/9/2020",
+      "episode": "59",
+      "topic": "The Three Weeks (Arking)",
+      "views": "518"
+    },
+    {
+      "Date": "7/2/2020",
+      "episode": "58",
+      "topic": "Tefillin on Minha of Fast Days (Mosseri)",
+      "views": "431"
+    },
+    {
+      "Date": "6/25/2020",
+      "episode": "57",
+      "topic": "Tefilla BeSibbur: Arbit (Harari)",
+      "views": "377"
+    },
+    {
+      "Date": "6/18/2020",
+      "episode": "56",
+      "topic": "Yehi Shem (Mosseri)",
+      "views": "512"
+    },
+    {
+      "Date": "6/11/2020",
+      "episode": "55",
+      "topic": "Birkat Kohanim: The Word Yebarekh-kha (Arking)",
+      "views": "482"
+    },
+    {
+      "Date": "6/4/2020",
+      "episode": "54",
+      "topic": "Tefilla BeSibbur: Minha (Harari)",
+      "views": "466"
+    },
+    {
+      "Date": "5/28/2020",
+      "episode": "53",
+      "topic": "Arbit and Qiddush on the First Night of Shabuot (Arking)",
+      "views": "379"
+    },
+    {
+      "Date": "5/21/2020",
+      "episode": "52",
+      "topic": "Azharot on Shabuot (Mosseri)",
+      "views": "346"
+    },
+    {
+      "Date": "5/14/2020",
+      "episode": "51",
+      "topic": "Tefilla BeSibbur: Sefirat HaOmer in Arbit (Harari)",
+      "views": "360"
+    },
+    {
+      "Date": "5/7/2020",
+      "episode": "50",
+      "topic": "Customs of Lag LaOmer (Arking)",
+      "views": "374"
+    },
+    {
+      "Date": "4/30/2020",
+      "episode": "49",
+      "topic": "The Hebrew Alphabet (Mosseri)",
+      "views": "683"
+    },
+    {
+      "Date": "4/23/2020",
+      "episode": "48",
+      "topic": "Tefilla BeSibbur: Qaddish - Customs (Harari)",
+      "views": "508"
+    },
+    {
+      "Date": "4/16/2020",
+      "episode": "47",
+      "topic": "Shaving on the Omer (Arking)",
+      "views": "769"
+    },
+    {
+      "Date": "4/9/2020",
+      "episode": "46",
+      "topic": "Misharotam (Mosseri)",
+      "views": "611"
+    },
+    {
+      "Date": "4/2/2020",
+      "episode": "45",
+      "topic": "Tefilla BeSibbur: Qaddish - Nosah (Harari)",
+      "views": "737"
+    },
+    {
+      "Date": "3/26/2020",
+      "episode": "44",
+      "topic": "Roasted Meat and the Shankbone on Pesah Night (Arking)",
+      "views": "564"
+    },
+    {
+      "Date": "3/19/2020",
+      "episode": "43",
+      "topic": "Rosh Hodesh Nisan: An Ancient Minhag (Mosseri)",
+      "views": "504"
+    },
+    {
+      "Date": "3/12/2020",
+      "episode": "42",
+      "topic": "Tefilla BeSibbur: Qaddish (Introduction) (Harari)",
+      "views": "737"
+    },
+    {
+      "Date": "3/5/2020",
+      "episode": "41",
+      "topic": "How to Roll a Megilah (Arking)",
+      "views": "473"
+    },
+    {
+      "Date": "2/27/2020",
+      "episode": "40",
+      "topic": "A Traditional Sephardic Purim (Mosseri)",
+      "views": "628"
+    },
+    {
+      "Date": "2/20/2020",
+      "episode": "39",
+      "topic": "Tefilla BeSibbur: Ketoret till End of Shahrit (Harari)",
+      "views": "528"
+    },
+    {
+      "Date": "2/13/2020",
+      "episode": "38",
+      "topic": "Qaddish and Mourners- Part 3 (Arking)",
+      "views": "416"
+    },
+    {
+      "Date": "2/6/2020",
+      "episode": "37",
+      "topic": "Tu Bishbat (Mosseri)",
+      "views": "554"
+    },
+    {
+      "Date": "1/30/2020",
+      "episode": "36",
+      "topic": "Tefilla BeSibbur: Tefilla leDavid - Shir Shel Yom (Harari)",
+      "views": "517"
+    },
+    {
+      "Date": "1/23/2020",
+      "episode": "35",
+      "topic": "Should a Mourner Be the Hazzan? (Arking)",
+      "views": "603"
+    },
+    {
+      "Date": "1/16/2020",
+      "episode": "34",
+      "topic": "Hoq LeYisrael (Mosseri)",
+      "views": "680"
+    },
+    {
+      "Date": "1/9/2020",
+      "episode": "33",
+      "topic": "Tefilla BeSibbur: Ashre - Shir Shel Yom (Harari)",
+      "views": "572"
+    },
+    {
+      "Date": "1/2/2020",
+      "episode": "32",
+      "topic": "Tefilin in Minha on a Fast Day (Arking)",
+      "views": "548"
+    },
+    {
+      "Date": "12/26/2019",
+      "episode": "31",
+      "topic": "A Traditional Sephardic Hanukkah (Mosseri)",
+      "views": "742"
+    },
+    {
+      "Date": "12/19/2019",
+      "episode": "30",
+      "topic": "Torah Reading- Part 2 (Harari)",
+      "views": "578"
+    },
+    {
+      "Date": "12/12/2019",
+      "episode": "29",
+      "topic": "Qaddish and Mourners- Part 2 (Arking)",
+      "views": "415"
+    },
+    {
+      "Date": "12/5/2019",
+      "episode": "28",
+      "topic": "Aleppo's Spanish Hanukkah Custom (Mosseri)",
+      "views": "1053"
+    },
+    {
+      "Date": "11/28/2019",
+      "episode": "27",
+      "topic": "Torah Reading (Harari)",
+      "views": "667"
+    },
+    {
+      "Date": "11/21/2019",
+      "episode": "26",
+      "topic": "Qaddish and Mourners (Arking)",
+      "views": "649"
+    },
+    {
+      "Date": "11/14/2019",
+      "episode": "25",
+      "topic": "Shir HaShirim on Friday Night (Mosseri)",
+      "views": "576"
+    },
+    {
+      "Date": "11/7/2019",
+      "episode": "24",
+      "topic": "Shahrit Tahanun (Harari)",
+      "views": "626"
+    },
+    {
+      "Date": "10/31/2019",
+      "episode": "23",
+      "topic": "Folding a Talet on Shabbat (Arking)",
+      "views": "664"
+    },
+    {
+      "Date": "10/24/2019",
+      "episode": "22",
+      "topic": "Customs of Daytime Qiddush (Mosseri)",
+      "views": "595"
+    },
+    {
+      "Date": "10/17/2019",
+      "episode": "21",
+      "topic": "Hazara (Harari)",
+      "views": "582"
+    },
+    {
+      "Date": "10/10/2019",
+      "episode": "20",
+      "topic": "Lesheb BaSukkah & Hoshaanot (Arking)",
+      "views": "378"
+    },
+    {
+      "Date": "10/3/2019",
+      "episode": "19",
+      "topic": "Ereb Yom Kippur (Mosseri)",
+      "views": "573"
+    },
+    {
+      "Date": "9/26/2019",
+      "episode": "18",
+      "topic": "Amida (Harari)",
+      "views": "479"
+    },
+    {
+      "Date": "9/19/2019",
+      "episode": "17",
+      "topic": "Rosh Hashanah Honey or Sugar? (Arking)",
+      "views": "696"
+    },
+    {
+      "Date": "9/12/2019",
+      "episode": "16",
+      "topic": "Rosh Hashanah Symbolic Foods (Mosseri)",
+      "views": "740"
+    },
+    {
+      "Date": "9/5/2019",
+      "episode": "15",
+      "topic": "Yoser- Amida (Harari)",
+      "views": "755"
+    },
+    {
+      "Date": "8/29/2019",
+      "episode": "14",
+      "topic": "Shir Hashirim & Qabbalat Shabbat (Arking)",
+      "views": "677"
+    },
+    {
+      "Date": "8/22/2019",
+      "episode": "13",
+      "topic": "Hatarat Nedarim (Mosseri)",
+      "views": "700"
+    },
+    {
+      "Date": "8/15/2019",
+      "episode": "12",
+      "topic": "Shahrit Zemirot (Harari)",
+      "views": "680"
+    },
+    {
+      "Date": "8/8/2019",
+      "episode": "11",
+      "topic": "Tefillin on Tish'a BeAb (Arking)",
+      "views": "795"
+    },
+    {
+      "Date": "8/1/2019",
+      "episode": "10",
+      "topic": "Tish'a BeAb (Mosseri)",
+      "views": "841"
+    },
+    {
+      "Date": "7/25/2019",
+      "episode": "9",
+      "topic": "Qorbanot (Harari)",
+      "views": "971"
+    },
+    {
+      "Date": "7/22/2019",
+      "episode": "8.5",
+      "topic": "17 Tammuz Panel with Tanach Study (All 3)",
+      "views": "760"
+    },
+    {
+      "Date": "7/18/2019",
+      "episode": "8",
+      "topic": "Hamossi (Arking)",
+      "views": "955"
+    },
+    {
+      "Date": "7/11/2019",
+      "episode": "7",
+      "topic": "Berakhot Between Qiddush and Netilat Yadayim (Mosseri)",
+      "views": "1027"
+    },
+    {
+      "Date": "7/4/2019",
+      "episode": "6",
+      "topic": "Talet-Tefillin & Qadesh Li (Harari)",
+      "views": "1532"
+    },
+    {
+      "Date": "6/27/2019",
+      "episode": "5",
+      "topic": "Qiddush on Friday Night (Arking)",
+      "views": "1152"
+    },
+    {
+      "Date": "6/20/2019",
+      "episode": "4",
+      "topic": "Candle Lighting & Qabbalat Shabbat (Mosseri)",
+      "views": "1535"
+    },
+    {
+      "Date": "6/13/2019",
+      "episode": "3",
+      "topic": "Introduction (Tefilla be'sibbur) (Harari)",
+      "views": "1581"
+    },
+    {
+      "Date": "6/6/2019",
+      "episode": "2",
+      "topic": "Dairy on Shabuot? (Arking)",
+      "views": "1092"
+    },
+    {
+      "Date": "5/30/2019",
+      "episode": "1",
+      "topic": "Rituals of Shabuot (Mosseri)",
+      "views": "1396"
+    },
+    {
+      "Date": "5/30/2019",
+      "episode": "Intro",
+      "topic": "Intro Video (All 3)",
+      "views": "1916"
+    }
+  ]
+}
