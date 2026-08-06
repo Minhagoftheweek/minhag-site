@@ -110,6 +110,26 @@ def run():
                 pages += 1
                 page_url = data.get("paging", {}).get("next")
             log(f"Media count via true id {true_id}: {total} items across {pages} pages (vs media_count field {adata.get('media_count')})")
+
+        # Test the separate /reels edge, which some account setups expose
+        # independently from /media
+        for test_id in {account_id, true_id} - {None}:
+            log(f"Testing /{test_id}/reels edge...")
+            reels_url = (f"https://graph.instagram.com/{test_id}/reels"
+                        f"?fields=id,media_type,timestamp,permalink&limit=50"
+                        f"&access_token={urllib.parse.quote(access_token)}")
+            try:
+                rdata = http_get_json(reels_url)
+                if "error" in rdata:
+                    log(f"  /reels error: {json.dumps(rdata['error'])[:500]}")
+                else:
+                    items = rdata.get("data", [])
+                    log(f"  /reels returned {len(items)} items on first page. Sample: {json.dumps(items[:3])}")
+                    has_next = bool(rdata.get("paging", {}).get("next"))
+                    log(f"  has more pages: {has_next}")
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", "replace")
+                log(f"  /reels HTTPError: {e.code} {e.reason} — body: {body[:500]}")
         return
 
     if lookup_url:
