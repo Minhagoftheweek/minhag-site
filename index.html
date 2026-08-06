@@ -32,6 +32,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#184878;--nd:#0f2d49;--hp:#8b54b2;--hpl:#f0e6fa;--hpd:#6b3d8a;--cream:#f5f7fa;--w:#fff;--bd:#d0dae8;--tx:#1a2a3a;--mu:#5a7090;--green:#2a9d5c}
+[data-theme="dark"]{--navy:#5a8fd6;--nd:#3d6bb0;--hp:#b98ee0;--hpl:#241c33;--hpd:#d1a8f0;--cream:#12161f;--w:#1a2030;--bd:#333e52;--tx:#e6ebf5;--mu:#9aa8c0;--green:#4ac07c}
+[data-theme="dark"] nav{background:var(--w);box-shadow:0 2px 12px rgba(0,0,0,.4)}
+[data-theme="dark"] img{filter:brightness(.92)}
+.theme-toggle{border:none;background:none;cursor:pointer;padding:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .12s}
+.theme-toggle:hover{background:var(--hpl)}
+.theme-toggle svg{width:20px;height:20px;stroke:var(--navy);fill:none;stroke-width:2}
+[data-theme="dark"] .sun-icon{display:none}
+[data-theme="light"] .moon-icon,:root:not([data-theme]) .moon-icon{display:none}
 *{box-sizing:border-box;margin:0;padding:0}
 html{overflow-x:hidden}
 body{font-family:Arial,Helvetica,sans-serif;background:var(--cream);color:var(--tx);line-height:1.5;display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden}
@@ -275,6 +283,19 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .card:hover .play-ico{transform:scale(1.1)}
 .ep-num{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.62);color:#fff;font-size:.58rem;padding:1px 5px;border-radius:3px;font-weight:700}
 .watched-badge{position:absolute;bottom:5px;right:5px;width:16px;height:16px;border-radius:50%;background:#2e9e5b;color:#fff;font-size:.6rem;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.pl-toggle{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:.8rem;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.4);border:none;cursor:pointer;transition:background .12s}
+.pl-toggle:hover{background:var(--hp)}
+.pl-toggle.on{background:var(--hp)}
+.pl-row{display:flex;align-items:center;gap:.9rem;padding:.7rem 0;border-bottom:1px solid var(--bd)}
+.pl-row .card-title{font-size:.9rem;font-weight:600;color:var(--tx)}
+.pl-row .card-date{font-size:.72rem;color:var(--mu);margin-top:.15rem}
+.pl-row-thumb{width:80px;height:45px;flex-shrink:0;border-radius:6px;overflow:hidden;cursor:pointer;background:var(--hpl)}
+.pl-row-thumb img{width:100%;height:100%;object-fit:cover}
+.pl-row-body{flex:1;min-width:0;cursor:pointer}
+.pl-row-remove{border:none;background:none;color:var(--mu);cursor:pointer;font-size:1.1rem;padding:.3rem .5rem}
+.pl-row-remove:hover{color:#c0392b}
+.pl-share-bar{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.pl-empty{color:var(--mu);font-size:.85rem;padding:1.5rem 0;text-align:center}
 .ep-who{position:absolute;top:5px;right:5px;font-size:.58rem;padding:1px 5px;border-radius:3px;font-weight:600;background:rgba(0,0,0,.58);color:#fff;cursor:pointer;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid rgba(255,255,255,.1)}
 .ep-who:hover{background:rgba(139,84,178,.8)}
 .card-body{padding:.58rem .65rem;flex:1;display:flex;flex-direction:column}
@@ -322,6 +343,7 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .mini-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:.62rem;padding:.25rem .5rem;font-family:Arial,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-btns{display:flex;gap:.5rem;align-items:center}
 .dl-btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--tx)}
+.dl-btn-active{background:var(--hp);border-color:var(--hp);color:#fff}
 .dl-btn[disabled]{pointer-events:none}
 a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .vid img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
@@ -387,6 +409,10 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
   <button class="hamburger" onclick="openDrawer()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
+  <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+    <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+    <svg class="moon-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+  </button>
 </nav>
 
 <div class="overlay" id="overlay" onclick="closeDrawer()" ontouchstart="closeDrawer()"></div>
@@ -397,6 +423,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
   </div>
   <div class="drawer-body">
     <button class="drawer-btn" onclick="closeDrawer();showHome()">All Episodes</button>
+    <button class="drawer-btn" onclick="closeDrawer();showPlaylist()">My Playlist <span id="drawerPlaylistCt"></span></button>
     <button class="drawer-btn" onclick="closeDrawer();showPage('opp')">Sponsorship Opportunities</button>
     <a class="drawer-btn" href="mailto:minhag@scaupdates.org?subject=Episode%20Suggestion" onclick="closeDrawer()">Suggest Episode Topic</a>
     <a class="drawer-btn" href="https://us.list-manage.com/OksJiO3RmfJ?e=fb9fa2429c&c2id=14219a4025956c69c2f3b48f8c556d8d" target="_blank" onclick="closeDrawer()">Subscribe to Email List</a>
@@ -623,6 +650,11 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
       <div id="epContent"></div>
     </div>
 
+    <div class="ep-pg" id="playlistPage" style="display:none">
+      <button class="back-btn" onclick="showHome()">&#8592; Back to episodes</button>
+      <div id="playlistContent"></div>
+    </div>
+
     <!-- SPONSORSHIP PAGE — full width -->
     <div class="full-pg" id="oppPage">
       <button class="back-btn" onclick="showHome()">&#8592; Back</button>
@@ -713,6 +745,27 @@ In honor of the wedding of Danny &amp; Sarah Sutton by Ralph &amp; Lauren Franco
 </footer>
 
 <script>
+// ── DARK MODE ────────────────────────────────────────────────────────────
+// Persisted locally per-visitor; defaults to the visitor's OS-level preference
+// on first visit, then remembers whatever they choose after that.
+const THEME_KEY='scaMinhagTheme';
+function getPreferredTheme(){
+  try{
+    const saved=localStorage.getItem(THEME_KEY);
+    if(saved==='dark'||saved==='light')return saved;
+  }catch(e){}
+  return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+}
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme',theme);
+  try{localStorage.setItem(THEME_KEY,theme);}catch(e){}
+}
+function toggleTheme(){
+  const current=document.documentElement.getAttribute('data-theme')==='dark'?'dark':'light';
+  applyTheme(current==='dark'?'light':'dark');
+}
+applyTheme(getPreferredTheme());
+
 const NAMES={Mosseri:'Joseph Mosseri',Arking:'Morris Arking',Harari:'Joey Harari','All 3':'Joseph Mosseri, Morris Arking & Joey Harari','Harari ft Arking':'Joey Harari & Morris Arking'};
 const PRESENTER_EMAILS={Mosseri:'joseph.mosseri@verizon.net',Arking:'morris@arcadeorder.com',Harari:'joey@joeyharari.com'};
 function getPresenterCcList(w){
@@ -1070,6 +1123,17 @@ function routeSponsorship(){navigate('/sponsorship');}
 function routeQuestion(){navigate('/question');}
 
 function applyRoute(){
+  const params=new URLSearchParams(location.search);
+  const plParam=params.get('playlist');
+  if(plParam){
+    const ids=plParam.split(',').map(s=>parseInt(s,10)).filter(n=>!isNaN(n));
+    showHome(false);
+    document.getElementById('heroWrap').style.display='none';
+    document.getElementById('listView').style.display='none';
+    document.getElementById('playlistPage').style.display='block';
+    renderPlaylistPage(ids);
+    return;
+  }
   let path=location.pathname;
   if(!path||path==='/'){
     // legacy hash links (e.g. old #ep-297 shares) — redirect to the new URL
@@ -1288,6 +1352,7 @@ function showHome(push){
   closeAllCats(null);
   setActive(document.getElementById('allBtn'));
   pg=1; hidePgs();
+  document.getElementById('playlistPage').style.display='none';
   document.getElementById('listView').style.display='block';
   document.getElementById('heroWrap').style.display='block';
   render();
@@ -1523,10 +1588,12 @@ function render(){
       :`<div class="thumb-ph"><div class="play-ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div></div>`;
     const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
     const watchedBadge=isWatched(E.id(ep))?'<span class="watched-badge" title="Watched">&#10003;</span>':'';
+    const plOn=isInPlaylist(E.id(ep));
     return `<div class="card" onclick="openEp(${E.id(ep)})">
       <div class="thumb">${th}
         <span class="ep-num">${numDisplay}</span>
         ${watchedBadge}
+        <button class="pl-toggle ${plOn?'on':''}" onclick="event.stopPropagation();togglePlaylist(${E.id(ep)})" title="${plOn?'Remove from playlist':'Add to playlist'}">${plOn?'&#10003;':'+'}</button>
       </div>
       <div class="card-body">
         <div class="cat-tags">${catHtml}</div>
@@ -1563,6 +1630,7 @@ function openEp(id,push){
   document.getElementById('epPage').classList.add('show');
   document.getElementById('heroWrap').style.display='none';
   document.getElementById('listView').style.display='none';
+  document.getElementById('playlistPage').style.display='none';
   const catHtml=E.c(ep).map((cid,i)=>{
     const lbl=getCL(cid);
     const sep=i<E.c(ep).length-1?'<span class="ep-cat-sep">&nbsp;&middot;&nbsp;</span>':'';
@@ -1587,6 +1655,8 @@ function openEp(id,push){
   const copyBtn=txt
     ?`<button class="dl-btn dl-btn-ghost" onclick="copyTranscript(${id})">Copy Text</button>`
     :'';
+  const plOnEp=isInPlaylist(id);
+  const playlistBtn=`<button class="dl-btn ${plOnEp?'dl-btn-active':'dl-btn-ghost'}" id="epPlaylistBtn" onclick="togglePlaylist(${id})">${plOnEp?'\u2713 In Playlist':'+ Add to Playlist'}</button>`;
   const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   document.getElementById('epContent').innerHTML=`
     <div class="ep-cats-hdr">${catHtml}</div>
@@ -1605,7 +1675,7 @@ function openEp(id,push){
     <div class="tx-card">
       <div class="tx-hdr">
         <h3>Episode Transcript</h3>
-        <div class="tx-btns">${copyBtn}${pdfBtn}</div>
+        <div class="tx-btns">${copyBtn}${pdfBtn}${playlistBtn}</div>
       </div>
       ${txHtml}
     </div>
@@ -1918,6 +1988,124 @@ function renderContinueWatching(){
   </div>`;
 }
 
+// ── PLAYLISTS ────────────────────────────────────────────────────────────
+// The visitor's own playlist is stored locally in their browser (an ordered
+// list of episode ids). "Share Playlist" builds a URL with those ids in the
+// query string (?playlist=1,5,20) so anyone opening that link sees the same
+// set of episodes and can save it as their own — nothing is ever sent to a
+// server, the whole playlist lives in the URL itself.
+const PLAYLIST_KEY='scaMinhagPlaylist';
+function getPlaylist(){
+  try{
+    const raw=localStorage.getItem(PLAYLIST_KEY);
+    return raw?JSON.parse(raw):[];
+  }catch(e){return [];}
+}
+function savePlaylist(ids){
+  try{localStorage.setItem(PLAYLIST_KEY,JSON.stringify(ids));}catch(e){}
+  updateDrawerPlaylistCount();
+}
+function isInPlaylist(epId){return getPlaylist().includes(epId);}
+function togglePlaylist(epId){
+  const ids=getPlaylist();
+  const idx=ids.indexOf(epId);
+  if(idx===-1)ids.push(epId);else ids.splice(idx,1);
+  savePlaylist(ids);
+  render(); // refresh the +/checkmark badges on visible cards
+  if(document.getElementById('playlistPage').style.display!=='none')renderPlaylistPage();
+  if(currentEpId===epId)renderPlaylistToggleOnEpPage();
+}
+function removeFromPlaylist(epId){
+  savePlaylist(getPlaylist().filter(id=>id!==epId));
+  render();
+  renderPlaylistPage();
+}
+function clearPlaylist(){
+  if(!confirm('Clear your whole playlist?'))return;
+  savePlaylist([]);
+  render();
+  renderPlaylistPage();
+}
+function updateDrawerPlaylistCount(){
+  const el=document.getElementById('drawerPlaylistCt');
+  if(!el)return;
+  const n=getPlaylist().length;
+  el.textContent=n?`(${n})`:'';
+}
+function renderPlaylistToggleOnEpPage(){
+  const btn=document.getElementById('epPlaylistBtn');
+  if(!btn)return;
+  const on=isInPlaylist(currentEpId);
+  btn.className='dl-btn'+(on?' dl-btn-active':' dl-btn-ghost');
+  btn.textContent=on?'\u2713 In Playlist':'+ Add to Playlist';
+}
+function copyPlaylistLink(ids){
+  const url=location.origin+'/?playlist='+ids.join(',');
+  const done=()=>{
+    const btn=document.getElementById('plShareBtn');
+    if(btn){const old=btn.textContent;btn.textContent='Link Copied!';setTimeout(()=>btn.textContent=old,1800);}
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done).catch(()=>prompt('Copy this link:',url));
+  }else{
+    prompt('Copy this link:',url);
+  }
+}
+function playlistRowHtml(ep,opts){
+  opts=opts||{};
+  const thumbUrl=THUMBS[E.id(ep)]||'';
+  const th=thumbUrl?`<img src="${thumbUrl}" alt="">`:'';
+  const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+  const removeBtn=opts.onRemove?`<button class="pl-row-remove" onclick="event.stopPropagation();${opts.onRemove}(${E.id(ep)})" title="Remove">&#10005;</button>`:'';
+  return `<div class="pl-row">
+    <div class="pl-row-thumb" onclick="openEp(${E.id(ep)})">${th}</div>
+    <div class="pl-row-body" onclick="openEp(${E.id(ep)})">
+      <div class="card-title">${numDisplay}: ${E.t(ep)}</div>
+      <div class="card-date">${E.dt(ep)} &middot; ${fn(E.w(ep))}</div>
+    </div>
+    ${removeBtn}
+  </div>`;
+}
+function showPlaylist(){
+  hidePgs();
+  document.getElementById('heroWrap').style.display='none';
+  document.getElementById('listView').style.display='none';
+  document.getElementById('epPage').classList.remove('show');
+  document.getElementById('oppPage')&&document.getElementById('oppPage').classList.remove('show');
+  document.getElementById('questionPage')&&document.getElementById('questionPage').classList.remove('show');
+  document.getElementById('playlistPage').style.display='block';
+  renderPlaylistPage();
+  document.getElementById('contentArea').scrollIntoView({behavior:'smooth'});
+}
+function renderPlaylistPage(sharedIds){
+  const wrap=document.getElementById('playlistContent');
+  const isShared=Array.isArray(sharedIds);
+  const ids=isShared?sharedIds:getPlaylist();
+  const eps=ids.map(id=>EPS.find(x=>E.id(x)===id)).filter(Boolean);
+  const heading=isShared?'Shared Playlist':'My Playlist';
+  let body;
+  if(!eps.length){
+    body=`<div class="pl-empty">${isShared?'This shared playlist link didn\u2019t contain any valid episodes.':'Your playlist is empty. Tap the + on any episode to add it here.'}</div>`;
+  }else{
+    body=eps.map(ep=>playlistRowHtml(ep,isShared?{}:{onRemove:'removeFromPlaylist'})).join('');
+  }
+  const shareBar=eps.length?`<div class="pl-share-bar">
+      <button class="dl-btn" id="plShareBtn" onclick="copyPlaylistLink([${ids.join(',')}])">Share Playlist Link</button>
+      ${isShared?`<button class="dl-btn dl-btn-ghost" onclick="importSharedPlaylist([${ids.join(',')}])">Save to My Playlist</button>`
+                :`<button class="dl-btn dl-btn-ghost" onclick="clearPlaylist()">Clear Playlist</button>`}
+    </div>`:'';
+  wrap.innerHTML=`<h2 style="margin-bottom:1rem">${heading} <span class="ep-ct">${eps.length} episode${eps.length===1?'':'s'}</span></h2>
+    ${shareBar}
+    <div class="pl-list">${body}</div>`;
+}
+function importSharedPlaylist(ids){
+  const mine=getPlaylist();
+  const merged=[...mine];
+  ids.forEach(id=>{if(!merged.includes(id))merged.push(id);});
+  savePlaylist(merged);
+  showPlaylist();
+}
+
 // ── RELATED EPISODES ──────────────────────────────────────────────────────
 // Surfaces other episodes sharing a subcategory with the one just watched,
 // rather than only offering the strict chronological next episode.
@@ -2046,6 +2234,7 @@ function hidePgs(){
 function showPage(p,push){
   document.getElementById('heroWrap').style.display='none';
   document.getElementById('listView').style.display='none';
+  document.getElementById('playlistPage').style.display='none';
   hidePgs();
   document.getElementById(p+'Page').classList.add('show');
   window.scrollTo({top:0,behavior:'smooth'});
@@ -2212,6 +2401,7 @@ buildSB();
 buildMobileCatBar();
 render();
 renderContinueWatching();
+updateDrawerPlaylistCount();
 // Load whatever page the URL points to (episode / category / presenter / etc.)
 // so shared and bookmarked links, and the browser back/forward buttons, work.
 applyRoute();
