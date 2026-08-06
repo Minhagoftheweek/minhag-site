@@ -1,4 +1,4 @@
-Run at 2026-08-06T01:09:29.341348+00:00
+Run at 2026-08-06T01:11:32.957180+00:00
 Exit code: 0
 
 access_token present: True (len=186)
@@ -31,6 +31,14 @@ Scanning 2019-01-01 (1546300800) to 2022-01-01 (1640995200)...
   page 24: got 50 items
   page 25: got 44 items
 Scanned 1244 total posts across 25 page(s) in this date range.
+media_type breakdown: {'CAROUSEL_ALBUM': 339, 'IMAGE': 770, 'VIDEO': 135}
+Near-miss count (caption mentions 'minhag' but hashtag not matched): 1
+  NEAR-MISS id=17843470735645020 type=CAROUSEL_ALBUM date=2019-09-09 caption='MUST WATCH! When Past President of Beth Torah, Jeffrey Dweck approached us asking if he can make a video testimonial about our recent initiative "SCA Minhag of the Week" we asked him what he had to sa'
+Posts with exact hashtag match (any media_type): 4
+  TAG-MATCH id=17886269584523421 type=VIDEO date=2020-04-02
+  TAG-MATCH id=18109310560075860 type=IMAGE date=2019-12-24
+  TAG-MATCH id=18088854439037613 type=VIDEO date=2019-07-23
+  TAG-MATCH id=17860802011441366 type=IMAGE date=2019-07-01
 Found 2 tagged video/reel posts. Fetching view counts...
   view count fetch failed for 17886269584523421: HTTP Error 400: Bad Request
   view count fetch failed for 18088854439037613: HTTP Error 400: Bad Request
