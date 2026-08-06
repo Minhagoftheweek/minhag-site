@@ -1,8 +1,8 @@
 {
-  "total_views": 310725,
+  "total_views": 310726,
   "breakdown": {
     "youtube": {
-      "views": 131174,
+      "views": 131175,
       "video_count": 305
     },
     "sproutvideo": {
@@ -14,5 +14,5 @@
       "note": "125 tagged videos indexed total (0 newly found this run); full history scan complete (walked back to 2015); NEW matches found during backfill this run (by type): {}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
     }
   },
-  "updated_at": "2026-08-06T01:12:50.352957+00:00"
+  "updated_at": "2026-08-06T01:17:33.725625+00:00"
 }
