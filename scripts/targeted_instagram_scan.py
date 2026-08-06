@@ -77,6 +77,20 @@ def run():
     log(f"access_token present: {bool(access_token)} (len={len(access_token) if access_token else 0})")
     log(f"account_id: {account_id!r}")
 
+    check_account = os.environ.get("CHECK_ACCOUNT")
+    if check_account:
+        log("=== ACCOUNT MEDIA_COUNT CHECK ===")
+        url = (f"https://graph.instagram.com/{account_id}"
+               f"?fields=id,username,media_count"
+               f"&access_token={urllib.parse.quote(access_token)}")
+        try:
+            adata = http_get_json(url)
+            log(f"Account info: {json.dumps(adata, indent=2)}")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", "replace")
+            log(f"HTTPError: {e.code} {e.reason} — body: {body[:1000]}")
+        return
+
     if lookup_url:
         log(f"=== ONE-OFF LOOKUP MODE (permalink match) for {lookup_url} ===")
         target = lookup_url.rstrip("/")
