@@ -6,15 +6,20 @@ on:
   workflow_dispatch:
     inputs:
       lookup_post_url:
-        description: 'Optional: Instagram post URL to resolve via oEmbed (one-off lookup, skips normal scan)'
+        description: 'Optional: Instagram post URL to resolve via permalink match (one-off lookup, skips normal jobs)'
         required: false
         default: ''
+      run_full_export:
+        description: 'Run full export of every post + view counts (resumable, set to true)'
+        required: false
+        default: 'false'
 
 permissions:
   contents: write
 
 jobs:
   update-views:
+    if: github.event_name == 'schedule' || github.event.inputs.run_full_export != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -52,7 +57,7 @@ jobs:
           fi
 
   targeted-scan:
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_full_export != 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -81,6 +86,44 @@ jobs:
           git add data/instagram-targeted-scan.csv data/instagram-targeted-scan-log.txt
           if ! git diff --cached --quiet; then
             git commit -m "Targeted 2019-2021 Instagram scan results + log"
+            for i in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main && git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 3
+            done
+          else
+            echo "No results to commit."
+          fi
+
+  full-export:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_full_export == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run full export (resumable)
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
+          TIME_BUDGET_SECONDS: '900'
+        run: python scripts/full_export_scan.py
+        continue-on-error: true
+
+      - name: Commit and push export progress
+        if: always()
+        run: |
+          git config user.name "view-count-bot"
+          git config user.email "actions@github.com"
+          git add data/full-export-state.json data/full-export.csv data/full-export-log.txt
+          if ! git diff --cached --quiet; then
+            git commit -m "Full export progress update"
             for i in 1 2 3 4 5; do
               git fetch origin main
               git rebase origin/main && git push && break
