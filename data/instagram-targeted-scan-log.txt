@@ -1,7 +1,17 @@
-Run at 2026-08-06T01:17:24.332631+00:00
+Run at 2026-08-06T01:20:55.952905+00:00
 Exit code: 0
 
 access_token present: True (len=186)
 account_id: '17841400272376865'
-=== ONE-OFF LOOKUP MODE for https://www.instagram.com/tv/ByGnzvogS9_/ ===
-oEmbed HTTPError: 400 Bad Request — body: {"error":{"message":"Invalid OAuth access token - Cannot parse access token","type":"OAuthException","code":190,"fbtrace_id":"ArT0Muxg-4XOYb4ycdGkv9r"}}
+=== ONE-OFF LOOKUP MODE (permalink match) for https://www.instagram.com/tv/ByGnzvogS9_/ ===
+  ...10 pages, 500 items so far
+  ...20 pages, 1000 items so far
+  ...30 pages, 1500 items so far
+  ...40 pages, 2000 items so far
+  ...50 pages, 2500 items so far
+  ...60 pages, 3000 items so far
+  ...70 pages, 3500 items so far
+  ...80 pages, 4000 items so far
+Scanned 4012 total posts across 81 page(s) (full history, no date filter).
+NO MATCH by exact permalink. Showing any permalinks containing similar shortcode fragment:
+Total items with a 'tv' or 'reel' style permalink: 578
