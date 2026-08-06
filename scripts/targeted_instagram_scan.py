@@ -11,17 +11,29 @@ Required environment variables:
   INSTAGRAM_BUSINESS_ACCOUNT_ID
   SCAN_SINCE_DATE   (YYYY-MM-DD, inclusive)
   SCAN_UNTIL_DATE   (YYYY-MM-DD, exclusive)
+
+Always writes data/instagram-targeted-scan-log.txt with full run output,
+including any traceback, so results are inspectable via the GitHub Contents
+API even when Actions log storage isn't reachable.
 """
 import csv
 import json
 import os
 import sys
+import traceback
 import urllib.request
 import urllib.parse
 import urllib.error
 from datetime import datetime, timezone
 
 HASHTAG = "#scaminhagoftheweek"
+
+LOG_LINES = []
+
+
+def log(msg):
+    print(msg)
+    LOG_LINES.append(str(msg))
 
 
 def http_get_json(url):
@@ -39,25 +51,29 @@ def fetch_media_view_count(media_id, access_token):
         values = idata.get("data", [])
         if values:
             return int(values[0].get("values", [{}])[0].get("value", 0))
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
-        pass
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+        log(f"  view count fetch failed for {media_id}: {e}")
     return None
 
 
-def main():
+def run():
     access_token = os.environ.get("INSTAGRAM_ACCESS_TOKEN")
     account_id = os.environ.get("INSTAGRAM_BUSINESS_ACCOUNT_ID")
     since_date = os.environ.get("SCAN_SINCE_DATE")
     until_date = os.environ.get("SCAN_UNTIL_DATE")
 
+    log(f"access_token present: {bool(access_token)} (len={len(access_token) if access_token else 0})")
+    log(f"account_id: {account_id!r}")
+    log(f"since_date: {since_date!r}  until_date: {until_date!r}")
+
     if not all([access_token, account_id, since_date, until_date]):
-        print("Missing one of: INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_BUSINESS_ACCOUNT_ID, SCAN_SINCE_DATE, SCAN_UNTIL_DATE", file=sys.stderr)
+        log("Missing one of: INSTAGRAM_ACCESS_TOKEN, INSTAGRAM_BUSINESS_ACCOUNT_ID, SCAN_SINCE_DATE, SCAN_UNTIL_DATE")
         sys.exit(1)
 
     since_ts = int(datetime.strptime(since_date, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
     until_ts = int(datetime.strptime(until_date, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp())
 
-    print(f"Scanning {since_date} to {until_date}...")
+    log(f"Scanning {since_date} ({since_ts}) to {until_date} ({until_ts})...")
 
     all_items = []
     page_url = (f"https://graph.instagram.com/{account_id}/media"
@@ -68,21 +84,29 @@ def main():
     while page_url and pages < 100:
         try:
             data = http_get_json(page_url)
-        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
-            print(f"Network error after {pages} page(s): {e}", file=sys.stderr)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode("utf-8", "replace")
+            log(f"HTTPError after {pages} page(s): {e.code} {e.reason} — body: {body[:1000]}")
+            break
+        except (urllib.error.URLError, TimeoutError) as e:
+            log(f"Network error after {pages} page(s): {e}")
+            break
+        if "error" in data:
+            log(f"API returned error payload after {pages} page(s): {json.dumps(data['error'])[:1000]}")
             break
         items = data.get("data", [])
+        log(f"  page {pages + 1}: got {len(items)} items")
         all_items.extend(items)
         pages += 1
         page_url = data.get("paging", {}).get("next")
 
-    print(f"Scanned {len(all_items)} total posts across {pages} page(s) in this date range.")
+    log(f"Scanned {len(all_items)} total posts across {pages} page(s) in this date range.")
 
     matches = [m for m in all_items
                if m.get("media_type") in ("VIDEO", "REELS")
                and HASHTAG in (m.get("caption") or "").lower()]
 
-    print(f"Found {len(matches)} tagged video/reel posts. Fetching view counts...")
+    log(f"Found {len(matches)} tagged video/reel posts. Fetching view counts...")
 
     rows = []
     for m in matches:
@@ -102,7 +126,26 @@ def main():
         w.writeheader()
         w.writerows(rows)
 
-    print(f"Wrote {len(rows)} rows to data/instagram-targeted-scan.csv")
+    log(f"Wrote {len(rows)} rows to data/instagram-targeted-scan.csv")
+
+
+def main():
+    exit_code = 0
+    try:
+        run()
+    except SystemExit as e:
+        exit_code = e.code if isinstance(e.code, int) else 1
+    except Exception:
+        log("UNCAUGHT EXCEPTION:")
+        log(traceback.format_exc())
+        exit_code = 1
+    finally:
+        os.makedirs("data", exist_ok=True)
+        with open("data/instagram-targeted-scan-log.txt", "w") as f:
+            f.write(f"Run at {datetime.now(timezone.utc).isoformat()}\n")
+            f.write(f"Exit code: {exit_code}\n\n")
+            f.write("\n".join(LOG_LINES))
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":
