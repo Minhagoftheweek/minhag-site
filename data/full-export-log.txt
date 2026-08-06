@@ -1,8 +1,0 @@
-Run at 2026-08-06T01:54:35.537351+00:00
-Exit code: 0
-
-Loaded state: 4012 items known, pagination_done=True, views_done=False
-80 video/reel items still need view counts.
-  fetched 50 view counts this run...
-Fetched 80 view counts this run. Remaining: 0. views_done=True
-Wrote 4012 rows to data/full-export.csv
