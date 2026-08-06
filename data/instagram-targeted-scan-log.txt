@@ -1,4 +1,4 @@
-Run at 2026-08-06T02:17:09.806098+00:00
+Run at 2026-08-06T02:49:43.048129+00:00
 Exit code: 0
 
 access_token present: True (len=186)
@@ -9,9 +9,10 @@ Account info via configured id 17841400272376865: {
   "username": "sca_updates",
   "media_count": 4818
 }
-IDs differ: configured=17841400272376865 vs true=27866966316301258. Testing /media count via true id...
-Media count via true id 27866966316301258: 4012 items across 81 pages (vs media_count field 4818)
-Testing /27866966316301258/reels edge...
-  /reels HTTPError: 400 Bad Request — body: {"error":{"message":"Tried accessing nonexisting field (reels)","type":"IGApiException","code":100,"fbtrace_id":"A2mBKK1bWx-rDPdIvbmJfX3"}}
-Testing /17841400272376865/reels edge...
-  /reels HTTPError: 400 Bad Request — body: {"error":{"message":"Tried accessing nonexisting field (reels)","type":"IGApiException","code":100,"fbtrace_id":"AQS_6zKAChxnrjnrw2gvdxJ"}}
+=== Direct media-object lookup by decoded shortcode pk ===
+  ByGnzvogS9_ (pk=2055505359593877375): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AZDeTslgdx6P64WqSC2hcda"}}
+  CkLwbXNrEsm (pk=2957670566882724646): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AdBHR4ULzNnOHVOjnWs8OE7"}}
+  Cj5u5pVqOPu (pk=2952597302254560238): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AJ5iRzRqrHyHsOHp9kuqpFa"}}
+  CjwIYBfrSVN (pk=2949894591172388173): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AshizbpyYNKpXgaFMopvyoT"}}
+  CjN9WktsRVP (pk=2940275963829753167): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"Af5_dU-UYgG9pc4zyzFEcz0"}}
+  CjDqLZiNVNV (pk=2937376883260871509): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"Ay0991T3hu0cHPlxj703P29"}}
