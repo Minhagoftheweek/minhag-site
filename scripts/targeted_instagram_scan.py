@@ -36,10 +36,21 @@ def log(msg):
     LOG_LINES.append(str(msg))
 
 
-def http_get_json(url):
-    req = urllib.request.Request(url)
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.load(r)
+def http_get_json(url, retries=3):
+    last_err = None
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return json.load(r)
+        except (urllib.error.URLError, TimeoutError) as e:
+            last_err = e
+            if attempt < retries - 1:
+                import time
+                time.sleep(3)
+                continue
+            raise
+    raise last_err
 
 
 def fetch_media_view_count(media_id, access_token):
@@ -95,14 +106,28 @@ def run():
             page_url = data.get("paging", {}).get("next")
         log(f"Scanned {len(all_items)} total posts across {pages} page(s) (full history, no date filter).")
         if all_items:
-            dated = [(m.get("timestamp") or "") for m in all_items if m.get("timestamp")]
-            dated.sort()
-            log(f"Earliest post timestamp in pull: {dated[0] if dated else 'N/A'}")
-            log(f"Latest post timestamp in pull: {dated[-1] if dated else 'N/A'}")
+            dated_items = sorted([m for m in all_items if m.get("timestamp")], key=lambda m: m["timestamp"])
+            log(f"Earliest post timestamp in pull: {dated_items[0]['timestamp'] if dated_items else 'N/A'}")
+            log(f"Latest post timestamp in pull: {dated_items[-1]['timestamp'] if dated_items else 'N/A'}")
             log("10 oldest posts in the pull:")
-            oldest = sorted(all_items, key=lambda m: m.get("timestamp") or "")[:10]
-            for m in oldest:
+            for m in dated_items[:10]:
                 log(f"  {m.get('timestamp')} id={m['id']} type={m.get('media_type')} permalink={m.get('permalink')}")
+
+            # Gap detection: find consecutive-post gaps > 21 days (a real account this
+            # active shouldn't go 3+ weeks without ANY post if history were complete)
+            from datetime import datetime as dt
+            log("Gaps of 21+ days between consecutive posts (possible missing history windows):")
+            gap_found = False
+            for i in range(1, len(dated_items)):
+                t1 = dt.fromisoformat(dated_items[i-1]["timestamp"].replace("+0000", "+00:00"))
+                t2 = dt.fromisoformat(dated_items[i]["timestamp"].replace("+0000", "+00:00"))
+                gap_days = (t2 - t1).days
+                if gap_days >= 21:
+                    gap_found = True
+                    log(f"  GAP: {gap_days} days between {dated_items[i-1]['timestamp']} (id={dated_items[i-1]['id']}) "
+                        f"and {dated_items[i]['timestamp']} (id={dated_items[i]['id']})")
+            if not gap_found:
+                log("  (none found — post history looks continuous)")
 
         match = None
         for m in all_items:
