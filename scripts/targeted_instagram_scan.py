@@ -102,6 +102,26 @@ def run():
 
     log(f"Scanned {len(all_items)} total posts across {pages} page(s) in this date range.")
 
+    # Diagnostics: media_type breakdown
+    from collections import Counter
+    type_counts = Counter(m.get("media_type", "UNKNOWN") for m in all_items)
+    log(f"media_type breakdown: {dict(type_counts)}")
+
+    # Diagnostics: near-misses — caption mentions "minhag" but doesn't match our exact hashtag
+    near_misses = [m for m in all_items
+                   if "minhag" in (m.get("caption") or "").lower()
+                   and HASHTAG not in (m.get("caption") or "").lower()]
+    log(f"Near-miss count (caption mentions 'minhag' but hashtag not matched): {len(near_misses)}")
+    for m in near_misses[:15]:
+        cap = (m.get("caption") or "").replace("\n", " ")[:200]
+        log(f"  NEAR-MISS id={m['id']} type={m.get('media_type')} date={(m.get('timestamp') or '')[:10]} caption={cap!r}")
+
+    # Diagnostics: exact hashtag match regardless of media_type
+    tag_matches_any_type = [m for m in all_items if HASHTAG in (m.get("caption") or "").lower()]
+    log(f"Posts with exact hashtag match (any media_type): {len(tag_matches_any_type)}")
+    for m in tag_matches_any_type[:30]:
+        log(f"  TAG-MATCH id={m['id']} type={m.get('media_type')} date={(m.get('timestamp') or '')[:10]}")
+
     matches = [m for m in all_items
                if m.get("media_type") in ("VIDEO", "REELS")
                and HASHTAG in (m.get("caption") or "").lower()]
