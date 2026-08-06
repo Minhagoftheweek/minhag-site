@@ -1004,5 +1004,5 @@
   "newest_seen_id": "17895383994592225",
   "backfill_complete": false,
   "schema_version": 4,
-  "backfill_until_ts": 1454188779
+  "backfill_until_ts": 1371244779
 }
