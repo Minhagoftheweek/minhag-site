@@ -1,0 +1,37 @@
+Run at 2026-08-06T01:09:29.341348+00:00
+Exit code: 0
+
+access_token present: True (len=186)
+account_id: '17841400272376865'
+since_date: '2019-01-01'  until_date: '2022-01-01'
+Scanning 2019-01-01 (1546300800) to 2022-01-01 (1640995200)...
+  page 1: got 50 items
+  page 2: got 50 items
+  page 3: got 50 items
+  page 4: got 50 items
+  page 5: got 50 items
+  page 6: got 50 items
+  page 7: got 50 items
+  page 8: got 50 items
+  page 9: got 50 items
+  page 10: got 50 items
+  page 11: got 50 items
+  page 12: got 50 items
+  page 13: got 50 items
+  page 14: got 50 items
+  page 15: got 50 items
+  page 16: got 50 items
+  page 17: got 50 items
+  page 18: got 50 items
+  page 19: got 50 items
+  page 20: got 50 items
+  page 21: got 50 items
+  page 22: got 50 items
+  page 23: got 50 items
+  page 24: got 50 items
+  page 25: got 44 items
+Scanned 1244 total posts across 25 page(s) in this date range.
+Found 2 tagged video/reel posts. Fetching view counts...
+  view count fetch failed for 17886269584523421: HTTP Error 400: Bad Request
+  view count fetch failed for 18088854439037613: HTTP Error 400: Bad Request
+Wrote 2 rows to data/instagram-targeted-scan.csv
