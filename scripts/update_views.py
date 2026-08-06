@@ -392,26 +392,41 @@ def main():
         print(f"SproutVideo API error: {e.code} {e.read().decode()}", file=sys.stderr)
         sys.exit(1)
 
-    ig_views, ig_counted, ig_matched = 0, 0, 0
+    # Frozen floor for pre-2023 IGTV-era episodes the Instagram API can never
+    # retrieve (confirmed via exhaustive testing — see data/instagram-legacy-baseline.json
+    # for full detail and derivation). This is added on top of whatever the live
+    # API scan below finds, so the Instagram total never drops below this floor
+    # even if Google Sheets access is later revoked — this number is a permanent
+    # snapshot checked into the repo, not fetched live from anywhere.
+    try:
+        with open("data/instagram-legacy-baseline.json") as f:
+            legacy_baseline = json.load(f)["total_views"]
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        legacy_baseline = 0
+
+    ig_views, ig_counted, ig_matched = legacy_baseline, 0, 0
     ig_note = "not configured"
     if ig_token and ig_account_id:
         try:
-            ig_views, ig_counted, ig_matched, ig_diag = get_instagram_total_views(ig_token, ig_account_id)
+            ig_live_views, ig_counted, ig_matched, ig_diag = get_instagram_total_views(ig_token, ig_account_id)
+            ig_views = legacy_baseline + ig_live_views
             if ig_diag["backfill_complete"]:
                 backfill_status = "full history scan complete (walked back to 2015)"
             else:
                 backfill_status = (f"backfilled back to {ig_diag['backfilled_back_to_date']} so far "
                                     f"({ig_diag['windows_scanned_this_run']} time-windows / "
                                     f"{ig_diag['posts_scanned_this_run']} posts scanned this run)")
-            ig_note = (f"{ig_counted} tagged videos indexed total ({ig_matched} newly found this run); "
+            ig_note = (f"{legacy_baseline:,} legacy baseline (pre-2023, API-inaccessible episodes) + "
+                       f"{ig_live_views:,} live API total = {ig_views:,}; "
+                       f"{ig_counted} tagged videos indexed live ({ig_matched} newly found this run); "
                        f"{backfill_status}; "
                        f"NEW matches found during backfill this run (by type): {ig_diag['backfill_hashtag_matches_by_type']}; "
                        f"matches seen during front-check (mostly re-seeing already-known posts, by type): {ig_diag['front_check_hashtag_matches_by_type']}; "
                        f"posts with no view-count available (still counted in the list, contribute 0 views): {ig_diag['views_unavailable_total']}"
                        f"{' — ' + ig_diag['stopped_early_reason'] if ig_diag['stopped_early_reason'] else ''}")
         except Exception as e:
-            print(f"Instagram step failed this run ({e}) — Instagram contributes 0, YouTube/SproutVideo unaffected", file=sys.stderr)
-            ig_note = "error this run — contributed 0, check logs"
+            print(f"Instagram live step failed this run ({e}) — using legacy baseline only ({legacy_baseline:,}), YouTube/SproutVideo unaffected", file=sys.stderr)
+            ig_note = f"live API step errored this run — using legacy baseline only ({legacy_baseline:,}), check logs"
 
     total = yt_views + sv_plays + ig_views
 
@@ -434,4 +449,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
