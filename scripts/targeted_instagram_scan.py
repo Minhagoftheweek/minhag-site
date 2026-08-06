@@ -109,6 +109,31 @@ def run():
             except urllib.error.HTTPError as e:
                 body = e.read().decode("utf-8", "replace")
                 log(f"  {sc} (pk={num}): HTTPError {e.code} — {body[:300]}")
+        # Test direct media-object + insights lookup using the REAL Post IDs
+        # from the Meta Business Suite export (not shortcode-decoded pks —
+        # those failed. These are Meta's own internal IDs for the same posts).
+        test_ids = ["18000143725219429", "17885118154348814", "18037268452152220"]
+        log("=== Direct lookup using Meta Business Suite Post IDs ===")
+        for mid in test_ids:
+            obj_url = (f"https://graph.instagram.com/{mid}"
+                       f"?fields=id,caption,media_type,timestamp,permalink"
+                       f"&access_token={urllib.parse.quote(access_token)}")
+            try:
+                mdata = http_get_json(obj_url)
+                log(f"  {mid} object: {json.dumps(mdata)[:500]}")
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", "replace")
+                log(f"  {mid} object: HTTPError {e.code} — {body[:300]}")
+
+            ins_url = (f"https://graph.instagram.com/{mid}/insights"
+                       f"?metric=views"
+                       f"&access_token={urllib.parse.quote(access_token)}")
+            try:
+                idata = http_get_json(ins_url)
+                log(f"  {mid} insights: {json.dumps(idata)[:500]}")
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", "replace")
+                log(f"  {mid} insights: HTTPError {e.code} — {body[:300]}")
         return
 
     if lookup_url:
