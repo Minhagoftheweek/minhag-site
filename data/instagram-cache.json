@@ -1002,7 +1002,7 @@
     }
   },
   "newest_seen_id": "17895383994592225",
-  "backfill_complete": false,
+  "backfill_complete": true,
   "schema_version": 4,
-  "backfill_until_ts": 1371244779
+  "backfill_until_ts": 1360876779
 }
