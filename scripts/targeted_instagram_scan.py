@@ -86,50 +86,29 @@ def run():
         try:
             adata = http_get_json(url)
             log(f"Account info via configured id {account_id}: {json.dumps(adata, indent=2)}")
-            true_id = adata.get("id")
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "replace")
             log(f"HTTPError: {e.code} {e.reason} — body: {body[:1000]}")
-            true_id = None
 
-        if true_id and true_id != account_id:
-            log(f"IDs differ: configured={account_id} vs true={true_id}. Testing /media count via true id...")
-            page_url = (f"https://graph.instagram.com/{true_id}/media"
-                        f"?fields=id&limit=50"
-                        f"&access_token={urllib.parse.quote(access_token)}")
-            total = 0
-            pages = 0
-            while page_url and pages < 200:
-                try:
-                    data = http_get_json(page_url)
-                except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
-                    log(f"Error during true-id pagination after {pages} pages: {e}")
-                    break
-                items = data.get("data", [])
-                total += len(items)
-                pages += 1
-                page_url = data.get("paging", {}).get("next")
-            log(f"Media count via true id {true_id}: {total} items across {pages} pages (vs media_count field {adata.get('media_count')})")
-
-        # Test the separate /reels edge, which some account setups expose
-        # independently from /media
-        for test_id in {account_id, true_id} - {None}:
-            log(f"Testing /{test_id}/reels edge...")
-            reels_url = (f"https://graph.instagram.com/{test_id}/reels"
-                        f"?fields=id,media_type,timestamp,permalink&limit=50"
+        # Try direct media-object lookup using shortcode-decoded numeric pk,
+        # for known-missing IGTV posts (media edge doesn't index /tv/ content
+        # but a direct-by-id fetch might still resolve).
+        alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+        igtv_shortcodes = ["ByGnzvogS9_", "CkLwbXNrEsm", "Cj5u5pVqOPu", "CjwIYBfrSVN", "CjN9WktsRVP", "CjDqLZiNVNV"]
+        log("=== Direct media-object lookup by decoded shortcode pk ===")
+        for sc in igtv_shortcodes:
+            num = 0
+            for ch in sc:
+                num = num * 64 + alphabet.index(ch)
+            test_url = (f"https://graph.instagram.com/{num}"
+                        f"?fields=id,caption,media_type,timestamp,permalink"
                         f"&access_token={urllib.parse.quote(access_token)}")
             try:
-                rdata = http_get_json(reels_url)
-                if "error" in rdata:
-                    log(f"  /reels error: {json.dumps(rdata['error'])[:500]}")
-                else:
-                    items = rdata.get("data", [])
-                    log(f"  /reels returned {len(items)} items on first page. Sample: {json.dumps(items[:3])}")
-                    has_next = bool(rdata.get("paging", {}).get("next"))
-                    log(f"  has more pages: {has_next}")
+                mdata = http_get_json(test_url)
+                log(f"  {sc} (pk={num}): {json.dumps(mdata)[:500]}")
             except urllib.error.HTTPError as e:
                 body = e.read().decode("utf-8", "replace")
-                log(f"  /reels HTTPError: {e.code} {e.reason} — body: {body[:500]}")
+                log(f"  {sc} (pk={num}): HTTPError {e.code} — {body[:300]}")
         return
 
     if lookup_url:
