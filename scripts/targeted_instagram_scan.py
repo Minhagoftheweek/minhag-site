@@ -67,18 +67,50 @@ def run():
     log(f"account_id: {account_id!r}")
 
     if lookup_url:
-        log(f"=== ONE-OFF LOOKUP MODE for {lookup_url} ===")
-        oembed_url = ("https://graph.facebook.com/v20.0/instagram_oembed"
-                      f"?url={urllib.parse.quote(lookup_url, safe='')}"
-                      f"&access_token={urllib.parse.quote(access_token)}")
-        try:
-            odata = http_get_json(oembed_url)
-            log(f"oEmbed result: {json.dumps(odata, indent=2)}")
-        except urllib.error.HTTPError as e:
-            body = e.read().decode("utf-8", "replace")
-            log(f"oEmbed HTTPError: {e.code} {e.reason} — body: {body[:2000]}")
-        except Exception as e:
-            log(f"oEmbed exception: {e!r}")
+        log(f"=== ONE-OFF LOOKUP MODE (permalink match) for {lookup_url} ===")
+        target = lookup_url.rstrip("/")
+        all_items = []
+        page_url = (f"https://graph.instagram.com/{account_id}/media"
+                    f"?fields=id,caption,media_type,timestamp,permalink&limit=50"
+                    f"&access_token={urllib.parse.quote(access_token)}")
+        pages = 0
+        while page_url and pages < 200:
+            try:
+                data = http_get_json(page_url)
+            except urllib.error.HTTPError as e:
+                body = e.read().decode("utf-8", "replace")
+                log(f"HTTPError after {pages} page(s): {e.code} {e.reason} — body: {body[:1000]}")
+                break
+            except (urllib.error.URLError, TimeoutError) as e:
+                log(f"Network error after {pages} page(s): {e}")
+                break
+            if "error" in data:
+                log(f"API returned error payload after {pages} page(s): {json.dumps(data['error'])[:1000]}")
+                break
+            items = data.get("data", [])
+            all_items.extend(items)
+            pages += 1
+            if pages % 10 == 0:
+                log(f"  ...{pages} pages, {len(all_items)} items so far")
+            page_url = data.get("paging", {}).get("next")
+        log(f"Scanned {len(all_items)} total posts across {pages} page(s) (full history, no date filter).")
+
+        match = None
+        for m in all_items:
+            pl = (m.get("permalink") or "").rstrip("/")
+            if pl == target:
+                match = m
+                break
+        if match:
+            log(f"MATCH FOUND: {json.dumps(match, indent=2)}")
+        else:
+            log("NO MATCH by exact permalink. Showing any permalinks containing similar shortcode fragment:")
+            frag = target.rstrip("/").split("/")[-1]
+            near = [m for m in all_items if frag in (m.get("permalink") or "")]
+            for m in near[:5]:
+                log(f"  near: {json.dumps(m)}")
+            log(f"Total items with a 'tv' or 'reel' style permalink: "
+                f"{sum(1 for m in all_items if '/tv/' in (m.get('permalink') or '') or '/reel/' in (m.get('permalink') or ''))}")
         return
 
     log(f"since_date: {since_date!r}  until_date: {until_date!r}")
