@@ -94,6 +94,15 @@ def run():
                 log(f"  ...{pages} pages, {len(all_items)} items so far")
             page_url = data.get("paging", {}).get("next")
         log(f"Scanned {len(all_items)} total posts across {pages} page(s) (full history, no date filter).")
+        if all_items:
+            dated = [(m.get("timestamp") or "") for m in all_items if m.get("timestamp")]
+            dated.sort()
+            log(f"Earliest post timestamp in pull: {dated[0] if dated else 'N/A'}")
+            log(f"Latest post timestamp in pull: {dated[-1] if dated else 'N/A'}")
+            log("10 oldest posts in the pull:")
+            oldest = sorted(all_items, key=lambda m: m.get("timestamp") or "")[:10]
+            for m in oldest:
+                log(f"  {m.get('timestamp')} id={m['id']} type={m.get('media_type')} permalink={m.get('permalink')}")
 
         match = None
         for m in all_items:
