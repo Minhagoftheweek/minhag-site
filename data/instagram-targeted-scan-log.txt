@@ -1,4 +1,4 @@
-Run at 2026-08-06T02:49:43.048129+00:00
+Run at 2026-08-06T03:01:08.836003+00:00
 Exit code: 0
 
 access_token present: True (len=186)
@@ -10,9 +10,16 @@ Account info via configured id 17841400272376865: {
   "media_count": 4818
 }
 === Direct media-object lookup by decoded shortcode pk ===
-  ByGnzvogS9_ (pk=2055505359593877375): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AZDeTslgdx6P64WqSC2hcda"}}
-  CkLwbXNrEsm (pk=2957670566882724646): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AdBHR4ULzNnOHVOjnWs8OE7"}}
-  Cj5u5pVqOPu (pk=2952597302254560238): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AJ5iRzRqrHyHsOHp9kuqpFa"}}
-  CjwIYBfrSVN (pk=2949894591172388173): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AshizbpyYNKpXgaFMopvyoT"}}
-  CjN9WktsRVP (pk=2940275963829753167): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"Af5_dU-UYgG9pc4zyzFEcz0"}}
-  CjDqLZiNVNV (pk=2937376883260871509): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"Ay0991T3hu0cHPlxj703P29"}}
+  ByGnzvogS9_ (pk=2055505359593877375): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AW1k1VKg25KXmSIPWwE51ql"}}
+  CkLwbXNrEsm (pk=2957670566882724646): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"ALjnqewvWIMkMVhcoeqkSmr"}}
+  Cj5u5pVqOPu (pk=2952597302254560238): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AWtYrET04dhHk2csUrHTMZU"}}
+  CjwIYBfrSVN (pk=2949894591172388173): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AvQbD0n-E8WDB6UkbXZ-FlG"}}
+  CjN9WktsRVP (pk=2940275963829753167): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"A7Ybr3pufACbB1UaMzEADd6"}}
+  CjDqLZiNVNV (pk=2937376883260871509): HTTPError 500 — {"error":{"message":"An unexpected error has occurred. Please retry your request later.","type":"OAuthException","is_transient":true,"code":2,"fbtrace_id":"AcB6UqimHsBDzedBaBNBp1s"}}
+=== Direct lookup using Meta Business Suite Post IDs ===
+  18000143725219429 object: HTTPError 400 — {"error":{"message":"Unsupported get request. Object with ID '18000143725219429' does not exist, cannot be loaded due to missing permissions, or does not support this operation","type":"IGApiException","code":100,"error_subcode":33,"fbtrace_id":"AexJti64ur8FoJxydYaeA45"}}
+  18000143725219429 insights: HTTPError 400 — {"error":{"message":"Unsupported get request. Object with ID '18000143725219429' does not exist, cannot be loaded due to missing permissions, or does not support this operation","type":"IGApiException","code":100,"error_subcode":33,"fbtrace_id":"Aci2r4-DvQgb_eWZESpfdwG"}}
+  17885118154348814 object: HTTPError 400 — {"error":{"message":"Unsupported get request. Object with ID '17885118154348814' does not exist, cannot be loaded due to missing permissions, or does not support this operation","type":"IGApiException","code":100,"error_subcode":33,"fbtrace_id":"AofcwpN7Bf9Q4gfru_2Ok4t"}}
+  17885118154348814 insights: HTTPError 400 — {"error":{"message":"Unsupported get request. Object with ID '17885118154348814' does not exist, cannot be loaded due to missing permissions, or does not support this operation","type":"IGApiException","code":100,"error_subcode":33,"fbtrace_id":"AZBv4k4c9NFRoO-zvLQOpRY"}}
+  18037268452152220 object: HTTPError 400 — {"error":{"message":"Unsupported get request. Object with ID '18037268452152220' does not exist, cannot be loaded due to missing permissions, or does not support this operation","type":"IGApiException","code":100,"error_subcode":33,"fbtrace_id":"Acj7NR-Ih442uhHQNExDzcI"}}
+  18037268452152220 insights: HTTPError 400 — {"error":{"message":"Unsupported get request. Object with ID '18037268452152220' does not exist, cannot be loaded due to missing permissions, or does not support this operation","type":"IGApiException","code":100,"error_subcode":33,"fbtrace_id":"A4aFtM1Do27V2Jg9scnZEqc"}}
