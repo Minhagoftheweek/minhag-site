@@ -1,59 +1,7 @@
-Run at 2026-08-06T01:13:14.216754+00:00
+Run at 2026-08-06T01:17:24.332631+00:00
 Exit code: 0
 
 access_token present: True (len=186)
 account_id: '17841400272376865'
-since_date: '2019-01-01'  until_date: '2022-01-01'
-Scanning 2019-01-01 (1546300800) to 2022-01-01 (1640995200)...
-  page 1: got 50 items
-  page 2: got 50 items
-  page 3: got 50 items
-  page 4: got 50 items
-  page 5: got 50 items
-  page 6: got 50 items
-  page 7: got 50 items
-  page 8: got 50 items
-  page 9: got 50 items
-  page 10: got 50 items
-  page 11: got 50 items
-  page 12: got 50 items
-  page 13: got 50 items
-  page 14: got 50 items
-  page 15: got 50 items
-  page 16: got 50 items
-  page 17: got 50 items
-  page 18: got 50 items
-  page 19: got 50 items
-  page 20: got 50 items
-  page 21: got 50 items
-  page 22: got 50 items
-  page 23: got 50 items
-  page 24: got 50 items
-  page 25: got 44 items
-Scanned 1244 total posts across 25 page(s) in this date range.
-media_type breakdown: {'CAROUSEL_ALBUM': 339, 'IMAGE': 770, 'VIDEO': 135}
-Near-miss count (caption mentions 'minhag' but hashtag not matched): 1
-  NEAR-MISS id=17843470735645020 type=CAROUSEL_ALBUM date=2019-09-09 caption='MUST WATCH! When Past President of Beth Torah, Jeffrey Dweck approached us asking if he can make a video testimonial about our recent initiative "SCA Minhag of the Week" we asked him what he had to sa'
-Posts with exact hashtag match (any media_type): 4
-  TAG-MATCH id=17886269584523421 type=VIDEO date=2020-04-02
-  TAG-MATCH id=18109310560075860 type=IMAGE date=2019-12-24
-  TAG-MATCH id=18088854439037613 type=VIDEO date=2019-07-23
-  TAG-MATCH id=17860802011441366 type=IMAGE date=2019-07-01
-=== RAW DUMP for posts near known-tagged dates (Episode 83 / Rituals of Shabuot) ===
-Found 6 post(s) with timestamp on those dates.
-  id=17933569108448292 type=VIDEO date=2020-12-24
-    caption repr: '“Does the vaccine have the virus in it?”\n\nIn this short clip from our recent town-hall of Mount Sinai Doctors, Dr. Joshua Shatzkes (Co-Director of Operations, Plasma Collection Center) talks about this topic bringing clarity to a popular question. For the full video, see link in bio.'
-  id=18137695930186404 type=CAROUSEL_ALBUM date=2020-12-24
-    caption repr: 'Yesterday, we facilitated a community wide high school program with seniors from our high schools: @welovemdyhs @hillelyeshiva & @yofhs . The discussion, led by SCA Board Members Jeffrey Beyda & Ricky Novick, was with world renowned authors and heroes Natan Sharansky & Gil Troy discussing their new book "Never Alone". Students were able to directly ask Natan & Gil questions about the book that they read earlier this month to truly appreciate what they went through and received life lessons they will never forget. See link in bio for the recorded discussion!  #SCACollaboration'
-  id=17863371140246099 type=IMAGE date=2020-12-22
-    caption repr: 'Mabrook to long-time SCA teacher Ms. Adele Chabot & Daveed Tawil on their marriage in ארץ ישראל! If you were unable to attend the wedding and would like to give a Mabrook/message to the couple, comment below 👇👇'
-  id=17900922034320639 type=CAROUSEL_ALBUM date=2019-05-31
-    caption repr: '[SWIPE 👉🏻👉🏻] Rabbi Dr. Ronnie Hasson answers "This question follows @RabbiDweck ’s comment on connection with God through the study and true wisdom: When we say that connection to God is built through true wisdom of God and his world, what would be the course of such study? Should one limit his course of study to only the Torah? Or And can we say that all knowledge leads to the keeping of the Torah and mitzvot due to the deeper connection and love that is brought about by that deep wisdom?”\n.\n.\nMore sources on this topic were compiled by Rabbi Hasson and can be found by clicking on link in bio\n.\n.\n.\nSCA recently held a panel on the theme of Maimonides. To close out the night we collected questions from the crowd about HaRambam but due to time constraints, we were only able to answer a few of them. We took the list of questions and approached rabbis and educators in our affiliate base to answer some of those them, to be posted on our social media feed on a weekly basis. Of course these answers and concepts cannot be fully explained in such short clips but our hope is for you to be inspired to delve into them further and use this as a springboard to learning these topics deeper in the future.'
-  id=17878972321368732 type=CAROUSEL_ALBUM date=2019-05-31
-    caption repr: '[SWIPE👉🏻👉🏻] A Taste of Israel Souk #SCAAffiliate #SCAAffiliateEvent'
-  id=18041202460189490 type=CAROUSEL_ALBUM date=2019-05-30
-    caption repr: '[SWIPE👉🏻👉🏻] Annual Gala Dinner #SCAAffiliate #SCAAffiliateEvent\n.\n.\nPlease join Congregation Magen David of Manhattan for its Annual Gala Dinner on Tuesday, June 18 at Union Park (5 East 17th St, Manhattan). This year\'s theme is "Hai" - commemorating the 18th birthday of the CMDM community.  We are honoring individuals who played instrumental roles throughout the years since our founding.  This year, we will be honoring Eli Dweck, Sharon and Jimmy Kassab, Abe Safdie and Ephraim Setton. \nAs Congregation Magen David of Manhattan continues to grow, we have enjoyed meaningful services, Shabbatons, delicious Kiddushes, and festive celebrations.  The Gala Dinner is our largest fundraiser of the year, and helps support the operations and programming of our beautiful community.\n\nWe hope you are able to attend and help support the wonderful honorees and Congregation Magen David of Manhattan.'
-Found 2 tagged video/reel posts. Fetching view counts...
-  view count fetch failed for 17886269584523421: HTTP Error 400: Bad Request
-  view count fetch failed for 18088854439037613: HTTP Error 400: Bad Request
-Wrote 2 rows to data/instagram-targeted-scan.csv
+=== ONE-OFF LOOKUP MODE for https://www.instagram.com/tv/ByGnzvogS9_/ ===
+oEmbed HTTPError: 400 Bad Request — body: {"error":{"message":"Invalid OAuth access token - Cannot parse access token","type":"OAuthException","code":190,"fbtrace_id":"ArT0Muxg-4XOYb4ycdGkv9r"}}
