@@ -79,16 +79,37 @@ def run():
 
     check_account = os.environ.get("CHECK_ACCOUNT")
     if check_account:
-        log("=== ACCOUNT MEDIA_COUNT CHECK ===")
+        log("=== ACCOUNT MEDIA_COUNT CHECK (both IDs) ===")
         url = (f"https://graph.instagram.com/{account_id}"
                f"?fields=id,username,media_count"
                f"&access_token={urllib.parse.quote(access_token)}")
         try:
             adata = http_get_json(url)
-            log(f"Account info: {json.dumps(adata, indent=2)}")
+            log(f"Account info via configured id {account_id}: {json.dumps(adata, indent=2)}")
+            true_id = adata.get("id")
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf-8", "replace")
             log(f"HTTPError: {e.code} {e.reason} — body: {body[:1000]}")
+            true_id = None
+
+        if true_id and true_id != account_id:
+            log(f"IDs differ: configured={account_id} vs true={true_id}. Testing /media count via true id...")
+            page_url = (f"https://graph.instagram.com/{true_id}/media"
+                        f"?fields=id&limit=50"
+                        f"&access_token={urllib.parse.quote(access_token)}")
+            total = 0
+            pages = 0
+            while page_url and pages < 200:
+                try:
+                    data = http_get_json(page_url)
+                except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as e:
+                    log(f"Error during true-id pagination after {pages} pages: {e}")
+                    break
+                items = data.get("data", [])
+                total += len(items)
+                pages += 1
+                page_url = data.get("paging", {}).get("next")
+            log(f"Media count via true id {true_id}: {total} items across {pages} pages (vs media_count field {adata.get('media_count')})")
         return
 
     if lookup_url:
