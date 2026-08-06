@@ -3,7 +3,12 @@ name: Update total view count
 on:
   schedule:
     - cron: '*/5 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      lookup_post_url:
+        description: 'Optional: Instagram post URL to resolve via oEmbed (one-off lookup, skips normal scan)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -64,6 +69,7 @@ jobs:
           INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
           SCAN_SINCE_DATE: '2019-01-01'
           SCAN_UNTIL_DATE: '2022-01-01'
+          LOOKUP_POST_URL: ${{ github.event.inputs.lookup_post_url }}
         run: python scripts/targeted_instagram_scan.py
         continue-on-error: true
 
