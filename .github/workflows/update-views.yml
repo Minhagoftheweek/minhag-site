@@ -60,14 +60,16 @@ jobs:
           SCAN_SINCE_DATE: '2019-01-01'
           SCAN_UNTIL_DATE: '2022-01-01'
         run: python scripts/targeted_instagram_scan.py
+        continue-on-error: true
 
       - name: Commit and push scan results
+        if: always()
         run: |
           git config user.name "view-count-bot"
           git config user.email "actions@github.com"
-          git add data/instagram-targeted-scan.csv
+          git add data/instagram-targeted-scan.csv data/instagram-targeted-scan-log.txt
           if ! git diff --cached --quiet; then
-            git commit -m "Targeted 2019-2021 Instagram scan results"
+            git commit -m "Targeted 2019-2021 Instagram scan results + log"
             git push
           else
             echo "No results to commit."
