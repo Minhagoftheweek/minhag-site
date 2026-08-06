@@ -1,11 +1,13 @@
-Run at 2026-08-06T02:07:02.188771+00:00
+Run at 2026-08-06T02:10:02.192954+00:00
 Exit code: 0
 
 access_token present: True (len=186)
 account_id: '17841400272376865'
-=== ACCOUNT MEDIA_COUNT CHECK ===
-Account info: {
+=== ACCOUNT MEDIA_COUNT CHECK (both IDs) ===
+Account info via configured id 17841400272376865: {
   "id": "27866966316301258",
   "username": "sca_updates",
   "media_count": 4818
 }
+IDs differ: configured=17841400272376865 vs true=27866966316301258. Testing /media count via true id...
+Media count via true id 27866966316301258: 4012 items across 81 pages (vs media_count field 4818)
