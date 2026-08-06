@@ -122,6 +122,18 @@ def run():
     for m in tag_matches_any_type[:30]:
         log(f"  TAG-MATCH id={m['id']} type={m.get('media_type')} date={(m.get('timestamp') or '')[:10]}")
 
+    # Deep diagnostic: dump raw captions (repr, showing hidden chars) for posts
+    # near the two dates we know for certain are tagged (from manual screenshot
+    # confirmation) but that aren't showing up as TAG-MATCH above.
+    target_dates = {"2020-12-22", "2020-12-23", "2020-12-24", "2019-05-29", "2019-05-30", "2019-05-31"}
+    log("=== RAW DUMP for posts near known-tagged dates (Episode 83 / Rituals of Shabuot) ===")
+    near_date_items = [m for m in all_items if (m.get("timestamp") or "")[:10] in target_dates]
+    log(f"Found {len(near_date_items)} post(s) with timestamp on those dates.")
+    for m in near_date_items:
+        cap = m.get("caption") or ""
+        log(f"  id={m['id']} type={m.get('media_type')} date={(m.get('timestamp') or '')[:10]}")
+        log(f"    caption repr: {cap!r}")
+
     matches = [m for m in all_items
                if m.get("media_type") in ("VIDEO", "REELS")
                and HASHTAG in (m.get("caption") or "").lower()]
