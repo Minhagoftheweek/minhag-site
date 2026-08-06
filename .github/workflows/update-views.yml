@@ -36,7 +36,12 @@ jobs:
           git add data/view-count.json data/instagram-cache.json
           if ! git diff --cached --quiet; then
             git commit -m "Auto-update total view count"
-            git push
+            for i in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main && git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 3
+            done
           else
             echo "No change in view count, nothing to commit."
           fi
@@ -70,7 +75,12 @@ jobs:
           git add data/instagram-targeted-scan.csv data/instagram-targeted-scan-log.txt
           if ! git diff --cached --quiet; then
             git commit -m "Targeted 2019-2021 Instagram scan results + log"
-            git push
+            for i in 1 2 3 4 5; do
+              git fetch origin main
+              git rebase origin/main && git push && break
+              echo "Push attempt $i failed, retrying..."
+              sleep 3
+            done
           else
             echo "No results to commit."
           fi
