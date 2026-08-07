@@ -794,29 +794,12 @@ function applyAutoTheme(lat,lon){
   }
 }
 function initAutoTheme(){
-  // Apply instantly using a cached or fallback location so there's no flash
-  // of the wrong theme while we wait on the geolocation permission prompt.
-  let loc=null;
-  try{const raw=localStorage.getItem(THEME_LOC_KEY);if(raw)loc=JSON.parse(raw);}catch(e){}
-  applyAutoTheme(loc?loc.lat:NYC_LAT,loc?loc.lon:NYC_LON);
-
-  if('geolocation' in navigator){
-    navigator.geolocation.getCurrentPosition(
-      pos=>{
-        const lat=pos.coords.latitude, lon=pos.coords.longitude;
-        try{localStorage.setItem(THEME_LOC_KEY,JSON.stringify({lat,lon}));}catch(e){}
-        applyAutoTheme(lat,lon);
-      },
-      ()=>{ /* denied or unavailable — NYC fallback already applied above */ },
-      {timeout:5000,maximumAge:3600000}
-    );
-  }
+  // Always uses New York's sunrise/sunset — no geolocation prompt.
+  applyAutoTheme(NYC_LAT,NYC_LON);
   // Re-check periodically so the theme actually flips live at sunrise/sunset
   // without needing a page reload, and recomputes each new day.
   setInterval(()=>{
-    let loc2=null;
-    try{const raw=localStorage.getItem(THEME_LOC_KEY);if(raw)loc2=JSON.parse(raw);}catch(e){}
-    applyAutoTheme(loc2?loc2.lat:NYC_LAT,loc2?loc2.lon:NYC_LON);
+    applyAutoTheme(NYC_LAT,NYC_LON);
   },5*60*1000);
 }
 initAutoTheme();
@@ -1867,7 +1850,7 @@ function renderWatchedCounter(){
   const el=document.getElementById('watchedCounter');
   if(!el)return;
   const n=getWatchedSet().size;
-  el.textContent=n?`${n} of ${EPS.length} episodes watched here`:'';
+  el.textContent=n?`To date, you have watched ${n} of ${EPS.length} episodes watched on this device`:'';
 }
 function getWatchHistory(){
   try{
