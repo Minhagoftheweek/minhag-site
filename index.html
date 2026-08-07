@@ -81,6 +81,20 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .cw-progress-track{height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
 .cw-progress-fill{height:100%;background:var(--hp);border-radius:2px}
 .cw-clear{font-size:.64rem;color:var(--mu);background:none;border:none;cursor:pointer;text-decoration:underline;margin-left:auto}
+/* FEATURED (Hebrew-calendar-aware homepage picks) */
+.feat-row{background:var(--w);border-bottom:1px solid var(--bd);padding:1.1rem 1.5rem 1.3rem}
+.feat-row h3{font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:.15rem;display:flex;align-items:center;gap:.4rem}
+.feat-reason{font-size:.7rem;color:var(--mu);margin-bottom:.8rem}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
+@media(max-width:700px){.feat-grid{grid-template-columns:1fr}}
+.feat-card{background:var(--cream);border:1px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .12s,transform .12s}
+.feat-card:hover{border-color:var(--hp);transform:translateY(-1px)}
+.feat-thumb{position:relative;width:100%;aspect-ratio:16/9;background:var(--nd);overflow:hidden}
+.feat-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.feat-thumb .thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.feat-num{position:absolute;top:.4rem;left:.4rem;background:rgba(0,0,0,.55);color:#fff;font-size:.62rem;font-weight:700;padding:.15rem .45rem;border-radius:4px}
+.feat-body{padding:.6rem .7rem .7rem}
+.feat-title{font-size:.8rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .related-section{margin-top:1.4rem;padding-top:1.4rem;border-top:1px solid var(--bd);text-align:center}
 .related-section h3{font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:1.1rem;text-align:center}
 .related-grid{display:flex;justify-content:center;gap:1.1rem;flex-wrap:wrap}
@@ -602,6 +616,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
       </div>
     </div>
   </div>
+  <div id="featuredRow"></div>
   <div id="continueWatchingRow"></div>
 </div>
 
@@ -2008,6 +2023,227 @@ function setupMediaSession(videoEl,epId){
     if(nextId!=null)confirmUpNext(epId,nextId);
   });
 }
+// ── FEATURED EPISODES (Hebrew-calendar-aware) ───────────────────────────
+// Always shows 3 episodes on the homepage. Picks are tied to what's coming
+// up on the Jewish calendar (the upcoming parasha, an approaching holiday,
+// Selihot/Elul, Shobabim, Rosh Hodesh, etc.) using episode tags already in
+// EPS (the same holidays:/parasha: tags used for category filtering). Falls
+// back to 3 random episodes whenever nothing timely applies, or if the
+// calendar lookup fails for any reason (e.g. offline). Recomputed once per
+// New York calendar day (seeded so every visitor sees the same 3 all day).
+
+// Hebcal's English parasha names -> this site's parasha tag vocabulary.
+const PARASHA_MAP={
+  'Bereshit':['Beresheet'],'Noach':['Noah'],'Lech-Lecha':['Lekh Lekha'],'Vayera':['Vayera'],
+  'Toldot':['Toledot'],'Vayetzei':['Vayese'],'Vayishlach':['Vayishlah'],'Vayeshev':['Vayesheb'],
+  'Miketz':['Miqess'],'Vayigash':['Vayigash'],'Vayechi':['Vayehi'],'Shemot':['Shemot'],
+  'Vaera':['Vaera'],'Bo':['Bo'],'Beshalach':['Beshalah'],'Yitro':['Yitro'],'Mishpatim':['Mishpatim'],
+  'Terumah':['Teruma'],'Tetzaveh':['Tessave'],'Ki Tisa':['Ki Tisa'],'Vayakhel':['Vayaqhel'],
+  'Pekudei':['Pequde'],'Vayakhel-Pekudei':['Vayaqhel','Pequde'],'Vayikra':['Vayiqra'],'Tzav':['Sav'],
+  'Shmini':['Shemini'],'Tazria':['Tazria'],'Metzora':['Tahor'],'Tazria-Metzora':['Tazria','Tahor'],
+  'Achrei Mot':['Ahare'],'Kedoshim':['Qedoshim'],'Achrei Mot-Kedoshim':['Ahare','Qedoshim'],
+  'Emor':['Emor'],'Behar':['Behar'],'Bechukotai':['Behuqotai'],'Behar-Bechukotai':['Behar','Behuqotai'],
+  'Bamidbar':['Bamidbar'],'Nasso':['Naso'],"Beha'alotcha":["Beha'alotekha"],"Sh'lach":['Shelah'],
+  'Korach':['Qorah'],'Chukat':['Huqat'],'Balak':['Balaq'],'Chukat-Balak':['Huqat','Balaq'],
+  'Pinchas':['Pinehas'],'Matot':['Matot'],'Masei':['Masei'],'Matot-Masei':['Matot','Masei'],
+  'Devarim':['Debarim'],'Vaetchanan':["Va'ethanan"],'Eikev':['Eqeb'],"Re'eh":["Re'eh"],
+  'Shoftim':['Shofetim'],'Ki Teitzei':['Ki Tesse'],'Ki Tavo':['Ki Tabo'],'Nitzavim':['Nisabim'],
+  'Vayeilech':['Vayelekh'],'Nitzavim-Vayeilech':['Nisabim','Vayelekh'],"Ha'azinu":['Haazinu']
+};
+// Weeks whose regular parasha falls during the Sephardic Shobabim fast period.
+const SHOBABIM_PARASHOT=new Set(['Shemot','Vaera','Bo','Beshalah','Yitro','Mishpatim']);
+// Major holidays: when one is within FEATURED_MAJOR_WINDOW days, all 3 slots
+// are filled with random episodes tagged for it.
+const MAJOR_HOLIDAY_KEYWORDS=[['Rosh Hashana','Rosh Hashanah'],['Yom Kippur','Yom Kippur'],
+  ['Sukkot','Sukkot & Shemini Asseret & Simhat Torah'],['Shmini Atzeret','Sukkot & Shemini Asseret & Simhat Torah'],
+  ['Simchat Torah','Sukkot & Shemini Asseret & Simhat Torah'],['Chanukah','Hanukkah'],
+  ['Pesach','Pesah'],['Shavuot','Shabuot'],['Purim','Purim']];
+const FEATURED_MAJOR_WINDOW=10;
+// Minor/special occasions: contribute at most one featured slot.
+const MINOR_HOLIDAY_RULES=[
+  {test:t=>/Shabbat Zachor/i.test(t),tag:'Purim',titleHint:/zak?hor/i},
+  {test:t=>/Shabbat Shekalim/i.test(t),tag:'Purim'},
+  {test:t=>/Shushan Purim|Ta'?anit Esther/i.test(t),tag:'Purim'},
+  {test:t=>/Shabbat Para/i.test(t),tag:'Pesah'},
+  {test:t=>/Shabbat HaChodesh/i.test(t),tag:'Pesah'},
+  {test:t=>/Shabbat Hagadol/i.test(t),tag:'Pesah'},
+  {test:t=>/Lag ?BaOmer/i.test(t),tag:'Omer & Lag LaOmer'},
+  {test:t=>/Tu ?BiShvat/i.test(t),tag:'Tu Bishbat'},
+  {test:t=>/Tzom Tammuz|Tish'?a B'?Av|Shabbat Chazon/i.test(t),tag:"17 Tamuz through Tish'a BeAb"},
+  {test:t=>/Tzom Gedaliah|Asara B'?Tevet|Taanit Bechorot/i.test(t),tag:'Fasts'},
+  {test:t=>/Rosh Chodesh/i.test(t),tag:'Rosh Hodesh'}
+];
+
+function parseSubs(ep){
+  const raw=E.subs(ep);const out={};
+  if(!raw)return out;
+  raw.split(',').forEach(pair=>{
+    const idx=pair.indexOf(':');if(idx===-1)return;
+    const type=pair.slice(0,idx),vals=pair.slice(idx+1);
+    out[type]=new Set(vals.split('|').map(v=>v.trim()));
+  });
+  return out;
+}
+function episodesForTag(type,val){
+  return EPS.filter(ep=>{const s=parseSubs(ep);return s[type]&&s[type].has(val);});
+}
+// Simple deterministic PRNG so picks stay stable for a given calendar day.
+function mulberry32(seed){
+  return function(){
+    seed|=0;seed=seed+0x6D2B79F5|0;
+    let t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return((t^t>>>14)>>>0)/4294967296;
+  };
+}
+function seedFromString(str){
+  let h=0;for(let i=0;i<str.length;i++){h=Math.imul(31,h)+str.charCodeAt(i)|0;}
+  return h;
+}
+function seededShuffle(arr,seedStr){
+  const rnd=mulberry32(seedFromString(seedStr));
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function nyDateStr(d){
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+  const m={};parts.forEach(p=>m[p.type]=p.value);
+  return `${m.year}-${m.month}-${m.day}`;
+}
+function addDaysStr(dateStr,days){
+  const d=new Date(dateStr+'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate()+days);
+  return d.toISOString().slice(0,10);
+}
+
+async function buildFeatured(){
+  const todayStr=nyDateStr(new Date());
+  const endStr=addDaysStr(todayStr,21);
+  let events=[],hebMonth=null;
+  try{
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),6000);
+    const [calRes,convRes]=await Promise.all([
+      fetch(`https://www.hebcal.com/hebcal?cfg=json&v=1&start=${todayStr}&end=${endStr}&maj=on&min=on&mf=on&ss=on&s=on&nx=on`,{signal:ctrl.signal}),
+      fetch(`https://www.hebcal.com/converter?cfg=json&date=${todayStr}&g2h=1`,{signal:ctrl.signal})
+    ]);
+    clearTimeout(timer);
+    const calJson=await calRes.json();
+    events=calJson.items||[];
+    const convJson=await convRes.json();
+    hebMonth=convJson.hm||null;
+  }catch(e){
+    // Calendar lookup failed (offline, blocked, etc.) — fall through to
+    // the random fallback below using only the seed, no timely picks.
+  }
+
+  const usedIds=new Set();
+  const pickFromTag=(type,val,count)=>{
+    const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep)));
+    const shuffled=seededShuffle(pool,todayStr+'|'+type+'|'+val);
+    const picked=shuffled.slice(0,count);
+    picked.forEach(ep=>usedIds.add(E.id(ep)));
+    return picked;
+  };
+
+  // 1) Major holiday within the window → full 3-slot takeover.
+  let majorTag=null,majorDate=null;
+  events.forEach(ev=>{
+    if(ev.category!=='holiday')return;
+    for(const[kw,tag] of MAJOR_HOLIDAY_KEYWORDS){
+      if(ev.title.includes(kw)){
+        const days=(new Date(ev.date+'T12:00:00Z')-new Date(todayStr+'T12:00:00Z'))/86400000;
+        if(days<=FEATURED_MAJOR_WINDOW&&(!majorDate||ev.date<majorDate)){majorTag=tag;majorDate=ev.date;}
+        break;
+      }
+    }
+  });
+  let picks=[],reason='';
+  if(majorTag){
+    picks=pickFromTag('holidays',majorTag,3);
+    reason=`Featured for ${majorTag}`;
+  }else{
+    // 2) Minor/special occasions (special Shabbatot, fasts, Rosh Hodesh…)
+    const minorSeen=new Set();
+    const minorHits=[];
+    events.forEach(ev=>{
+      for(const rule of MINOR_HOLIDAY_RULES){
+        if(rule.test(ev.title)&&!minorSeen.has(rule.tag)){
+          minorSeen.add(rule.tag);
+          minorHits.push({date:ev.date,tag:rule.tag,titleHint:rule.titleHint,label:ev.title});
+        }
+      }
+    });
+    minorHits.sort((a,b)=>a.date<b.date?-1:1);
+    if(hebMonth==='Elul')minorHits.push({tag:'Elul',label:'Selihot / Elul'});
+
+    // Upcoming parasha, lowest priority.
+    const parashaEv=events.find(ev=>ev.category==='parashat');
+    let parashaTags=[];
+    if(parashaEv){
+      const title=parashaEv.title.replace(/^Parashat\s+/,'');
+      parashaTags=PARASHA_MAP[title]||[];
+    }
+    const rawParashaName=parashaEv?parashaEv.title.replace(/^Parashat\s+/,''):null;
+    if(rawParashaName&&SHOBABIM_PARASHOT.has(rawParashaName)){
+      minorHits.push({tag:'Shobabim',label:'Shobabim'});
+    }
+
+    const reasonParts=[];
+    for(const hit of minorHits){
+      if(picks.length>=3)break;
+      let ep=null;
+      if(hit.titleHint){
+        const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
+        if(hinted){ep=hinted;usedIds.add(E.id(ep));}
+      }
+      if(!ep){const got=pickFromTag('holidays',hit.tag,1);if(got.length)ep=got[0];}
+      if(ep){picks.push(ep);reasonParts.push(hit.label||hit.tag);}
+    }
+    // Fill remaining with this week's parasha episodes, if tagged ones exist.
+    for(const pt of parashaTags){
+      if(picks.length>=3)break;
+      const got=pickFromTag('parasha',pt,3-picks.length);
+      if(got.length){picks=picks.concat(got);reasonParts.push(`Parashat ${rawParashaName}`);}
+    }
+    reason=reasonParts.length?`Featured for ${[...new Set(reasonParts)].join(', ')}`:'';
+  }
+  // 3) Fill any remaining slots with random episodes.
+  if(picks.length<3){
+    const rest=seededShuffle(EPS.filter(ep=>!usedIds.has(E.id(ep))),todayStr+'|fallback');
+    picks=picks.concat(rest.slice(0,3-picks.length));
+  }
+  return {picks:picks.slice(0,3),reason};
+}
+
+async function renderFeatured(){
+  const row=document.getElementById('featuredRow');
+  if(!row)return;
+  let result;
+  try{result=await buildFeatured();}
+  catch(e){
+    result={picks:seededShuffle(EPS,nyDateStr(new Date())+'|fallback').slice(0,3),reason:''};
+  }
+  const cards=result.picks.map(ep=>{
+    const thumbUrl=THUMBS[E.id(ep)]||'';
+    const th=thumbUrl
+      ?`<img src="${thumbUrl}" alt="" loading="lazy">`
+      :`<div class="thumb-ph"><div class="play-ico"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div></div>`;
+    const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+    return `<div class="feat-card" onclick="openEp(${E.id(ep)})">
+      <div class="feat-thumb">${th}<span class="feat-num">${numDisplay}</span></div>
+      <div class="feat-body"><div class="feat-title">${E.t(ep)}</div></div>
+    </div>`;
+  }).join('');
+  row.innerHTML=`<div class="feat-row">
+    <h3>Featured Episodes</h3>
+    ${result.reason?`<div class="feat-reason">${result.reason}</div>`:'<div class="feat-reason">&nbsp;</div>'}
+    <div class="feat-grid">${cards}</div>
+  </div>`;
+}
+renderFeatured();
+
 function renderContinueWatching(){
   const row=document.getElementById('continueWatchingRow');
   if(!row)return;
