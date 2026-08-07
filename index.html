@@ -32,8 +32,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#184878;--nd:#0f2d49;--hp:#8b54b2;--hpl:#f0e6fa;--hpd:#6b3d8a;--cream:#f5f7fa;--w:#fff;--bd:#d0dae8;--tx:#1a2a3a;--mu:#5a7090;--green:#2a9d5c}
-[data-theme="dark"]{--navy:#5a8fd6;--nd:#3d6bb0;--hp:#b98ee0;--hpl:#241c33;--hpd:#d1a8f0;--cream:#12161f;--w:#1a2030;--bd:#333e52;--tx:#e6ebf5;--mu:#9aa8c0;--green:#4ac07c}
-[data-theme="dark"] nav{background:var(--w);box-shadow:0 2px 12px rgba(0,0,0,.4)}
+[data-theme="dark"]{--navy:#d4c8e8;--hp:#b98ee0;--hpl:#241c33;--hpd:#d1a8f0;--cream:#12161f;--w:#1a2030;--bd:#333e52;--tx:#e6ebf5;--mu:#9aa8c0;--green:#4ac07c}
 [data-theme="dark"] img{filter:brightness(.92)}
 .dark-indicator{border:none;background:none;padding:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .dark-indicator svg{width:18px;height:18px;stroke:var(--navy);fill:none;stroke-width:2;opacity:.55}
@@ -1650,7 +1649,7 @@ function render(){
       <div class="thumb">${th}
         <span class="ep-num">${numDisplay}</span>
         ${watchedBadge}
-        <button class="pl-toggle ${plOn?'on':''}" onclick="event.stopPropagation();togglePlaylist(${E.id(ep)})" title="${plOn?'Remove from playlist':'Add to playlist'}">${plOn?'&#10003;':'+'}</button>
+        ${plOn?'':`<button class="pl-toggle" onclick="event.stopPropagation();togglePlaylist(${E.id(ep)})" title="Add to playlist">+</button>`}
       </div>
       <div class="card-body">
         <div class="cat-tags">${catHtml}</div>
