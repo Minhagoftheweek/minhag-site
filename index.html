@@ -82,10 +82,10 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .cw-progress-fill{height:100%;background:var(--hp);border-radius:2px}
 .cw-clear{font-size:.64rem;color:var(--mu);background:none;border:none;cursor:pointer;text-decoration:underline;margin-left:auto}
 /* FEATURED (Hebrew-calendar-aware homepage picks) */
-.feat-row{background:var(--w);border-bottom:1px solid var(--bd);padding:.7rem 1.5rem .75rem}
-.feat-row h3{font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:.15rem;display:flex;align-items:center;gap:.4rem}
+.feat-row{background:var(--w);border-bottom:1px solid var(--bd);padding:.7rem 1.5rem .75rem;text-align:center}
+.feat-row h3{font-size:.95rem;font-weight:700;color:var(--navy);margin-bottom:.15rem;display:flex;align-items:center;justify-content:center;gap:.4rem}
 .feat-reason{font-size:.64rem;color:var(--mu);margin-bottom:.55rem}
-.feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.95rem}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.95rem;max-width:920px;margin:0 auto}
 @media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:500px){.feat-grid{grid-template-columns:1fr}}
 .feat-card{background:var(--cream);border:1px solid var(--bd);border-radius:7px;overflow:hidden;cursor:pointer;transition:border-color .12s,transform .12s;display:flex;flex-direction:column}
@@ -2520,6 +2520,11 @@ function getRelatedEpisodes(epId,maxResults){
       if(vals)vals.split('|').forEach(v=>{if(v!=='✓')mySubs.add(v);});
     });
   }
+  // Significant title words, used as a fallback signal below — catches thematically
+  // linked mini-series (e.g. "Hinukh Habayit" episodes) that have no shared category
+  // tags at all, which would otherwise never surface as related to one another.
+  const TITLE_STOP=new Set(['the','and','for','with','from','part','into','introduction','to','on','of','a','an','in']);
+  const myTitleWords=new Set(E.t(ep).toLowerCase().replace(/[^a-z0-9\s']/g,' ').split(/\s+/).filter(w=>w.length>=4&&!TITLE_STOP.has(w)));
   const scored=EPS.filter(other=>E.id(other)!==epId).map(other=>{
     const otherSubsStr=E.subs(other);
     const otherCats=new Set(E.c(other));
@@ -2535,7 +2540,12 @@ function getRelatedEpisodes(epId,maxResults){
     // episode has a specific named subcategory to match on.
     let catScore=0;
     otherCats.forEach(c=>{if(myCats.has(c))catScore++;});
-    return {ep:other,score:subScore*10+catScore};
+    let titleScore=0;
+    if(myTitleWords.size){
+      const otherTitleWords=E.t(other).toLowerCase().replace(/[^a-z0-9\s']/g,' ').split(/\s+/).filter(w=>w.length>=4&&!TITLE_STOP.has(w));
+      otherTitleWords.forEach(w=>{if(myTitleWords.has(w))titleScore++;});
+    }
+    return {ep:other,score:subScore*10+catScore+titleScore*3};
   }).filter(x=>x.score>0);
   scored.sort((a,b)=>b.score-a.score||epSortKey(b.ep)-epSortKey(a.ep));
   return scored.slice(0,maxResults).map(x=>x.ep);
