@@ -82,19 +82,20 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .cw-progress-fill{height:100%;background:var(--hp);border-radius:2px}
 .cw-clear{font-size:.64rem;color:var(--mu);background:none;border:none;cursor:pointer;text-decoration:underline;margin-left:auto}
 /* FEATURED (Hebrew-calendar-aware homepage picks) */
-.feat-row{background:var(--w);border-bottom:1px solid var(--bd);padding:1.1rem 1.5rem 1.3rem}
-.feat-row h3{font-size:.85rem;font-weight:700;color:var(--navy);margin-bottom:.15rem;display:flex;align-items:center;gap:.4rem}
-.feat-reason{font-size:.7rem;color:var(--mu);margin-bottom:.8rem}
-.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.9rem}
-@media(max-width:700px){.feat-grid{grid-template-columns:1fr}}
-.feat-card{background:var(--cream);border:1px solid var(--bd);border-radius:8px;overflow:hidden;cursor:pointer;transition:border-color .12s,transform .12s}
+.feat-row{background:var(--w);border-bottom:1px solid var(--bd);padding:.55rem 1.5rem .6rem}
+.feat-row h3{font-size:.72rem;font-weight:700;color:var(--navy);margin-bottom:.1rem;display:flex;align-items:center;gap:.4rem}
+.feat-reason{font-size:.62rem;color:var(--mu);margin-bottom:.45rem}
+.feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem}
+@media(max-width:900px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:500px){.feat-grid{grid-template-columns:1fr}}
+.feat-card{background:var(--cream);border:1px solid var(--bd);border-radius:6px;overflow:hidden;cursor:pointer;transition:border-color .12s,transform .12s;display:flex;align-items:center}
 .feat-card:hover{border-color:var(--hp);transform:translateY(-1px)}
-.feat-thumb{position:relative;width:100%;aspect-ratio:16/9;background:var(--nd);overflow:hidden}
+.feat-thumb{position:relative;width:88px;flex-shrink:0;aspect-ratio:16/9;background:var(--nd);overflow:hidden}
 .feat-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .feat-thumb .thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
-.feat-num{position:absolute;top:.4rem;left:.4rem;background:rgba(0,0,0,.55);color:#fff;font-size:.62rem;font-weight:700;padding:.15rem .45rem;border-radius:4px}
-.feat-body{padding:.6rem .7rem .7rem}
-.feat-title{font-size:.8rem;font-weight:600;color:var(--tx);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.feat-num{position:absolute;top:.25rem;left:.25rem;background:rgba(0,0,0,.55);color:#fff;font-size:.55rem;font-weight:700;padding:.1rem .35rem;border-radius:4px}
+.feat-body{padding:.35rem .5rem}
+.feat-title{font-size:.68rem;font-weight:600;color:var(--tx);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .related-section{margin-top:1.4rem;padding-top:1.4rem;border-top:1px solid var(--bd);text-align:center}
 .related-section h3{font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:1.1rem;text-align:center}
 .related-grid{display:flex;justify-content:center;gap:1.1rem;flex-wrap:wrap}
@@ -140,7 +141,10 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .pill-p{background:rgba(139,84,178,.18);border:1px solid rgba(139,84,178,.32);color:rgba(201,160,232,.95)}
 .pill-w{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.58)}
 /* SEARCH — sticky, always shown */
-.search-bar{background:var(--nd);padding:.7rem 1.5rem;border-bottom:2px solid var(--hp);position:sticky;top:54px;z-index:90}
+.search-bar{background:var(--nd);padding:1.1rem 1.5rem;border-bottom:2px solid var(--hp);position:sticky;top:54px;z-index:90}
+.search-bar #searchInput{font-size:1.05rem;padding:.85rem .9rem .85rem 2.5rem}
+.search-bar .search-inner{max-width:900px;margin:0 auto}
+.search-bar .search-inner svg{width:18px;height:18px;left:.9rem}
 .search-inner{position:relative;max-width:560px;margin-left:auto;margin-right:auto}
 .search-inner svg{position:absolute;left:.65rem;top:50%;transform:translateY(-50%);opacity:.4;pointer-events:none}
 #searchInput{width:100%;padding:.52rem .75rem .52rem 2rem;font-family:Arial,sans-serif;font-size:.8rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:5px;color:#fff;outline:none}
@@ -199,7 +203,8 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
   .sidebar{display:none !important;width:0 !important;padding:0 !important;overflow:hidden !important;position:absolute !important;pointer-events:none !important}
 
   /* Search bar */
-  .search-bar{padding:.55rem 1rem;top:64px}
+  .search-bar{padding:.85rem 1rem;top:64px}
+  .search-bar #searchInput{font-size:.95rem;padding:.7rem .8rem .7rem 2.2rem}
   .search-inner{max-width:100%}
   #searchInput{font-size:.9rem;padding:.5rem .5rem .5rem 2rem}
 
@@ -421,10 +426,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
   <button class="hamburger" onclick="openDrawer()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
-  <button class="dark-indicator" aria-label="Theme follows local sunrise/sunset automatically" title="Theme follows local sunrise/sunset automatically" tabindex="-1">
-    <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-    <svg class="moon-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-  </button>
+  <button class="dark-indicator" aria-label="Theme follows local sunrise/sunset automatically" title="Theme follows local sunrise/sunset automatically" tabindex="-1" style="display:none"></button>
 </nav>
 
 <div class="overlay" id="overlay" onclick="closeDrawer()" ontouchstart="closeDrawer()"></div>
@@ -616,9 +618,6 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
       </div>
     </div>
   </div>
-  <div id="featuredRow"></div>
-  <div id="continueWatchingRow"></div>
-</div>
 
 <!-- SEARCH BAR — sticky below nav, always visible on every page -->
 <div class="search-bar">
@@ -626,6 +625,10 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="searchInput" placeholder="Search a topic by key words..." onkeydown="if(event.key==='Enter')handleSearch()">
   </div>
+</div>
+
+  <div id="featuredRow"></div>
+  <div id="continueWatchingRow"></div>
 </div>
 
 <!-- Mobile-only category browser — outside body-wrap so it doesn't disrupt flex layout -->
