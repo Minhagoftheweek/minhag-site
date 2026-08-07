@@ -444,6 +444,14 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
   <button class="dark-indicator" aria-label="Theme follows local sunrise/sunset automatically" title="Theme follows local sunrise/sunset automatically" tabindex="-1" style="display:none"></button>
 </nav>
 
+<!-- SEARCH BAR — sticky below nav, always visible on every page regardless of view -->
+<div class="search-bar">
+  <div class="search-inner">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="searchInput" placeholder="Search a topic by key words..." onkeydown="if(event.key==='Enter')handleSearch()">
+  </div>
+</div>
+
 <div class="overlay" id="overlay" onclick="closeDrawer()" ontouchstart="closeDrawer()"></div>
 <div class="mini-player" id="miniPlayer"></div>
 <div class="drawer" id="drawer">
@@ -634,14 +642,6 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
       </div>
     </div>
   </div>
-
-<!-- SEARCH BAR — sticky below nav, always visible on every page -->
-<div class="search-bar">
-  <div class="search-inner">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="searchInput" placeholder="Search a topic by key words..." onkeydown="if(event.key==='Enter')handleSearch()">
-  </div>
-</div>
 
   <div id="featuredRow"></div>
   <div id="continueWatchingRow"></div>
