@@ -2116,6 +2116,19 @@ function addDaysStr(dateStr,days){
   d.setUTCDate(d.getUTCDate()+days);
   return d.toISOString().slice(0,10);
 }
+// The featured PARASHA (not holidays) should only flip to the upcoming
+// Shabbat's reading once the current Shabbat has actually ended — Motzei
+// Shabbat, ~35 min after sunset in New York — not at midnight and not
+// days in advance. Uses the same NOAA sunset math as dark mode.
+function effectiveParashaDateStr(now){
+  const todayStr=nyDateStr(now);
+  const weekday=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short'}).format(now);
+  if(weekday!=='Sat')return todayStr;
+  const noonNY=new Date(todayStr+'T12:00:00-05:00'); // approx midday NY, fine for sunset calc
+  const {sunset}=getSunTimes(noonNY,NYC_LAT,NYC_LON);
+  const motzei=new Date(sunset.getTime()+35*60000);
+  return now>=motzei?addDaysStr(todayStr,1):todayStr;
+}
 
 async function buildFeatured(){
   const todayStr=nyDateStr(new Date());
@@ -2179,7 +2192,8 @@ async function buildFeatured(){
     if(hebMonth==='Elul')minorHits.push({tag:'Elul',label:'Selihot / Elul'});
 
     // Upcoming parasha, lowest priority.
-    const parashaEv=events.find(ev=>ev.category==='parashat');
+    const parashaCutoff=effectiveParashaDateStr(new Date());
+    const parashaEv=events.find(ev=>ev.category==='parashat'&&ev.date>=parashaCutoff);
     let parashaTags=[];
     if(parashaEv){
       const title=parashaEv.title.replace(/^Parashat\s+/,'');
