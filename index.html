@@ -1448,6 +1448,8 @@ function showHome(push){
   document.getElementById('playlistPage').style.display='none';
   document.getElementById('listView').style.display='block';
   document.getElementById('heroWrap').style.display='block';
+  document.getElementById('featuredRow').style.display='';
+  document.getElementById('continueWatchingRow').style.display='';
   render();
   renderContinueWatching();
   renderWatchedCounter();
@@ -1556,7 +1558,8 @@ function handleSearch(){
       minimizeVideo();
       document.getElementById('epPage').classList.remove('show');
       ['opp','question'].forEach(p=>document.getElementById(p+'Page').classList.remove('show'));
-      document.getElementById('heroWrap').style.display='none';
+      document.getElementById('featuredRow').style.display='none';
+      document.getElementById('continueWatchingRow').style.display='none';
       document.getElementById('listView').style.display='block';
       trackSearch(q,fil.length);
       pg=1; render();
@@ -1653,7 +1656,8 @@ function handleSearch(){
     minimizeVideo();
     document.getElementById('epPage').classList.remove('show');
     ['opp','question'].forEach(p=>document.getElementById(p+'Page').classList.remove('show'));
-    document.getElementById('heroWrap').style.display='none';
+    document.getElementById('featuredRow').style.display='none';
+    document.getElementById('continueWatchingRow').style.display='none';
     document.getElementById('listView').style.display='block';
     pg=1; render();
 }
