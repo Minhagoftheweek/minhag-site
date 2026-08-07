@@ -438,6 +438,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
   <div class="drawer-body">
     <button class="drawer-btn" onclick="closeDrawer();showHome()">All Episodes</button>
     <button class="drawer-btn" onclick="closeDrawer();showPlaylist()">My Playlist <span id="drawerPlaylistCt"></span></button>
+    <button class="drawer-btn" onclick="closeDrawer();showPage('about')">About</button>
     <button class="drawer-btn" onclick="closeDrawer();showPage('opp')">Sponsorship Opportunities</button>
     <a class="drawer-btn" href="mailto:minhag@scaupdates.org?subject=Episode%20Suggestion" onclick="closeDrawer()">Suggest Episode Topic</a>
     <a class="drawer-btn" href="https://us.list-manage.com/OksJiO3RmfJ?e=fb9fa2429c&c2id=14219a4025956c69c2f3b48f8c556d8d" target="_blank" onclick="closeDrawer()">Subscribe to Email List</a>
@@ -744,6 +745,19 @@ Dedicated by Danny Harary in honor of his wife and children'></textarea></div>
       </div>
     </div>
 
+    <!-- ABOUT PAGE — full width -->
+    <div class="full-pg" id="aboutPage">
+      <button class="back-btn" onclick="showHome()">&#8592; Back</button>
+      <div class="fp-title">About Minhag of the Week</div>
+      <div class="form-card" style="text-align:left;line-height:1.7;font-size:.88rem;color:var(--tx)">
+        <p style="margin-bottom:1rem">Every community has traditions that define it. Some are written in books, but many are passed from generation to generation- learned by watching parents, grandparents, rabbis and elders. The idea behind Minhag of the Week was simple: preserve the cherished customs of the Sephardic community before they are lost to time. At a Sephardic Community Alliance (SCA) Board Meeting in the spring of 2018, board member Mr. Jesse M. Sutton proposed creating a series dedicated to documenting and teaching our community's minhagim. Throughout that summer, the concept evolved, and by the fall of 2018, the SCA assembled a diverse focus group representing different ages, backgrounds and interests. Their feedback helped shape the format, pacing and content, ensuring the series would be engaging and meaningful to the widest possible audience. On May 30, 2019, Minhag of the Week officially launched.</p>
+        <p style="margin-bottom:1rem">At the center of the project are three extraordinary community members: Mr. Joseph Mosseri, Mr. Morris Arking and Mr. Joey Harari. Widely respected throughout the community for their passion, scholarship and deep knowledge of our community's minhagim and hazzanut, the three have volunteered their time, completely free of charge since the very first episode. Every week, they dedicate countless hours to researching sources, preparing each presentation and recording new episodes- all motivated by a shared desire to preserve our heritage and pass it on to future generations. Their unwavering commitment has transformed what began as a simple idea into one of the most comprehensive digital collections of authentic Sephardic customs available anywhere.</p>
+        <p style="margin-bottom:1rem">Although Minhag of the Week was originally created for the Syrian Sephardic community of New York and New Jersey, its impact quickly extended far beyond our local neighborhoods. Today, the series is watched by audiences throughout Israel, Panama, Mexico, Argentina, Brazil, England and other Sephardic communities around the world. We regularly receive messages from viewers expressing how meaningful the project has been to them, along with requests to translate episodes into additional languages so even more communities can benefit. It is truly remarkable that families in Brooklyn, students in Jerusalem and communities in Panama City can all be learning the very same minhagim together- strengthening the shared traditions that have united Sephardic Jews across the world for generations.</p>
+        <p style="margin-bottom:1rem">For several years, Minhag of the Week was distributed primarily through YouTube, Instagram and social media, where it grew to more than 300 episodes and hundreds of thousands of views. In the summer of 2026, we took the next major step by launching MinhagOfTheWeek.com. The website transforms this ever-growing library into a fully searchable resource, featuring complete episode transcriptions, powerful search tools, topic categories and many other resources that make it easier than ever to find exactly what you're looking for. Whether you're researching a specific custom, preparing for a holiday, settling a question from the Shabbat table or simply exploring the rich traditions of Sephardic Judaism, our hope is that Minhag of the Week will continue serving as a trusted resource for generations to come.</p>
+        <p>Minhag of the Week has always been- and will always remain- a free resource for the community. Every episode, every transcription and every new feature has been made possible through the dedication of volunteers and supporters who believe that preserving our traditions is a responsibility we all share. If Minhag of the Week has enriched your understanding of our heritage or helped strengthen your family's connection to our community's customs, we invite you to <span class="card-pres-lnk" onclick="showPage('opp')">partner with us</span>. Your support will help us continue producing new episodes, expanding the website and ensuring that these treasured minhagim remain accessible to Jews around the world for generations to come.</p>
+      </div>
+    </div>
+
     
 
   </div>
@@ -755,6 +769,7 @@ Dedicated by Danny Harary in honor of his wife and children'></textarea></div>
     <div class="ft-links">
       <button class="ft-lnk" onclick="showHome()">Home</button>
       <button class="ft-lnk" onclick="showPlaylist()">My Playlist</button>
+      <button class="ft-lnk" onclick="showPage('about')">About</button>
       <button class="ft-lnk" onclick="showPage('opp')">Sponsorship Opportunities</button>
       <a class="ft-lnk" href="mailto:minhag@scaupdates.org?subject=Episode%20Suggestion" style="text-decoration:none">Suggest Episode Topic</a>
     </div>
@@ -1178,6 +1193,7 @@ function routeSub(catId,sub){navigate('/category/'+catId+'/'+slugify(sub));}
 function routePresenter(w){navigate('/presenter/'+slugify(w));}
 function routeSponsorship(){navigate('/sponsorship');}
 function routeQuestion(){navigate('/question');}
+function routeAbout(){navigate('/about');}
 
 function applyRoute(){
   const params=new URLSearchParams(location.search);
@@ -1206,6 +1222,7 @@ function applyRoute(){
   const[first,second,third]=parts;
   if(first==='sponsorship'){showPage('opp',false);return;}
   if(first==='question'){showPage('question',false);return;}
+  if(first==='about'){showPage('about',false);return;}
   if(first==='category'&&second){
     const catId=catIdFromSlug(second);
     if(catId){
@@ -1763,6 +1780,10 @@ function setVidSize(id,size){
 // Episodes sorted oldest-to-newest by their display number (handles "Ep. 8.5" etc correctly)
 function epSortKey(ep){return parseFloat(ep[1].replace(/^Ep\.\s*/,''));}
 function getNextEpId(currentId){
+  // Prefer one of the same episodes shown in the "Related Episodes" section,
+  // so Up Next stays topically related instead of just the next chronological upload.
+  const related=getRelatedEpisodes(currentId,3);
+  if(related.length)return E.id(related[0]);
   const sorted=EPS.slice().sort((a,b)=>epSortKey(a)-epSortKey(b));
   const idx=sorted.findIndex(ep=>E.id(ep)===currentId);
   if(idx===-1)return null;
@@ -2406,7 +2427,7 @@ function renderPlaylistPage(sharedIds){
   const heading=isShared?'Shared Playlist':'My Playlist';
   let body;
   if(!eps.length){
-    body=`<div class="pl-empty">${isShared?'This shared playlist link didn\u2019t contain any valid episodes.':'Your playlist is empty. Tap the + on any episode to add it here.'}</div>`;
+    body=`<div class="pl-empty">${isShared?'This shared playlist link didn\u2019t contain any valid episodes.':'Your playlist is empty. Add episodes below, or tap the + icon in the top-right corner of any episode thumbnail across the site.'}</div>`;
   }else{
     body=eps.map(ep=>playlistRowHtml(ep,isShared?{}:{onRemove:'removeFromPlaylist'})).join('');
   }
@@ -2415,9 +2436,39 @@ function renderPlaylistPage(sharedIds){
       ${isShared?`<button class="dl-btn dl-btn-ghost" onclick="importSharedPlaylist([${ids.join(',')}])">Save to My Playlist</button>`
                 :`<button class="dl-btn dl-btn-ghost" onclick="clearPlaylist()">Clear Playlist</button>`}
     </div>`:'';
+  const addSection=isShared?'':`<div class="pl-add-section" style="margin-top:1.6rem;padding-top:1.4rem;border-top:1px solid var(--bd)">
+      <label style="display:block;font-size:.78rem;font-weight:700;color:var(--navy);margin-bottom:.4rem">Add Episodes to Playlist</label>
+      <div style="font-size:.7rem;color:var(--mu);margin-bottom:.5rem">You can also add any episode to your playlist by tapping the + icon in the top-right corner of its thumbnail wherever you browse episodes.</div>
+      <input type="text" id="plAddSearch" placeholder="Search by episode title, number or presenter..." oninput="renderPlAddResults()" style="width:100%;padding:.6rem .75rem;border:1px solid var(--bd);border-radius:6px;font-family:Arial,sans-serif;font-size:.82rem">
+      <div id="plAddResults" style="margin-top:.6rem"></div>
+    </div>`;
   wrap.innerHTML=`<h2 style="margin-bottom:1rem">${heading} <span class="ep-ct">${eps.length} episode${eps.length===1?'':'s'}</span></h2>
     ${shareBar}
-    <div class="pl-list">${body}</div>`;
+    <div class="pl-list">${body}</div>
+    ${addSection}`;
+}
+function renderPlAddResults(){
+  const box=document.getElementById('plAddResults');
+  if(!box)return;
+  const q=(document.getElementById('plAddSearch').value||'').trim().toLowerCase();
+  if(!q){box.innerHTML='';return;}
+  const inPl=getPlaylist();
+  const matches=EPS.filter(ep=>{
+    if(inPl.includes(E.id(ep)))return false;
+    const num=E.num(ep).toLowerCase().replace(/^ep\.\s*/,'');
+    return E.t(ep).toLowerCase().includes(q)||fn(E.w(ep)).toLowerCase().includes(q)||num.includes(q);
+  }).slice(0,8);
+  if(!matches.length){box.innerHTML='<div style="font-size:.76rem;color:var(--mu);padding:.4rem 0">No matching episodes found.</div>';return;}
+  box.innerHTML=matches.map(ep=>{
+    const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+    return `<div class="pl-row" style="cursor:default">
+      <div class="pl-row-body" style="cursor:pointer" onclick="openEp(${E.id(ep)})">
+        <div class="card-title">${numDisplay}: ${E.t(ep)}</div>
+        <div class="card-date">${E.dt(ep)} &middot; ${fn(E.w(ep))}</div>
+      </div>
+      <button class="dl-btn dl-btn-ghost" style="flex-shrink:0" onclick="togglePlaylist(${E.id(ep)});renderPlAddResults()">+ Add</button>
+    </div>`;
+  }).join('');
 }
 function importSharedPlaylist(ids){
   const mine=getPlaylist();
@@ -2550,7 +2601,7 @@ function reopenFromMini(){
 function hidePgs(){
   minimizeVideo();
   document.getElementById('epPage').classList.remove('show');
-  ['opp','question'].forEach(p=>document.getElementById(p+'Page').classList.remove('show'));
+  ['opp','question','about'].forEach(p=>document.getElementById(p+'Page').classList.remove('show'));
 }
 function showPage(p,push){
   document.getElementById('heroWrap').style.display='none';
@@ -2562,6 +2613,7 @@ function showPage(p,push){
   if(push!==false){
     if(p==='opp')routeSponsorship();
     else if(p==='question')routeQuestion();
+    else if(p==='about')routeAbout();
   }
 }
 
