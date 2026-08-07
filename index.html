@@ -2058,7 +2058,7 @@ const MAJOR_HOLIDAY_KEYWORDS=[['Rosh Hashana','Rosh Hashanah'],['Yom Kippur','Yo
   ['Sukkot','Sukkot & Shemini Asseret & Simhat Torah'],['Shmini Atzeret','Sukkot & Shemini Asseret & Simhat Torah'],
   ['Simchat Torah','Sukkot & Shemini Asseret & Simhat Torah'],['Chanukah','Hanukkah'],
   ['Pesach','Pesah'],['Shavuot','Shabuot'],['Purim','Purim']];
-const FEATURED_MAJOR_WINDOW=10;
+const FEATURED_MAJOR_LEAD_DAYS=7;
 // Minor/special occasions: contribute at most one featured slot.
 const MINOR_HOLIDAY_RULES=[
   {test:t=>/Shabbat Zachor/i.test(t),tag:'Purim',titleHint:/zak?hor/i},
@@ -2132,13 +2132,14 @@ function effectiveParashaDateStr(now){
 
 async function buildFeatured(){
   const todayStr=nyDateStr(new Date());
-  const endStr=addDaysStr(todayStr,21);
-  let events=[],hebMonth=null;
+  const fetchStart=addDaysStr(todayStr,-10); // lookback so an already-in-progress multi-day holiday's earlier day(s) are visible
+  const fetchEnd=addDaysStr(todayStr,21);
+  let events=[],hebMonth=null,hebYear=null;
   try{
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),6000);
     const [calRes,convRes]=await Promise.all([
-      fetch(`https://www.hebcal.com/hebcal?cfg=json&v=1&start=${todayStr}&end=${endStr}&maj=on&min=on&mf=on&ss=on&s=on&nx=on`,{signal:ctrl.signal}),
+      fetch(`https://www.hebcal.com/hebcal?cfg=json&v=1&start=${fetchStart}&end=${fetchEnd}&maj=on&min=on&mf=on&ss=on&s=on&nx=on`,{signal:ctrl.signal}),
       fetch(`https://www.hebcal.com/converter?cfg=json&date=${todayStr}&g2h=1`,{signal:ctrl.signal})
     ]);
     clearTimeout(timer);
@@ -2146,41 +2147,63 @@ async function buildFeatured(){
     events=calJson.items||[];
     const convJson=await convRes.json();
     hebMonth=convJson.hm||null;
+    hebYear=convJson.hy||null;
   }catch(e){
     // Calendar lookup failed (offline, blocked, etc.) — fall through to
     // the random fallback below using only the seed, no timely picks.
   }
 
   const usedIds=new Set();
-  const pickFromTag=(type,val,count)=>{
+  const pickFromTag=(type,val,count,seedStr)=>{
     const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep)));
-    const shuffled=seededShuffle(pool,todayStr+'|'+type+'|'+val);
+    const shuffled=seededShuffle(pool,seedStr);
     const picked=shuffled.slice(0,count);
     picked.forEach(ep=>usedIds.add(E.id(ep)));
     return picked;
   };
 
-  // 1) Major holiday within the window → full 3-slot takeover.
-  let majorTag=null,majorDate=null;
+  // 1) Major holiday: active starting FEATURED_MAJOR_LEAD_DAYS before its
+  // first day, and stays active through its LAST day until Motzei Chag
+  // (sunset + 35 min in New York) — not a fixed day-count on both ends.
+  const now=new Date();
+  let majorTag=null,majorFirstDate=null,majorLastDate=null;
+  const byTag={};
   events.forEach(ev=>{
     if(ev.category!=='holiday')return;
     for(const[kw,tag] of MAJOR_HOLIDAY_KEYWORDS){
       if(ev.title.includes(kw)){
-        const days=(new Date(ev.date+'T12:00:00Z')-new Date(todayStr+'T12:00:00Z'))/86400000;
-        if(days<=FEATURED_MAJOR_WINDOW&&(!majorDate||ev.date<majorDate)){majorTag=tag;majorDate=ev.date;}
+        if(!byTag[tag])byTag[tag]={first:ev.date,last:ev.date};
+        if(ev.date<byTag[tag].first)byTag[tag].first=ev.date;
+        if(ev.date>byTag[tag].last)byTag[tag].last=ev.date;
         break;
       }
     }
   });
+  for(const tag in byTag){
+    const{first,last}=byTag[tag];
+    const firstDate=new Date(first+'T12:00:00Z');
+    const daysToFirst=(firstDate-new Date(todayStr+'T12:00:00Z'))/86400000;
+    let active=false;
+    if(daysToFirst>=0){
+      active=daysToFirst<=FEATURED_MAJOR_LEAD_DAYS;
+    }else{
+      const noonNY=new Date(last+'T12:00:00-05:00');
+      const{sunset}=getSunTimes(noonNY,NYC_LAT,NYC_LON);
+      const conclusion=new Date(sunset.getTime()+35*60000);
+      active=now<conclusion;
+    }
+    if(active&&(!majorFirstDate||first<majorFirstDate)){majorTag=tag;majorFirstDate=first;majorLastDate=last;}
+  }
   let picks=[],reason='';
   if(majorTag){
-    picks=pickFromTag('holidays',majorTag,3);
+    picks=pickFromTag('holidays',majorTag,3,`${majorTag}|${hebYear||todayStr}`);
     reason=`Featured for ${majorTag}`;
   }else{
     // 2) Minor/special occasions (special Shabbatot, fasts, Rosh Hodesh…)
     const minorSeen=new Set();
     const minorHits=[];
     events.forEach(ev=>{
+      if(ev.date<todayStr)return; // lookback window is only for major-holiday detection
       for(const rule of MINOR_HOLIDAY_RULES){
         if(rule.test(ev.title)&&!minorSeen.has(rule.tag)){
           minorSeen.add(rule.tag);
@@ -2189,7 +2212,7 @@ async function buildFeatured(){
       }
     });
     minorHits.sort((a,b)=>a.date<b.date?-1:1);
-    if(hebMonth==='Elul')minorHits.push({tag:'Elul',label:'Selihot / Elul'});
+    if(hebMonth==='Elul')minorHits.push({tag:'Elul',label:'Selihot / Elul',date:todayStr});
 
     // Upcoming parasha, lowest priority.
     const parashaCutoff=effectiveParashaDateStr(new Date());
@@ -2201,10 +2224,9 @@ async function buildFeatured(){
     }
     const rawParashaName=parashaEv?parashaEv.title.replace(/^Parashat\s+/,''):null;
     if(rawParashaName&&SHOBABIM_PARASHOT.has(rawParashaName)){
-      minorHits.push({tag:'Shobabim',label:'Shobabim'});
+      minorHits.push({tag:'Shobabim',label:'Shobabim',date:parashaEv.date});
     }
 
-    const reasonParts=[];
     for(const hit of minorHits){
       if(picks.length>=3)break;
       let ep=null;
@@ -2212,16 +2234,16 @@ async function buildFeatured(){
         const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
         if(hinted){ep=hinted;usedIds.add(E.id(ep));}
       }
-      if(!ep){const got=pickFromTag('holidays',hit.tag,1);if(got.length)ep=got[0];}
-      if(ep){picks.push(ep);reasonParts.push(hit.label||hit.tag);}
+      if(!ep){const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`);if(got.length)ep=got[0];}
+      if(ep)picks.push(ep);
     }
     // Fill remaining with this week's parasha episodes, if tagged ones exist.
     for(const pt of parashaTags){
       if(picks.length>=3)break;
-      const got=pickFromTag('parasha',pt,3-picks.length);
-      if(got.length){picks=picks.concat(got);reasonParts.push(`Parashat ${rawParashaName}`);}
+      const got=pickFromTag('parasha',pt,3-picks.length,`${pt}|${parashaEv.date}`);
+      if(got.length)picks=picks.concat(got);
     }
-    reason=reasonParts.length?`Featured for ${[...new Set(reasonParts)].join(', ')}`:'';
+    reason='';
   }
   // 3) Fill any remaining slots with random episodes.
   if(picks.length<3){
@@ -2252,7 +2274,6 @@ async function renderFeatured(){
   }).join('');
   row.innerHTML=`<div class="feat-row">
     <h3>Featured Episodes</h3>
-    ${result.reason?`<div class="feat-reason">${result.reason}</div>`:'<div class="feat-reason">&nbsp;</div>'}
     <div class="feat-grid">${cards}</div>
   </div>`;
 }
