@@ -2563,14 +2563,10 @@ function minimizeVideo(){
   if(!vidBox)return;
   const videoEl=vidBox.querySelector('video');
   if(!videoEl){
-    // No native <video> — this is a SproutVideo iframe. There's no mini-player
-    // support for it (moving a cross-origin iframe mid-playback is unreliable).
-    // We deliberately do NOT call pause() here: if the viewer put the video into
-    // native Picture-in-Picture before navigating away, pausing here would kill
-    // that PiP session. We just save progress; if they're not in PiP the audio
-    // will keep playing briefly in the background, which is the acceptable
-    // trade-off for letting PiP survive in-app navigation. Opening a new episode
-    // replaces this iframe entirely, which naturally stops the old one.
+    // No native <video> — this is a SproutVideo iframe. Save progress, then
+    // stop playback by clearing the iframe src (PiP isn't enabled on this
+    // iframe's allow list, so there's no PiP session to preserve — leaving
+    // it playing was just leaving audio running in the background).
     if(activeSproutPlayer){
       try{
         const t=activeSproutPlayer.getCurrentTime();
@@ -2578,6 +2574,9 @@ function minimizeVideo(){
         if(d)saveWatchProgress(currentEpId,t,d);
       }catch(e){/* player may already be torn down */}
     }
+    const iframe=vidBox.querySelector('iframe.sproutvideo-player');
+    if(iframe)iframe.src='about:blank';
+    activeSproutPlayer=null;
     return;
   }
   // Only worth minimizing if it's a real <video> that's actually playing (data URI / Stream native player)
