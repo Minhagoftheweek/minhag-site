@@ -1867,7 +1867,7 @@ function renderWatchedCounter(){
   const el=document.getElementById('watchedCounter');
   if(!el)return;
   const n=getWatchedSet().size;
-  el.textContent=n?`${n} episode${n===1?'':'s'} watched on this device`:'';
+  el.textContent=n?`${n} of ${EPS.length} episodes watched here`:'';
 }
 function getWatchHistory(){
   try{
