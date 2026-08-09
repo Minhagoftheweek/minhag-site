@@ -2210,18 +2210,25 @@ async function buildFeatured(){
   }
 
   const isLeapYear=hebYear?((7*hebYear+1)%19)<7:false;
+  const purimEv=events.find(ev=>ev.category==='holiday'&&ev.title==='Purim');
+  const purimIsFriday=purimEv?new Date(purimEv.date+'T12:00:00Z').getUTCDay()===5:false;
+  const fastIsFriday=events.some(ev=>/Tzom Gedaliah|Asara B.?Tevet|Taanit Bechorot|Tzom Tammuz/i.test(ev.title)&&new Date(ev.date+'T12:00:00Z').getUTCDay()===5);
+  // Episodes whose applicability depends on a specific yearly calendar
+  // coincidence (not just "this holiday/occasion is happening") are kept
+  // out of the generic random tag pools unless their exact condition holds
+  // this year — 128 only in a real leap year, 92 only if Purim itself
+  // falls on Friday, 83 only if an upcoming fast falls on Friday. 149 is
+  // never picked generically — it only surfaces via its own dedicated
+  // dateFilter rule below (Rosh Hodesh Tebet/Adar/Nisan on Shabbat).
+  const CONDITIONAL_BLOCK={128:!isLeapYear,149:true,92:!purimIsFriday,83:!fastIsFriday};
   const usedIds=new Set();
-  const pickFromTag=(type,val,count,seedStr,excludeIds)=>{
-    const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep))&&!(excludeIds&&excludeIds.has(E.id(ep))));
+  const pickFromTag=(type,val,count,seedStr)=>{
+    const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
     const shuffled=seededShuffle(pool,seedStr);
     const picked=shuffled.slice(0,count);
     picked.forEach(ep=>usedIds.add(E.id(ep)));
     return picked;
   };
-  // Episode 128 ("Musaf for Rosh Hodesh during a Jewish Leap Year") only
-  // applies in an actual Hebrew leap year — exclude it from the generic
-  // Rosh Hodesh pool otherwise.
-  const ROSH_HODESH_EXCLUDE=isLeapYear?null:new Set([128]);
 
   // 1) Major holiday: active starting FEATURED_MAJOR_LEAD_DAYS before its
   // first day, and stays active through its LAST day until Motzei Chag
@@ -2296,7 +2303,7 @@ async function buildFeatured(){
         const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
         if(hinted){ep=hinted;usedIds.add(E.id(ep));}
       }
-      if(!ep){const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`,hit.tag==='Rosh Hodesh'?ROSH_HODESH_EXCLUDE:null);if(got.length)ep=got[0];}
+      if(!ep){const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`);if(got.length)ep=got[0];}
       if(ep)picks.push(ep);
     }
     // Fill remaining with this week's parasha episodes, if tagged ones exist.
