@@ -2209,14 +2209,19 @@ async function buildFeatured(){
     // the random fallback below using only the seed, no timely picks.
   }
 
+  const isLeapYear=hebYear?((7*hebYear+1)%19)<7:false;
   const usedIds=new Set();
-  const pickFromTag=(type,val,count,seedStr)=>{
-    const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep)));
+  const pickFromTag=(type,val,count,seedStr,excludeIds)=>{
+    const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep))&&!(excludeIds&&excludeIds.has(E.id(ep))));
     const shuffled=seededShuffle(pool,seedStr);
     const picked=shuffled.slice(0,count);
     picked.forEach(ep=>usedIds.add(E.id(ep)));
     return picked;
   };
+  // Episode 128 ("Musaf for Rosh Hodesh during a Jewish Leap Year") only
+  // applies in an actual Hebrew leap year — exclude it from the generic
+  // Rosh Hodesh pool otherwise.
+  const ROSH_HODESH_EXCLUDE=isLeapYear?null:new Set([128]);
 
   // 1) Major holiday: active starting FEATURED_MAJOR_LEAD_DAYS before its
   // first day, and stays active through its LAST day until Motzei Chag
@@ -2291,7 +2296,7 @@ async function buildFeatured(){
         const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
         if(hinted){ep=hinted;usedIds.add(E.id(ep));}
       }
-      if(!ep){const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`);if(got.length)ep=got[0];}
+      if(!ep){const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`,hit.tag==='Rosh Hodesh'?ROSH_HODESH_EXCLUDE:null);if(got.length)ep=got[0];}
       if(ep)picks.push(ep);
     }
     // Fill remaining with this week's parasha episodes, if tagged ones exist.
