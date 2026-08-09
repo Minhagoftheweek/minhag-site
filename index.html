@@ -2190,7 +2190,7 @@ async function buildFeatured(){
   const todayStr=nyDateStr(new Date());
   const fetchStart=addDaysStr(todayStr,-10); // lookback so an already-in-progress multi-day holiday's earlier day(s) are visible
   const fetchEnd=addDaysStr(todayStr,21);
-  let events=[],hebMonth=null,hebYear=null;
+  let events=[],hebMonth=null,hebYear=null,hebDay=null;
   try{
     const ctrl=new AbortController();
     const timer=setTimeout(()=>ctrl.abort(),6000);
@@ -2204,6 +2204,7 @@ async function buildFeatured(){
     const convJson=await convRes.json();
     hebMonth=convJson.hm||null;
     hebYear=convJson.hy||null;
+    hebDay=convJson.hd||null;
   }catch(e){
     // Calendar lookup failed (offline, blocked, etc.) — fall through to
     // the random fallback below using only the seed, no timely picks.
@@ -2281,7 +2282,11 @@ async function buildFeatured(){
       }
     });
     minorHits.sort((a,b)=>a.date<b.date?-1:1);
-    if(hebMonth==='Elul')minorHits.push({tag:'Elul',label:'Selihot / Elul',date:todayStr});
+    // Selihot/Elul: starts the day after Rosh Hodesh Elul (2 Elul), not on
+    // Rosh Hodesh Elul itself — and is never said on Shabbat, so skip if
+    // today (NY) is Saturday.
+    const todayWeekday=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short'}).format(now);
+    if(hebMonth==='Elul'&&hebDay>=2&&todayWeekday!=='Sat')minorHits.push({tag:'Elul',label:'Selihot / Elul',date:todayStr});
 
     // Upcoming parasha, lowest priority.
     const parashaCutoff=effectiveParashaDateStr(new Date());
