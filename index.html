@@ -2223,8 +2223,9 @@ async function buildFeatured(){
   const byTag={};
   events.forEach(ev=>{
     if(ev.category!=='holiday')return;
+    if(/LaBehemot|Katan/i.test(ev.title))return; // exclude minor lookalikes (Rosh Hashana LaBehemot, Yom Kippur Katan)
     for(const[kw,tag] of MAJOR_HOLIDAY_KEYWORDS){
-      if(ev.title.includes(kw)){
+      if(ev.title===kw||ev.title.startsWith(kw+' ')){
         if(!byTag[tag])byTag[tag]={first:ev.date,last:ev.date};
         if(ev.date<byTag[tag].first)byTag[tag].first=ev.date;
         if(ev.date>byTag[tag].last)byTag[tag].last=ev.date;
