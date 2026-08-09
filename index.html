@@ -2,6 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="build-version" content="1786294132">
+<script>
+// Self-healing cache check: if this page was served from a stale CDN/ISP
+// cache, silently fetch the real current build id (with a cache-proof
+// unique query string) and force a fresh reload if it doesn't match —
+// so visitors never see an out-of-date page or need to manually refresh.
+(function(){
+  try{
+    if(sessionStorage.getItem('mow_cache_checked'))return;
+    sessionStorage.setItem('mow_cache_checked','1');
+    var mine=document.querySelector('meta[name="build-version"]').content;
+    fetch('/version.json?_='+Date.now(),{cache:'no-store'})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d && d.v && d.v!==mine){
+          location.replace(location.pathname+'?_cb='+Date.now()+location.hash);
+        }
+      })
+      .catch(function(){});
+  }catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>SCA Minhag of the Week</title>
 <!-- Google Analytics — replace G-NT9BFDHPD3 with your real Measurement ID -->
