@@ -2220,7 +2220,7 @@ async function buildFeatured(){
   // falls on Friday, 83 only if an upcoming fast falls on Friday. 149 is
   // never picked generically — it only surfaces via its own dedicated
   // dateFilter rule below (Rosh Hodesh Tebet/Adar/Nisan on Shabbat).
-  const CONDITIONAL_BLOCK={128:!isLeapYear,149:true,92:!purimIsFriday,83:!fastIsFriday};
+  const CONDITIONAL_BLOCK={128:!isLeapYear,149:true,92:!purimIsFriday,83:!fastIsFriday,269:!fastIsFriday};
   const usedIds=new Set();
   const pickFromTag=(type,val,count,seedStr)=>{
     const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
@@ -2319,7 +2319,24 @@ async function buildFeatured(){
     const rest=seededShuffle(EPS.filter(ep=>!usedIds.has(E.id(ep))),todayStr+'|fallback');
     picks=picks.concat(rest.slice(0,3-picks.length));
   }
-  return {picks:picks.slice(0,3),reason};
+  picks=picks.slice(0,3);
+  // Diversity rule: the 3 slots may never all be the same presenter (e.g.
+  // Morris Arking alone in all 3). If they are, swap the last slot for a
+  // different-presenter episode from the remaining pool, keeping the swap
+  // stable for the day via the same seeding approach used elsewhere.
+  if(picks.length===3){
+    const presenters=picks.map(ep=>E.w(ep));
+    const allSamePresenter=presenters.every(p=>p===presenters[0])&&!presenters[0].includes(',');
+    if(allSamePresenter){
+      const altPool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&E.w(ep)!==presenters[0]);
+      if(altPool.length){
+        const alt=seededShuffle(altPool,todayStr+'|diversify')[0];
+        usedIds.add(E.id(alt));
+        picks=[picks[0],picks[1],alt];
+      }
+    }
+  }
+  return {picks,reason};
 }
 
 async function renderFeatured(){
