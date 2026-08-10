@@ -2,7 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786298507">
+<meta name="build-version" content="1786356790">
+<script>
+// If we were just bounced here from 404.html (a deep link like /sponsorship
+// that isn't a real file), restore the original URL before anything else
+// runs, so the router below renders the right page instead of the homepage.
+(function(){
+  try{
+    var p=sessionStorage.getItem('mow_redirect_path');
+    if(p){
+      sessionStorage.removeItem('mow_redirect_path');
+      history.replaceState(null,'',p);
+    }
+  }catch(e){}
+})();
+</script>
 <script>
 // Self-healing cache check: if this page was served from a stale CDN/ISP
 // cache, silently fetch the real current build id (with a cache-proof
