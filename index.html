@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786356790">
+<meta name="build-version" content="1786363726">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2159,7 +2159,7 @@ const MINOR_HOLIDAY_RULES=[
   {test:t=>/Tu ?BiShvat/i.test(t),tag:'Tu Bishbat'},
   {test:t=>/Tzom Tammuz|Tish'?a B'?Av|Shabbat Chazon/i.test(t),tag:"17 Tamuz through Tish'a BeAb"},
   {test:t=>/Tzom Gedaliah|Asara B'?Tevet|Taanit Bechorot/i.test(t),tag:'Fasts'},
-  {test:t=>/Rosh Chodesh (Teves|Adar( I| II)?|Nisan)/i.test(t),tag:'3 Sifre Torah',titleHint:/3 Sifre Torah/i,
+  {test:t=>/Rosh Chodesh (Teves|Tevet|Adar( I| II)?|Nisan)/i.test(t),tag:'3 Sifre Torah',titleHint:/3 Sifre Torah/i,
     dateFilter:d=>new Date(d+'T12:00:00Z').getUTCDay()===6},
   {test:t=>/Rosh Chodesh/i.test(t),tag:'Rosh Hodesh'}
 ];
@@ -2235,6 +2235,10 @@ async function buildFeatured(){
     clearTimeout(timer);
     const calJson=await calRes.json();
     events=calJson.items||[];
+    // Hebcal titles use curly apostrophes (’) — normalize to straight (')
+    // so our regexes (written with straight quotes) actually match things
+    // like "Asara B’Tevet", "Ta’anit Bechorot", "Tish’a B’Av".
+    events.forEach(ev=>{if(ev.title)ev.title=ev.title.replace(/[\u2018\u2019]/g,"'");});
     const convJson=await convRes.json();
     hebMonth=convJson.hm||null;
     hebYear=convJson.hy||null;
@@ -2273,9 +2277,9 @@ async function buildFeatured(){
   const byTag={};
   events.forEach(ev=>{
     if(ev.category!=='holiday')return;
-    if(/LaBehemot|Katan/i.test(ev.title))return; // exclude minor lookalikes (Rosh Hashana LaBehemot, Yom Kippur Katan)
+    if(/LaBehemot|Katan|Pesach Sheni/i.test(ev.title))return; // exclude minor lookalikes (Rosh Hashana LaBehemot, Yom Kippur/Purim Katan, Pesach Sheni)
     for(const[kw,tag] of MAJOR_HOLIDAY_KEYWORDS){
-      if(ev.title===kw||ev.title.startsWith(kw+' ')){
+      if(ev.title===kw||ev.title.startsWith(kw+' ')||ev.title.startsWith(kw+':')){
         if(!byTag[tag])byTag[tag]={first:ev.date,last:ev.date};
         if(ev.date<byTag[tag].first)byTag[tag].first=ev.date;
         if(ev.date>byTag[tag].last)byTag[tag].last=ev.date;
