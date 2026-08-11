@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786454889">
+<meta name="build-version" content="1786455648">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2225,6 +2225,26 @@ function seededShuffle(arr,seedStr){
   for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
   return a;
 }
+// Rotating, non-repeating pick: instead of an independent random draw each
+// time (which can easily leave some pool members never chosen across a
+// small number of occurrences, purely by chance), this walks a repeatedly
+// reshuffled-when-exhausted "deck" — reignOrdinal identifies which
+// occurrence/sub-period this is, and the deck guarantees every pool member
+// gets a turn before any repeat within a lap.
+function rotatingPick(pool,tag,slotsNeeded,reignOrdinal){
+  const deckSize=pool.length;
+  if(deckSize<=slotsNeeded)return pool.slice();
+  const picks=[];
+  let lap=Math.floor((reignOrdinal*slotsNeeded)/deckSize);
+  let pos=(reignOrdinal*slotsNeeded)%deckSize;
+  let guard=0;
+  while(picks.length<slotsNeeded&&guard<10){
+    const deck=seededShuffle(pool,tag+'|lap'+lap);
+    while(pos<deckSize&&picks.length<slotsNeeded){picks.push(deck[pos]);pos++;}
+    if(picks.length<slotsNeeded){lap++;pos=0;guard++;}
+  }
+  return picks;
+}
 function nyDateStr(d){
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
   const m={};parts.forEach(p=>m[p.type]=p.value);
@@ -2297,6 +2317,22 @@ async function buildFeatured(){
     picked.forEach(ep=>usedIds.add(E.id(ep)));
     return picked;
   };
+  // Rotating variant: same filtering as pickFromTag, but walks the
+  // non-repeating deck above instead of an independent shuffle, so a pool
+  // with more members than fit in one occurrence gradually gets full
+  // coverage across occurrences instead of some members never coming up.
+  const pickFromTagRotating=(type,val,count,tag,reignOrdinal)=>{
+    const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
+    const picked=rotatingPick(pool,tag,count,reignOrdinal).filter(ep=>!usedIds.has(E.id(ep))).slice(0,count);
+    picked.forEach(ep=>usedIds.add(E.id(ep)));
+    return picked;
+  };
+  // How many ~3-day sub-periods a major holiday's pool rotates through per
+  // year — splits a longer holiday into shorter reigns so more of a big
+  // pool (e.g. 12 Pesah-tagged episodes) gets shown within the same week,
+  // instead of the same 3 for the entire holiday every year.
+  const ROTATION_DAYS=3;
+  const MAJOR_PERIODS_PER_YEAR={'Rosh Hashanah':1,'Yom Kippur':1,'Sukkot & Shemini Asseret & Simhat Torah':4,'Hanukkah':3,'Pesah':3,'Shavuot':1,'Purim':1};
   // A "timely" episode is tied to a specific holiday or parasha — fine when
   // that's genuinely the reason it's on screen, but wrong for the pure
   // random-fill pool: showing e.g. a Tish'a BeAb episode at a random moment
@@ -2388,7 +2424,8 @@ async function buildFeatured(){
       const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
       if(hinted){usedIds.add(E.id(hinted));return[hinted];}
     }
-    const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`);
+    const reignOrdinal=Math.floor(new Date(hit.date+'T12:00:00Z').getTime()/86400000);
+    const got=pickFromTagRotating('holidays',hit.tag,1,hit.tag,reignOrdinal);
     return got;
   };
 
@@ -2412,7 +2449,11 @@ async function buildFeatured(){
 
   if(majorTag){
     if(picks.length<3){
-      const got=pickFromTag('holidays',majorTag,3-picks.length,`${majorTag}|${hebYear||todayStr}`);
+      const periodsPerYear=MAJOR_PERIODS_PER_YEAR[majorTag]||1;
+      const daysIntoHoliday=Math.max(0,Math.round((new Date(todayStr+'T12:00:00Z')-new Date(majorFirstDate+'T12:00:00Z'))/86400000));
+      const subPeriod=Math.min(Math.floor(daysIntoHoliday/ROTATION_DAYS),periodsPerYear-1);
+      const reignOrdinal=(hebYear||0)*periodsPerYear+subPeriod;
+      const got=pickFromTagRotating('holidays',majorTag,3-picks.length,majorTag,reignOrdinal);
       picks=picks.concat(got);
     }
   }else{
@@ -2424,7 +2465,8 @@ async function buildFeatured(){
     }
     for(const pt of parashaTags){
       if(picks.length>=NONRANDOM_CAP)break;
-      const got=pickFromTag('parasha',pt,NONRANDOM_CAP-picks.length,`${pt}|${parashaEv.date}`);
+      const reignOrdinal=Math.floor(new Date(parashaEv.date+'T12:00:00Z').getTime()/86400000);
+      const got=pickFromTagRotating('parasha',pt,NONRANDOM_CAP-picks.length,pt,reignOrdinal);
       if(got.length)picks=picks.concat(got);
     }
   }
