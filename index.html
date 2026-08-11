@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786407335">
+<meta name="build-version" content="1786407685">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2169,8 +2169,16 @@ const MINOR_HOLIDAY_RULES=[
   {test:t=>/Tzom Gedaliah|Asara B'?Tevet|Taanit Bechorot/i.test(t),tag:'Fasts'},
   {test:t=>/Rosh Chodesh (Teves|Tevet|Adar( I| II)?|Nisan)/i.test(t),tag:'3 Sifre Torah',titleHint:/3 Sifre Torah/i,
     dateFilter:d=>new Date(d+'T12:00:00Z').getUTCDay()===6},
+  {test:t=>/Rosh Chodesh Nisan/i.test(t),tag:'Rosh Hodesh Nisan',titleHint:/Rosh Hodesh Nisan: An Ancient Minhag/i},
   {test:t=>/Rosh Chodesh/i.test(t),tag:'Rosh Hodesh'}
 ];
+// How many days ahead a minor/special occasion is allowed to start being
+// featured. Without this cap, an occasion detected via the wide major-holiday
+// lookahead window (21 days) would get "stuck" showing the same episode for
+// nearly 3 weeks straight, since the pick is seeded by the occasion's fixed
+// date. Elul/Selihot and Shobabim are intentionally exempt — those are
+// genuinely week(s)-long periods, not single-day occasions.
+const MINOR_LEAD_DAYS=6;
 
 function parseSubs(ep){
   const raw=E.subs(ep);const out={};
@@ -2267,7 +2275,7 @@ async function buildFeatured(){
   // falls on Friday, 83 only if an upcoming fast falls on Friday. 149 is
   // never picked generically — it only surfaces via its own dedicated
   // dateFilter rule below (Rosh Hodesh Tebet/Adar/Nisan on Shabbat).
-  const CONDITIONAL_BLOCK={128:!isLeapYear,149:true,92:!purimIsFriday,83:!fastIsFriday,269:!fastIsFriday};
+  const CONDITIONAL_BLOCK={128:!isLeapYear,149:true,43:true,92:!purimIsFriday,83:!fastIsFriday,269:!fastIsFriday};
   const usedIds=new Set();
   const pickFromTag=(type,val,count,seedStr)=>{
     const pool=episodesForTag(type,val).filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
@@ -2320,6 +2328,7 @@ async function buildFeatured(){
     const minorHits=[];
     events.forEach(ev=>{
       if(ev.date<todayStr)return; // lookback window is only for major-holiday detection
+      if(ev.date>addDaysStr(todayStr,MINOR_LEAD_DAYS))return; // don't let a minor occasion "lock in" its pick weeks in advance just because it's inside the wider fetch window
       for(const rule of MINOR_HOLIDAY_RULES){
         if(rule.test(ev.title)&&!minorSeen.has(rule.tag)&&(!rule.dateFilter||rule.dateFilter(ev.date))){
           minorSeen.add(rule.tag);
