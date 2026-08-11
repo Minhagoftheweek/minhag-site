@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786409114">
+<meta name="build-version" content="1786410017">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2166,8 +2166,16 @@ const MINOR_HOLIDAY_RULES=[
   {test:t=>/day of the Omer/i.test(t),tag:"L'Shem Yihud (Omer)",titleHint:/L'Shem Yihud/i},
   {test:t=>/Tu ?BiShvat/i.test(t),tag:'Tu Bishbat'},
   {test:t=>/Tzom Tammuz|Tish'?a B'?Av|Shabbat Chazon/i.test(t),tag:"17 Tamuz through Tish'a BeAb"},
+  // Rare: a fast falling on Friday changes tefilin/minha timing — episodes
+  // 83/269 exist specifically for this coincidence, not general fast content.
+  {test:t=>/Tzom Gedaliah|Asara B'?Tevet|Taanit Bechorot/i.test(t),tag:'Fast on Friday',rare:true,
+    dateFilter:d=>new Date(d+'T12:00:00Z').getUTCDay()===5,
+    titleHints:[/Tefilin in Minhah of a Fast Day that Falls on Friday/i,/Tefilin in Minhah of a Fast Day on Friday Part 2/i]},
   {test:t=>/Tzom Gedaliah|Asara B'?Tevet|Taanit Bechorot/i.test(t),tag:'Fasts'},
-  {test:t=>/Rosh Chodesh (Teves|Tevet|Adar( I| II)?|Nisan)/i.test(t),tag:'3 Sifre Torah',titleHint:/3 Sifre Torah/i,
+  // Rare: 3 Sifre Torah are only read when Rosh Hodesh Teves/Adar/Nisan
+  // itself falls on Shabbat — a specific yearly coincidence, not just "it's
+  // Rosh Hodesh season" the way the generic rule below is.
+  {test:t=>/Rosh Chodesh (Teves|Tevet|Adar( I| II)?|Nisan)/i.test(t),tag:'3 Sifre Torah',titleHint:/3 Sifre Torah/i,rare:true,
     dateFilter:d=>new Date(d+'T12:00:00Z').getUTCDay()===6},
   {test:t=>/Rosh Chodesh Nisan/i.test(t),tag:'Rosh Hodesh Nisan',titleHint:/Rosh Hodesh Nisan: An Ancient Minhag/i},
   {test:t=>/Rosh Chodesh/i.test(t),tag:'Rosh Hodesh'}
@@ -2284,6 +2292,11 @@ async function buildFeatured(){
     picked.forEach(ep=>usedIds.add(E.id(ep)));
     return picked;
   };
+  // A "timely" episode is tied to a specific holiday or parasha — fine when
+  // that's genuinely the reason it's on screen, but wrong for the pure
+  // random-fill pool: showing e.g. a Tish'a BeAb episode at a random moment
+  // weeks later looks like a mistake. Kept out of random fill entirely.
+  const isTimely=ep=>{const s=parseSubs(ep);return !!(s.holidays||s.parasha);};
 
   // 1) Major holiday: active starting FEATURED_MAJOR_LEAD_DAYS before its
   // first day, and stays active through its LAST day until Motzei Chag
@@ -2318,65 +2331,103 @@ async function buildFeatured(){
     }
     if(active&&(!majorFirstDate||first<majorFirstDate)){majorTag=tag;majorFirstDate=first;majorLastDate=last;}
   }
-  let picks=[],reason='';
+
+  // 2) Minor/special occasions (special Shabbatot, fasts, Rosh Hodesh…) —
+  // collected regardless of whether a major holiday is active, because a
+  // "rare" occasion (one that depends on an unusual calendar coincidence,
+  // like 3 Sifre Torah or a fast landing on Friday) still gets first claim
+  // on a slot even during a major holiday, ahead of generic holiday picks.
+  const minorSeen=new Set();
+  const minorHits=[];
+  events.forEach(ev=>{
+    if(ev.date<todayStr)return; // lookback window is only for major-holiday detection
+    if(ev.date>addDaysStr(todayStr,MINOR_LEAD_DAYS))return; // don't let a minor occasion "lock in" its pick weeks in advance just because it's inside the wider fetch window
+    for(const rule of MINOR_HOLIDAY_RULES){
+      if(rule.test(ev.title)&&!minorSeen.has(rule.tag)&&(!rule.dateFilter||rule.dateFilter(ev.date))){
+        minorSeen.add(rule.tag);
+        minorHits.push({date:ev.date,tag:rule.tag,titleHint:rule.titleHint,titleHints:rule.titleHints,rare:!!rule.rare,label:ev.title});
+        break; // most specific matching rule wins for this event — stop checking broader ones (e.g. "3 Sifre Torah"/"Rosh Hodesh Nisan" beat generic "Rosh Hodesh" for the same date)
+      }
+    }
+  });
+  minorHits.sort((a,b)=>a.date<b.date?-1:1);
+  // Selihot/Elul: starts the day after Rosh Hodesh Elul (2 Elul), not on
+  // Rosh Hodesh Elul itself — and is never said on Shabbat, so skip if
+  // today (NY) is Saturday.
+  const todayWeekday=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short'}).format(now);
+  if(hebMonth==='Elul'&&hebDay>=2&&todayWeekday!=='Sat')minorHits.push({tag:'Elul',label:'Selihot / Elul',date:todayStr});
+
+  // Upcoming parasha, lowest priority among the "timely" sources.
+  const parashaCutoff=effectiveParashaDateStr(new Date());
+  const parashaEv=events.find(ev=>ev.category==='parashat'&&ev.date>=parashaCutoff);
+  let parashaTags=[];
+  if(parashaEv){
+    const title=parashaEv.title.replace(/^Parashat\s+/,'');
+    parashaTags=PARASHA_MAP[title]||[];
+  }
+  const rawParashaName=parashaEv?parashaEv.title.replace(/^Parashat\s+/,''):null;
+  if(rawParashaName&&SHOBABIM_PARASHOT.has(rawParashaName)){
+    minorHits.push({tag:'Shobabim',label:'Shobabim',date:parashaEv.date});
+  }
+
+  const resolveHit=hit=>{
+    if(hit.titleHints){
+      const found=[];
+      for(const re of hit.titleHints){
+        const hinted=EPS.find(e=>re.test(E.t(e))&&!usedIds.has(E.id(e)));
+        if(hinted){found.push(hinted);usedIds.add(E.id(hinted));}
+      }
+      if(found.length)return found;
+    }
+    if(hit.titleHint){
+      const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
+      if(hinted){usedIds.add(E.id(hinted));return[hinted];}
+    }
+    const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`);
+    return got;
+  };
+
+  let picks=[];
+  // At most 2 of 3 slots go to "timely" content on an ordinary (non-major)
+  // day, guaranteeing at least one genuinely random slot instead of every
+  // slot being consumed by whatever occasions happen to be nearby. During
+  // an active major holiday, the full 3 slots stay themed as before — a
+  // rare pre-claim (below) can still take one of those 3, it just doesn't
+  // also force a random slot on top of it.
+  const NONRANDOM_CAP=majorTag?3:2;
+
+  // 2a) Rare occasions claim a slot first, before major-holiday or generic
+  // minor/parasha picks.
+  for(const hit of minorHits){
+    if(!hit.rare)continue;
+    if(picks.length>=NONRANDOM_CAP)break;
+    const got=resolveHit(hit);
+    got.forEach(ep=>{if(picks.length<NONRANDOM_CAP)picks.push(ep);});
+  }
+
   if(majorTag){
-    picks=pickFromTag('holidays',majorTag,3,`${majorTag}|${hebYear||todayStr}`);
-    reason=`Featured for ${majorTag}`;
+    if(picks.length<3){
+      const got=pickFromTag('holidays',majorTag,3-picks.length,`${majorTag}|${hebYear||todayStr}`);
+      picks=picks.concat(got);
+    }
   }else{
-    // 2) Minor/special occasions (special Shabbatot, fasts, Rosh Hodesh…)
-    const minorSeen=new Set();
-    const minorHits=[];
-    events.forEach(ev=>{
-      if(ev.date<todayStr)return; // lookback window is only for major-holiday detection
-      if(ev.date>addDaysStr(todayStr,MINOR_LEAD_DAYS))return; // don't let a minor occasion "lock in" its pick weeks in advance just because it's inside the wider fetch window
-      for(const rule of MINOR_HOLIDAY_RULES){
-        if(rule.test(ev.title)&&!minorSeen.has(rule.tag)&&(!rule.dateFilter||rule.dateFilter(ev.date))){
-          minorSeen.add(rule.tag);
-          minorHits.push({date:ev.date,tag:rule.tag,titleHint:rule.titleHint,label:ev.title});
-        }
-      }
-    });
-    minorHits.sort((a,b)=>a.date<b.date?-1:1);
-    // Selihot/Elul: starts the day after Rosh Hodesh Elul (2 Elul), not on
-    // Rosh Hodesh Elul itself — and is never said on Shabbat, so skip if
-    // today (NY) is Saturday.
-    const todayWeekday=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short'}).format(now);
-    if(hebMonth==='Elul'&&hebDay>=2&&todayWeekday!=='Sat')minorHits.push({tag:'Elul',label:'Selihot / Elul',date:todayStr});
-
-    // Upcoming parasha, lowest priority.
-    const parashaCutoff=effectiveParashaDateStr(new Date());
-    const parashaEv=events.find(ev=>ev.category==='parashat'&&ev.date>=parashaCutoff);
-    let parashaTags=[];
-    if(parashaEv){
-      const title=parashaEv.title.replace(/^Parashat\s+/,'');
-      parashaTags=PARASHA_MAP[title]||[];
-    }
-    const rawParashaName=parashaEv?parashaEv.title.replace(/^Parashat\s+/,''):null;
-    if(rawParashaName&&SHOBABIM_PARASHOT.has(rawParashaName)){
-      minorHits.push({tag:'Shobabim',label:'Shobabim',date:parashaEv.date});
-    }
-
     for(const hit of minorHits){
-      if(picks.length>=3)break;
-      let ep=null;
-      if(hit.titleHint){
-        const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
-        if(hinted){ep=hinted;usedIds.add(E.id(ep));}
-      }
-      if(!ep){const got=pickFromTag('holidays',hit.tag,1,`${hit.tag}|${hit.date}`);if(got.length)ep=got[0];}
-      if(ep)picks.push(ep);
+      if(hit.rare)continue; // already handled above
+      if(picks.length>=NONRANDOM_CAP)break;
+      const got=resolveHit(hit);
+      got.forEach(ep=>{if(picks.length<NONRANDOM_CAP)picks.push(ep);});
     }
-    // Fill remaining with this week's parasha episodes, if tagged ones exist.
     for(const pt of parashaTags){
-      if(picks.length>=3)break;
-      const got=pickFromTag('parasha',pt,3-picks.length,`${pt}|${parashaEv.date}`);
+      if(picks.length>=NONRANDOM_CAP)break;
+      const got=pickFromTag('parasha',pt,NONRANDOM_CAP-picks.length,`${pt}|${parashaEv.date}`);
       if(got.length)picks=picks.concat(got);
     }
-    reason='';
   }
-  // 3) Fill any remaining slots with random episodes.
+  // 3) Fill any remaining slots with genuinely random, non-timely episodes.
   if(picks.length<3){
-    const rest=seededShuffle(EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]),todayStr+'|fallback');
+    let pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]&&!isTimely(ep));
+    if(!pool.length)pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]); // safety net if that pool is ever empty
+    const rest=seededShuffle(pool,todayStr+'|fallback');
     picks=picks.concat(rest.slice(0,3-picks.length));
   }
   picks=picks.slice(0,3);
@@ -2396,7 +2447,7 @@ async function buildFeatured(){
       }
     }
   }
-  return {picks,reason};
+  return {picks};
 }
 
 async function renderFeatured(){
