@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786363726">
+<meta name="build-version" content="1786407335">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1182,6 +1182,7 @@ let activeSproutPlayer=null;
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden||!activeSproutPlayer)return;
   try{
+    activeSproutPlayer.setVolume(1); // returning to the page shouldn't re-mute an already-unmuted video
     const t=activeSproutPlayer.getCurrentTime();
     if(t!=null)activeSproutPlayer.seek(t);
   }catch(e){}
@@ -1278,6 +1279,11 @@ function applyRoute(){
   }
   const parts=path.split('/').filter(Boolean).map(p=>decodeURIComponent(p));
   const[first,second,third]=parts;
+  if(first==='search'&&second){
+    document.getElementById('searchInput').value=second;
+    handleSearch(true);
+    return;
+  }
   if(first==='sponsorship'){showPage('opp',false);return;}
   if(first==='question'){showPage('question',false);return;}
   if(first==='about'){showPage('about',false);return;}
@@ -1578,10 +1584,11 @@ function trackSearch(q,resultCount){
     gtag('event','search',{search_term:q,result_count:resultCount});
   }
 }
-function handleSearch(){
+function handleSearch(fromRoute){
   const q=document.getElementById('searchInput').value.trim();
   if(!q){return;}
   const qL=q.toLowerCase();
+  if(!fromRoute)navigate('/search/'+encodeURIComponent(q));
 
     // Direct episode-number search: "episode 1", "ep 1", "ep. 1", "#1"
     const epNumMatch=qL.match(/^(?:episode|ep\.?|#)?\s*(\d+(?:\.\d+)?)$/);
@@ -2029,6 +2036,7 @@ function attachSproutTracking(embedUrl,epId,retries){
   const hist=getWatchHistory();
   const saved=hist[epId];
   player.bind('ready',function(e){
+    try{player.setVolume(1);}catch(err){}
     duration=(e&&e.data&&e.data.duration)||0;
     setupSproutMediaSession(player,epId,duration);
   });
