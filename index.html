@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786456459">
+<meta name="build-version" content="1786456625">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2234,13 +2234,18 @@ function seededShuffle(arr,seedStr){
 function rotatingPick(pool,tag,slotsNeeded,reignOrdinal){
   const deckSize=pool.length;
   if(deckSize<=slotsNeeded)return pool.slice();
+  // Divide by how many draws it actually takes to exhaust the deck (not by
+  // an unrelated ordinal multiplier) — using the wrong divisor here can
+  // share a common factor with deckSize and permanently skip most of the
+  // pool instead of guaranteeing full coverage.
+  const occurrencesPerLap=Math.ceil(deckSize/slotsNeeded);
+  const lap=Math.floor(reignOrdinal/occurrencesPerLap);
+  let pos=(reignOrdinal%occurrencesPerLap)*slotsNeeded;
   const picks=[];
   const pickedIds=new Set();
-  let lap=Math.floor((reignOrdinal*slotsNeeded)/deckSize);
-  let pos=(reignOrdinal*slotsNeeded)%deckSize;
-  let guard=0;
+  let curLap=lap,guard=0;
   while(picks.length<slotsNeeded&&guard<10){
-    const deck=seededShuffle(pool,tag+'|lap'+lap);
+    const deck=seededShuffle(pool,tag+'|lap'+curLap);
     while(pos<deckSize&&picks.length<slotsNeeded){
       // A lap boundary crossed mid-call means this position comes from a
       // fresh independent shuffle of the same pool — dedupe against what
@@ -2249,7 +2254,7 @@ function rotatingPick(pool,tag,slotsNeeded,reignOrdinal){
       if(!pickedIds.has(E.id(deck[pos]))){picks.push(deck[pos]);pickedIds.add(E.id(deck[pos]));}
       pos++;
     }
-    if(picks.length<slotsNeeded){lap++;pos=0;guard++;}
+    if(picks.length<slotsNeeded){curLap++;pos=0;guard++;}
   }
   return picks;
 }
