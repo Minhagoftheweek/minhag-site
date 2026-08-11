@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786455648">
+<meta name="build-version" content="1786455797">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2235,12 +2235,20 @@ function rotatingPick(pool,tag,slotsNeeded,reignOrdinal){
   const deckSize=pool.length;
   if(deckSize<=slotsNeeded)return pool.slice();
   const picks=[];
+  const pickedIds=new Set();
   let lap=Math.floor((reignOrdinal*slotsNeeded)/deckSize);
   let pos=(reignOrdinal*slotsNeeded)%deckSize;
   let guard=0;
   while(picks.length<slotsNeeded&&guard<10){
     const deck=seededShuffle(pool,tag+'|lap'+lap);
-    while(pos<deckSize&&picks.length<slotsNeeded){picks.push(deck[pos]);pos++;}
+    while(pos<deckSize&&picks.length<slotsNeeded){
+      // A lap boundary crossed mid-call means this position comes from a
+      // fresh independent shuffle of the same pool — dedupe against what
+      // this call has already picked, or the same episode could show up
+      // twice in one day's slots by coincidence.
+      if(!pickedIds.has(E.id(deck[pos]))){picks.push(deck[pos]);pickedIds.add(E.id(deck[pos]));}
+      pos++;
+    }
     if(picks.length<slotsNeeded){lap++;pos=0;guard++;}
   }
   return picks;
