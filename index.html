@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1786410137">
+<meta name="build-version" content="1786411105">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2156,14 +2156,19 @@ const MAJOR_HOLIDAY_KEYWORDS=[['Rosh Hashana','Rosh Hashanah'],['Yom Kippur','Yo
 const FEATURED_MAJOR_LEAD_DAYS=7;
 // Minor/special occasions: contribute at most one featured slot.
 const MINOR_HOLIDAY_RULES=[
-  {test:t=>/Shabbat Zachor/i.test(t),tag:'Purim',titleHint:/zak?hor/i},
+  // Rare: rules with a titleHint point at ONE specific episode written for
+  // that exact occasion (not just "Purim season" generally) — they always
+  // sit in the final run-up to their major holiday, so without being
+  // marked rare they'd be swallowed by that holiday's takeover every time
+  // and effectively never actually show.
+  {test:t=>/Shabbat Zachor/i.test(t),tag:'Purim',titleHint:/zak?hor/i,rare:true},
   {test:t=>/Shabbat Shekalim/i.test(t),tag:'Purim'},
   {test:t=>/Shushan Purim|Ta'?anit Esther/i.test(t),tag:'Purim'},
   {test:t=>/Shabbat Para/i.test(t),tag:'Pesah'},
   {test:t=>/Shabbat HaChodesh/i.test(t),tag:'Pesah'},
-  {test:t=>/Shabbat Hagadol/i.test(t),tag:'Pesah',titleHint:/Haftarah on Shabbat HaGadol/i},
+  {test:t=>/Shabbat Hagadol/i.test(t),tag:'Pesah',titleHint:/Haftarah on Shabbat HaGadol/i,rare:true},
   {test:t=>/Lag ?BaOmer/i.test(t),tag:'Omer & Lag LaOmer'},
-  {test:t=>/day of the Omer/i.test(t),tag:"L'Shem Yihud (Omer)",titleHint:/L'Shem Yihud/i},
+  {test:t=>/day of the Omer/i.test(t),tag:"L'Shem Yihud (Omer)",titleHint:/L'Shem Yihud/i,rare:true},
   {test:t=>/Tu ?BiShvat/i.test(t),tag:'Tu Bishbat'},
   {test:t=>/Tzom Tammuz|Tish'?a B'?Av|Shabbat Chazon/i.test(t),tag:"17 Tamuz through Tish'a BeAb"},
   // Rare: a fast falling on Friday changes tefilin/minha timing — episodes
@@ -2177,7 +2182,7 @@ const MINOR_HOLIDAY_RULES=[
   // Rosh Hodesh season" the way the generic rule below is.
   {test:t=>/Rosh Chodesh (Teves|Tevet|Adar( I| II)?|Nisan)/i.test(t),tag:'3 Sifre Torah',titleHint:/3 Sifre Torah/i,rare:true,
     dateFilter:d=>new Date(d+'T12:00:00Z').getUTCDay()===6},
-  {test:t=>/Rosh Chodesh Nisan/i.test(t),tag:'Rosh Hodesh Nisan',titleHint:/Rosh Hodesh Nisan: An Ancient Minhag/i},
+  {test:t=>/Rosh Chodesh Nisan/i.test(t),tag:'Rosh Hodesh Nisan',titleHint:/Rosh Hodesh Nisan: An Ancient Minhag/i,rare:true},
   {test:t=>/Rosh Chodesh/i.test(t),tag:'Rosh Hodesh'}
 ];
 // How many days ahead a minor/special occasion is allowed to start being
@@ -2423,12 +2428,49 @@ async function buildFeatured(){
       if(got.length)picks=picks.concat(got);
     }
   }
-  // 3) Fill any remaining slots with genuinely random, non-timely episodes.
+  // 3) Fill any remaining slots — mostly genuinely random, non-timely
+  // episodes, but as a soft "nice touch" (never a hard rule), lean toward
+  // thematically-fitting evergreen content during when it's naturally most
+  // relevant: weddings in the customary wedding seasons, the traveler's
+  // prayer around Pesach/January/Thanksgiving, and Bar Missvah content in
+  // mid/late January and around Thanksgiving.
   if(picks.length<3){
-    let pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]&&!isTimely(ep));
-    if(!pool.length)pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]); // safety net if that pool is ever empty
-    const rest=seededShuffle(pool,todayStr+'|fallback');
-    picks=picks.concat(rest.slice(0,3-picks.length));
+    const weddingSeason=(hebMonth==='Av'&&hebDay>=10)||hebMonth==='Elul'
+      ||(hebMonth==='Iyyar'&&hebDay>=19)||hebMonth==='Sivan'||(hebMonth==='Tamuz'&&hebDay<=16)
+      ||hebMonth==='Shevat'||hebMonth==='Adar'||hebMonth==='Adar I'||hebMonth==='Adar II'||(hebMonth==='Nisan'&&hebDay<=7);
+    const isThanksgivingWeek=(()=>{
+      const d=new Date(todayStr+'T12:00:00Z');
+      const year=d.getUTCFullYear();
+      const nov1=new Date(Date.UTC(year,10,1));
+      const firstThu=1+((4-nov1.getUTCDay()+7)%7);
+      const thanksgiving=new Date(Date.UTC(year,10,firstThu+21));
+      const diff=Math.round((d-thanksgiving)/86400000);
+      return diff>=-3&&diff<=4;
+    })();
+    const travelSeason=todayStr.slice(5,7)==='01'||isThanksgivingWeek||(hebMonth==='Nisan'&&hebDay<=21);
+    const barMissvahSeason=(todayStr.slice(5,7)==='01'&&+todayStr.slice(8,10)>=15&&+todayStr.slice(8,10)<=28)||isThanksgivingWeek;
+
+    while(picks.length<3){
+      const slotSeed=`${todayStr}|nudge${picks.length}`;
+      const roll=mulberry32(seedFromString(slotSeed))();
+      let nudged=null;
+      if(travelSeason&&roll<0.25&&!usedIds.has(203)){
+        const ep203=EPS.find(e=>E.id(e)===203);
+        if(ep203)nudged=ep203;
+      }else if(barMissvahSeason&&roll<0.30){
+        const got=pickFromTag('lifecycle','Bar Missvah',1,slotSeed+'|barm');
+        if(got.length)nudged=got[0];
+      }else if(weddingSeason&&roll<0.35){
+        const got=pickFromTag('lifecycle','Engagements & Weddings',1,slotSeed+'|wed');
+        if(got.length)nudged=got[0];
+      }
+      if(nudged){picks.push(nudged);usedIds.add(E.id(nudged));continue;}
+      let pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]&&!isTimely(ep));
+      if(!pool.length)pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
+      const rest=seededShuffle(pool,slotSeed+'|fallback');
+      if(rest.length){picks.push(rest[0]);usedIds.add(E.id(rest[0]));}
+      else break;
+    }
   }
   picks=picks.slice(0,3);
   // Diversity rule: the 3 slots may never all be the same presenter (e.g.
@@ -2447,6 +2489,14 @@ async function buildFeatured(){
         picks=[picks[0],picks[1],alt];
       }
     }
+  }
+  // Nudge: if a Harari-presented episode is among the 3 (and it's not the
+  // only presenter present — the diversity rule above already handles
+  // that), move it to the last slot rather than leading. A soft display
+  // preference, not a selection rule — doesn't change which 3 episodes
+  // get picked, only their on-page order.
+  if(picks.length===3){
+    picks=picks.map((ep,i)=>({ep,i})).sort((a,b)=>(E.w(a.ep)==='Harari')-(E.w(b.ep)==='Harari')||a.i-b.i).map(x=>x.ep);
   }
   return {picks};
 }
