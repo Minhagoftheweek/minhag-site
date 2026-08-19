@@ -168,6 +168,51 @@ If nothing applies well, respond {{"categories": [], "subs": ""}}."""
     return parsed["categories"], parsed["subs"]
 
 
+def slugify_title(topic):
+    """Match the site's existing preview-folder naming: spaces -> dashes, strip unsafe chars."""
+    cleaned = re.sub(r"[^\w\s-]", "", topic)
+    return re.sub(r"\s+", "-", cleaned.strip())
+
+
+def make_preview_page(episode_num, topic, presenter, thumb_url):
+    """Static per-episode folder with og:/twitter: tags + redirect, for link previews (iMessage/WhatsApp/etc)."""
+    slug = slugify_title(topic)
+    title = f'SCA Minhag of the Week {episode_num}: &ldquo;{topic}&rdquo;'
+    desc = f"Presented by {presenter}. Watch this week&rsquo;s minhag from the Sephardic Community Alliance."
+    url = f"https://minhagoftheweek.com/{slug}"
+    html = f"""<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{title}</title>
+<meta name="description" content="{desc}">
+<link rel="canonical" href="{url}">
+<meta property="og:type" content="video.other">
+<meta property="og:site_name" content="SCA Minhag of the Week">
+<meta property="og:title" content="{title}">
+<meta property="og:description" content="{desc}">
+<meta property="og:image" content="{thumb_url}">
+<meta property="og:image:width" content="1920">
+<meta property="og:image:height" content="1080">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:url" content="{url}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{title}">
+<meta name="twitter:description" content="{desc}">
+<meta name="twitter:image" content="{thumb_url}">
+<meta http-equiv="refresh" content="0; url=/#ep-{episode_num}">
+<script>location.replace('/#ep-{episode_num}');</script>
+</head><body>
+<p>Redirecting to <a href="/#ep-{episode_num}">Episode {episode_num}</a>&hellip;</p>
+</body></html>
+"""
+    folder = os.path.join(REPO_ROOT, slug)
+    os.makedirs(folder, exist_ok=True)
+    with open(os.path.join(folder, "index.html"), "w", encoding="utf-8") as f:
+        f.write(html)
+    return slug
+
+
 def next_wednesday_1230_et(after_date=None):
     """Compute the next Wednesday at 12:30pm America/New_York, as ISO 8601 with offset."""
     tz = ZoneInfo("America/New_York")
@@ -206,6 +251,8 @@ def main():
 
     categories, subs = categorize(topic, presenter, dedication)
     cats_js = json.dumps(categories)
+
+    slug = make_preview_page(episode_num, topic, presenter, thumb_url)
 
     release_dt = datetime.now(ZoneInfo("America/New_York"))
     display_date = release_dt.strftime("%b %-d, %Y")
@@ -246,7 +293,7 @@ def main():
 
     subprocess.run(["git", "config", "user.name", "minhag-publish-bot"], check=True, cwd=REPO_ROOT)
     subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True, cwd=REPO_ROOT)
-    subprocess.run(["git", "add", "index.html", "version.json"], check=True, cwd=REPO_ROOT)
+    subprocess.run(["git", "add", "index.html", "version.json", slug], check=True, cwd=REPO_ROOT)
     subprocess.run(
         ["git", "commit", "-m", f"Publish Episode {episode_num}: {topic} (scheduled {schedule_iso})"],
         check=True, cwd=REPO_ROOT,
@@ -256,6 +303,7 @@ def main():
     print(f"Done. Episode {episode_num} scheduled to go live {schedule_iso}")
     print(f"  Categories: {categories} ({subs})")
     print(f"  Thumbnail: {thumb_url}")
+    print(f"  Preview page: /{slug}")
 
 
 if __name__ == "__main__":
