@@ -1,0 +1,30 @@
+name: Publish Episode
+
+on:
+  repository_dispatch:
+    types: [publish_episode]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Publish episode
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SPROUTVIDEO_API_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
+        run: python scripts/publish_episode.py
