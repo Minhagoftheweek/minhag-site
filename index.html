@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787109465">
+<meta name="build-version" content="1787109625">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1326,7 +1326,7 @@ function routeHome(){navigate('/');}
 function routeEpisode(id,replace){navigate('/'+(EP_SLUG_BY_ID[id]||('episode-'+id)),replace);}
 function routeCategory(id){navigate('/category/'+id);}
 function routeSub(catId,sub){navigate('/category/'+catId+'/'+slugify(sub));}
-function routePresenter(w){navigate('/presenter/'+slugify(w));}
+function routePresenter(w){navigate('/teacher/'+slugify(w));}
 function routeSponsorship(){navigate('/sponsorship');}
 function routeQuestion(){navigate('/question');}
 function routeAbout(){navigate('/about');}
@@ -1377,7 +1377,7 @@ function applyRoute(){
       return;
     }
   }
-  if(first==='presenter'&&second){
+  if((first==='teacher'||first==='presenter')&&second){
     const w=presenterFromSlug(second);
     if(w){filterPres(w,false);return;}
   }
@@ -1631,6 +1631,7 @@ function filterPres(w,push){
   document.getElementById('epPage').classList.remove('show');
   render();
   if(push!==false)routePresenter(w);
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ── SEARCH (triggers only on Enter, not on every keystroke) ────────────────
