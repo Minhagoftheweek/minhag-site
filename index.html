@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787109625">
+<meta name="build-version" content="1787109688">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -436,7 +436,7 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .about-body strong{color:var(--hpd);font-weight:700}
 .teacher-card{background:var(--w);border:1px solid var(--bd);border-radius:12px;padding:2rem 2.2rem;box-shadow:0 4px 18px rgba(24,72,120,.08);margin-bottom:1.6rem;display:flex;gap:1.8rem;align-items:flex-start}
 .teacher-card:last-child{margin-bottom:0}
-.teacher-photo{width:120px;height:120px;border-radius:10px;flex-shrink:0;background:linear-gradient(150deg,#e7edf4,#d3dee9);display:flex;align-items:center;justify-content:center;color:var(--hpd);font-size:.68rem;font-weight:600;text-align:center;overflow:hidden}
+.teacher-photo{width:120px;height:120px;border-radius:0;flex-shrink:0;background:linear-gradient(150deg,#e7edf4,#d3dee9);display:flex;align-items:center;justify-content:center;color:var(--hpd);font-size:.68rem;font-weight:600;text-align:center;overflow:hidden}
 .teacher-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .teacher-info{flex:1;min-width:0}
 .teacher-name{font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:.7rem}
@@ -1631,6 +1631,7 @@ function filterPres(w,push){
   document.getElementById('epPage').classList.remove('show');
   render();
   if(push!==false)routePresenter(w);
+  window.scrollTo({top:0,behavior:'smooth'});
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
