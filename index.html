@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787175394">
+<meta name="build-version" content="1787176365">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -437,30 +437,32 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .about-body p{font-size:.93rem;line-height:1.9;color:var(--tx);margin-bottom:1.4rem}
 .about-body p:last-child{margin-bottom:0}
 .about-body strong{color:var(--hpd);font-weight:700}
-.teacher-card{background:var(--w);border:1px solid var(--bd);border-radius:12px;padding:2rem 2.2rem;box-shadow:0 4px 18px rgba(24,72,120,.08);margin-bottom:1.6rem;position:relative}
+.teacher-card{background:var(--w);border:1px solid var(--bd);border-radius:12px;padding:1.4rem 2.2rem;box-shadow:0 4px 18px rgba(24,72,120,.08);margin-bottom:1.6rem;position:relative;transition:padding-bottom .25s ease}
 .teacher-card:last-child{margin-bottom:0}
-.teacher-header{display:flex;gap:1.8rem;align-items:center;cursor:pointer}
-.teacher-photo{width:180px;height:180px;border-radius:0;flex-shrink:0;background:linear-gradient(150deg,#e7edf4,#d3dee9);display:flex;align-items:center;justify-content:center;color:var(--hpd);font-size:.68rem;font-weight:600;text-align:center;overflow:hidden}
-.teacher-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.teacher-card.expanded{padding-bottom:5rem}
+.teacher-header{display:flex;gap:1rem;align-items:center;cursor:pointer}
 .teacher-name{flex:1;font-size:1.05rem;font-weight:800;color:var(--navy)}
 .teacher-chevron{flex-shrink:0;color:var(--hp);transition:transform .2s}
 .teacher-chevron.expanded{transform:rotate(180deg)}
-.teacher-body{max-height:5.6em;overflow:hidden;padding-top:1rem;padding-right:9rem;transition:max-height .25s ease}
-.teacher-body.expanded{max-height:1400px}
+.teacher-body{max-height:0;overflow:hidden;transition:max-height .25s ease}
+.teacher-body.expanded{max-height:2500px;padding-top:1.3rem}
+.teacher-photo{float:left;width:200px;height:200px;border-radius:0;margin:0 1.8rem 1rem 0;background:linear-gradient(150deg,#e7edf4,#d3dee9);overflow:hidden}
+.teacher-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .teacher-body p{font-size:.9rem;line-height:1.8;color:var(--tx);margin-bottom:1rem}
 .teacher-body p:last-child{margin-bottom:0}
-.teacher-contact-btn{position:absolute;right:2.2rem;bottom:2rem;padding:.55rem 1.1rem;background:var(--hp);color:#fff;font-size:.82rem;font-weight:700;border-radius:6px;text-decoration:none;transition:opacity .15s}
+.teacher-contact-btn{display:none;position:absolute;right:2.2rem;bottom:1.6rem;padding:.55rem 1.1rem;background:var(--hp);color:#fff;font-size:.82rem;font-weight:700;border-radius:6px;text-decoration:none;transition:opacity .15s}
+.teacher-card.expanded .teacher-contact-btn{display:inline-block}
 .teacher-contact-btn:hover{opacity:.88}
+#presBioBlock.teacher-card .teacher-contact-btn{display:inline-block;position:static;margin-top:.6rem}
+#presBioBlock.teacher-card{padding-bottom:1.4rem}
 @media(max-width:640px){
-  .teacher-card{padding:1.2rem 1.3rem}
-  .teacher-header{gap:.7rem}
-  .teacher-photo{display:none}
-  .teacher-card.expanded .teacher-photo{display:block;width:130px;height:130px;margin:0 auto 1rem}
-  .teacher-name{font-size:.92rem}
-  .teacher-body{max-height:0;padding-top:0;padding-right:0}
-  .teacher-body.expanded{max-height:2000px;padding-top:.8rem}
+  .teacher-card{padding:1.1rem 1.2rem}
+  .teacher-card.expanded{padding-bottom:4.4rem}
+  .teacher-card.expanded .teacher-header{justify-content:center}
+  .teacher-name{font-size:.92rem;text-align:center}
+  .teacher-photo{float:none;width:130px;height:130px;margin:0 auto 1rem;display:block}
   .teacher-body p{font-size:.85rem;line-height:1.75}
-  .teacher-contact-btn{position:static;display:inline-block;margin-top:.4rem}
+  .teacher-contact-btn{right:1.2rem;bottom:1.1rem}
 }
 #presBar:not(.show) + #presBioBlock{display:none !important}
 @media(max-width:700px){
@@ -844,11 +846,11 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 
         <div class="teacher-card" id="teacher-Mosseri">
           <div class="teacher-header" onclick="toggleTeacherCard('Mosseri')">
-            <div class="teacher-photo"><img src="/images/teachers/mosseri.jpg" alt="Mr. Joseph Mosseri"></div>
             <div class="teacher-name">Mr. Joseph Mosseri</div>
             <svg class="teacher-chevron" id="chev-Mosseri" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
           </div>
           <div class="teacher-body" id="body-Mosseri">
+            <div class="teacher-photo"><img src="/images/teachers/mosseri.jpg" alt="Mr. Joseph Mosseri"></div>
             <p>Mr. Joseph Mosseri's expertise spans many areas related to Sephardim and the development of their culture, history and Halakhah. His passion for collecting rare and important books of teshubot and siddurim has helped fuel his deep knowledge on these subjects, and he holds a particular interest in the development and evolving nature of minhagim across Sephardic communities. Widely recognized, both locally and internationally, as an expert on the history, heritage, traditions and music of the Egyptian and Syrian communities, as well as many other facets of Sephardic life, he is frequently consulted and interviewed by researchers and historians for his insight.</p>
             <p>Since its inception he has been a teacher at Minhag of the Week, an initiative of the Sephardic Community Alliance that teaches the Sephardic community its customs. He also teaches many other classes most of which are available on many online platforms.</p>
             <a class="teacher-contact-btn" href="mailto:joseph.mosseri@verizon.net">Contact Joseph</a>
@@ -857,11 +859,11 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 
         <div class="teacher-card" id="teacher-Arking">
           <div class="teacher-header" onclick="toggleTeacherCard('Arking')">
-            <div class="teacher-photo"><img src="/images/teachers/arking.jpg" alt="Mr. Morris Arking"></div>
             <div class="teacher-name">Mr. Morris Arking</div>
             <svg class="teacher-chevron" id="chev-Arking" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
           </div>
           <div class="teacher-body" id="body-Arking">
+            <div class="teacher-photo"><img src="/images/teachers/arking.jpg" alt="Mr. Morris Arking"></div>
             <p>Mr. Morris Arking has been teaching in the Sephardic community of Brooklyn, NY for over 20 years. He is a student of Hakham Shimon Alouf and he has taught perashah, halakhah and minhagim in community synagogues such as Beth Torah, Bnei Yosef and Ave N. Sephardic Congregation. He has recordings of his daily halakha at Bnei Yosef which can be found on his website, BirkatHaTorah.com.</p>
             <p>He is known for his deep appreciation of Syrian minhagim and is often consulted by Rabbis, community members and friends from around the world regarding Syrian minhagim. He has written many articles over the years which eventually will be posted on BirkatHaTorah.com.</p>
             <p>Since 2019, he has been recording videos for Minhag of the Week, an initiative by the Sephardic Community Alliance to teach the community about their customs.</p>
@@ -872,11 +874,11 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
 
         <div class="teacher-card" id="teacher-Harari">
           <div class="teacher-header" onclick="toggleTeacherCard('Harari')">
-            <div class="teacher-photo"><img src="/images/teachers/harari.jpg" alt="Mr. Joey Harari"></div>
             <div class="teacher-name">Mr. Joey Harari</div>
             <svg class="teacher-chevron" id="chev-Harari" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
           </div>
           <div class="teacher-body" id="body-Harari">
+            <div class="teacher-photo"><img src="/images/teachers/harari.jpg" alt="Mr. Joey Harari"></div>
             <p>Born and raised in Brooklyn, NY, Mr. Joey Harari has always been deeply involved in synagogue life- it's been his passion throughout. In the 1980s he served as president of Ahaba ve Ahva, and in the 1990s he helped build and run Bnei Yitzhak. In 1999, he and his wife Kady made Aliyah to Israel, where he served as Gabbai at the famous Ades Synagogue. After close to 25 years in Jerusalem, he moved to Ra'anana, where he currently serves as president of Aram Soba Ra'anana.</p>
             <p>For over twenty years he is teaching at Yeshivat Eretz Hatzvi, and has also taught in the past at Yeshivat Moreshet Yerushalayim. Most recently, he recorded videos on the prayer customs of the Aleppo community as part of the SCA Minhag of the Week series.</p>
             <a class="teacher-contact-btn" href="mailto:joey@joeyharari.com">Contact Joey</a>
