@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787108447">
+<meta name="build-version" content="1787108963">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -105,6 +105,11 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .drawer-section-label{font-size:.65rem;font-weight:700;color:rgba(201,160,232,.7);text-transform:uppercase;letter-spacing:.1em;padding:.5rem 1.3rem .25rem}
 .drawer-cat-btn{display:block;width:100%;padding:.55rem 1.3rem;font-size:.84rem;font-weight:600;color:rgba(255,255,255,.78);background:none;border:none;border-left:3px solid transparent;cursor:pointer;font-family:Arial,sans-serif;text-align:left;transition:all .15s}
 .drawer-cat-btn:hover{color:#fff;border-left-color:var(--hp);background:rgba(139,84,178,.15)}
+.drawer-chevron{float:right;transition:transform .15s;font-size:.7rem}
+.drawer-btn.open .drawer-chevron{transform:rotate(180deg)}
+.drawer-sub{max-height:0;overflow:hidden;transition:max-height .2s ease}
+.drawer-sub.open{max-height:120px}
+.drawer-sub .drawer-btn{padding-left:2.2rem;font-size:.82rem}
 /* HERO */
 .hero{background:linear-gradient(160deg,#080f1e 0%,#0f1e3d 30%,#13254a 60%,#0d1a35 100%);padding:4rem 1.5rem 3rem;border-bottom:none;position:relative;overflow:hidden}
 .cw-row{background:var(--w);border-bottom:1px solid var(--bd);padding:1rem 1.5rem}
@@ -437,6 +442,9 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .teacher-name{font-size:1.05rem;font-weight:800;color:var(--navy);margin-bottom:.7rem}
 .teacher-info p{font-size:.9rem;line-height:1.8;color:var(--tx);margin-bottom:1rem}
 .teacher-info p:last-child{margin-bottom:0}
+.teacher-contact-btn{display:inline-block;margin-top:.4rem;padding:.55rem 1.1rem;background:var(--hp);color:#fff;font-size:.82rem;font-weight:700;border-radius:6px;text-decoration:none;transition:opacity .15s}
+.teacher-contact-btn:hover{opacity:.88}
+#presBar:not(.show) + #presBioBlock{display:none !important}
 @media(max-width:640px){
   .teacher-card{flex-direction:column;align-items:center;text-align:left;padding:1.4rem 1.2rem}
   .teacher-photo{width:96px;height:96px}
@@ -511,8 +519,11 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
   </div>
   <div class="drawer-body">
     <button class="drawer-btn" onclick="closeDrawer();showHome()">All Episodes</button>
-    <button class="drawer-btn" onclick="closeDrawer();showPage('about')">About</button>
-    <button class="drawer-btn" onclick="closeDrawer();showPage('teachers')">Our Teachers</button>
+    <button class="drawer-btn" id="aboutDrawerToggle" onclick="toggleDrawerAbout()">About <span class="drawer-chevron">&#9662;</span></button>
+    <div class="drawer-sub" id="aboutDrawerSub">
+      <button class="drawer-btn" onclick="closeDrawer();showPage('about')">Our Story</button>
+      <button class="drawer-btn" onclick="closeDrawer();showPage('teachers')">Our Teachers</button>
+    </div>
     <button class="drawer-btn" onclick="closeDrawer();showPlaylist()">My Playlist <span id="drawerPlaylistCt"></span></button>
     <button class="drawer-btn" onclick="closeDrawer();showPage('opp')">Sponsorship Opportunities</button>
     <a class="drawer-btn" href="mailto:minhag@scaupdates.org?subject=Episode%20Suggestion" onclick="closeDrawer()">Suggest Episode Topic</a>
@@ -723,6 +734,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
         <span id="presName"></span>
         <button class="pres-clr" onclick="showHome()">Clear</button>
       </div>
+      <div id="presBioBlock" class="teacher-card" style="display:none;margin-bottom:1.6rem"></div>
       <div class="ch"><h2 id="viewTitle">All Episodes</h2><span class="ep-ct" id="epCt"></span></div>
       <div id="watchedCounter" style="font-size:.72rem;color:var(--mu);margin:-.3rem 0 .8rem"></div>
       <div class="grid" id="epGrid"></div>
@@ -818,7 +830,17 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
           <div class="about-tagline">Meet the Voices Behind Minhag of the Week</div>
         </div>
 
-        <div class="teacher-card">
+        <div class="teacher-card" id="teacher-Mosseri">
+          <div class="teacher-photo">Photo<br>Coming Soon</div>
+          <div class="teacher-info">
+            <div class="teacher-name">Mr. Joseph Mosseri</div>
+            <p>Mr. Joseph Mosseri's expertise spans many areas related to Sephardim and the development of their culture, history and Halakhah. His passion for collecting rare and important books of teshubot and siddurim has helped fuel his deep knowledge on these subjects, and he holds a particular interest in the development and evolving nature of minhagim across Sephardic communities. Widely recognized, both locally and internationally, as an expert on the history, heritage, traditions and music of the Egyptian and Syrian communities, as well as many other facets of Sephardic life, he is frequently consulted and interviewed by researchers and historians for his insight.</p>
+            <p>Since its inception he has been a teacher at Minhag of the Week, an initiative of the Sephardic Community Alliance that teaches the Sephardic community its customs. He also teaches many other classes most of which are available on many online platforms.</p>
+            <a class="teacher-contact-btn" href="mailto:joseph.mosseri@verizon.net">Contact Joseph</a>
+          </div>
+        </div>
+
+        <div class="teacher-card" id="teacher-Arking">
           <div class="teacher-photo">Photo<br>Coming Soon</div>
           <div class="teacher-info">
             <div class="teacher-name">Mr. Morris Arking</div>
@@ -826,24 +848,17 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
             <p>He is known for his deep appreciation of Syrian minhagim and is often consulted by Rabbis, community members and friends from around the world regarding Syrian minhagim. He has written many articles over the years which eventually will be posted on BirkatHaTorah.com.</p>
             <p>Since 2019, he has been recording videos for Minhag of the Week, an initiative by the Sephardic Community Alliance to teach the community about their customs.</p>
             <p>He resides in Brooklyn, NY with his wife, children and grandchildren, where he works in business supply sales.</p>
+            <a class="teacher-contact-btn" href="mailto:morris@arcadeorder.com">Contact Morris</a>
           </div>
         </div>
 
-        <div class="teacher-card">
+        <div class="teacher-card" id="teacher-Harari">
           <div class="teacher-photo">Photo<br>Coming Soon</div>
           <div class="teacher-info">
             <div class="teacher-name">Mr. Joey Harari</div>
             <p>Born and raised in Brooklyn, NY, Mr. Joey Harari has always been deeply involved in synagogue life- it's been his passion throughout. In the 1980s he served as president of Ahaba ve Ahva, and in the 1990s he helped build and run Bnei Yitzhak. In 1999, he and his wife Kady made Aliyah to Israel, where he served as Gabbai at the famous Ades Synagogue. After close to 25 years in Jerusalem, he moved to Ra'anana, where he currently serves as president of Aram Soba Ra'anana.</p>
             <p>For over twenty years he is teaching at Yeshivat Eretz Hatzvi, and has also taught in the past at Yeshivat Moreshet Yerushalayim. Most recently, he recorded videos on the prayer customs of the Aleppo community as part of the SCA Minhag of the Week series.</p>
-          </div>
-        </div>
-
-        <div class="teacher-card">
-          <div class="teacher-photo">Photo<br>Coming Soon</div>
-          <div class="teacher-info">
-            <div class="teacher-name">Mr. Joseph Mosseri</div>
-            <p>Mr. Joseph Mosseri's expertise spans many areas related to Sephardim and the development of their culture, history and Halakhah. His passion for collecting rare and important books of teshubot and siddurim has helped fuel his deep knowledge on these subjects, and he holds a particular interest in the development and evolving nature of minhagim across Sephardic communities. Widely recognized, both locally and internationally, as an expert on the history, heritage, traditions and music of the Egyptian and Syrian communities, as well as many other facets of Sephardic life, he is frequently consulted and interviewed by researchers and historians for his insight.</p>
-            <p>Since its inception he has been a teacher at Minhag of the Week, an initiative of the Sephardic Community Alliance that teaches the Sephardic community its customs. He also teaches many other classes most of which are available on many online platforms.</p>
+            <a class="teacher-contact-btn" href="mailto:joey@joeyharari.com">Contact Joey</a>
           </div>
         </div>
       </div>
@@ -859,8 +874,8 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
           <div class="about-tagline">Preserving Our Rich Heritage, One Minhag at a Time</div>
         </div>
         <div class="about-body">
-          <p>Every community has traditions that define it. Some are written in books, but many are passed from generation to generation- learned by watching parents, grandparents, rabbis and elders. The idea behind Minhag of the Week was simple: preserve the cherished customs of the Sephardic community before they are lost to time. At a Sephardic Community Alliance (SCA) Board Meeting in the spring of 2018, board member <strong>Mr. Jesse M. Sutton</strong> proposed creating a series dedicated to documenting and teaching our community's minhagim. Throughout that summer, the concept evolved, and by the fall of 2018, the SCA assembled a diverse focus group representing different ages, backgrounds and interests. Their feedback helped shape the format, pacing and content, ensuring the series would be engaging and meaningful to the widest possible audience. On May 30, 2019, Minhag of the Week officially launched.</p>
-          <p>At the center of the project are three extraordinary community members: <strong>Mr. Joseph Mosseri</strong>, <strong>Mr. Morris Arking</strong> and <strong>Mr. Joey Harari</strong>. Widely respected throughout the community for their passion, scholarship and deep knowledge of our community's minhagim and hazzanut, the three have volunteered their time, completely free of charge since the very first episode. Every week, they dedicate countless hours to researching sources, preparing each presentation and recording new episodes- all motivated by a shared desire to preserve our heritage and pass it on to future generations. Their unwavering commitment has transformed what began as a simple idea into one of the most comprehensive digital collections of authentic Sephardic customs available anywhere.</p>
+          <p>Every community has traditions that define it. Some are written in books, but many are passed from generation to generation- learned by watching parents, grandparents, rabbis and elders. The idea behind Minhag of the Week was simple: preserve the cherished customs of the Sephardic community before they are lost to time. At a Sephardic Community Alliance (SCA) Board Meeting in the spring of 2018, board member Mr. Jesse M. Sutton proposed creating a series dedicated to documenting and teaching our community's minhagim. Throughout that summer, the concept evolved, and by the fall of 2018, the SCA assembled a diverse focus group representing different ages, backgrounds and interests. Their feedback helped shape the format, pacing and content, ensuring the series would be engaging and meaningful to the widest possible audience. On May 30, 2019, Minhag of the Week officially launched.</p>
+          <p>At the center of the project are three extraordinary community members: <span class="card-pres-lnk" onclick="filterPres('Mosseri')">Mr. Joseph Mosseri</span>, <span class="card-pres-lnk" onclick="filterPres('Arking')">Mr. Morris Arking</span> and <span class="card-pres-lnk" onclick="filterPres('Harari')">Mr. Joey Harari</span>. Widely respected throughout the community for their passion, scholarship and deep knowledge of our community's minhagim and hazzanut, the three have volunteered their time, completely free of charge since the very first episode. Every week, they dedicate countless hours to researching sources, preparing each presentation and recording new episodes- all motivated by a shared desire to preserve our heritage and pass it on to future generations. Their unwavering commitment has transformed what began as a simple idea into one of the most comprehensive digital collections of authentic Sephardic customs available anywhere.</p>
           <p>Although Minhag of the Week was originally created for the Syrian Sephardic community of New York and New Jersey, its impact quickly extended far beyond our local neighborhoods. Today, the series is watched by audiences throughout Israel, Panama, Mexico, Argentina, Brazil, England and other Sephardic communities around the world. We regularly receive messages from viewers expressing how meaningful the project has been to them, along with requests to translate episodes into additional languages so even more communities can benefit. It is truly remarkable that families in Brooklyn, students in Jerusalem and communities in Panama City can all be learning the very same minhagim together- strengthening the shared traditions that have united Sephardic Jews across the world for generations.</p>
           <p>For several years, Minhag of the Week was distributed primarily through YouTube, Instagram and social media, where it grew to more than 300 episodes and hundreds of thousands of views. In the summer of 2026, we took the next major step by launching MinhagOfTheWeek.com. The website transforms this ever-growing library into a fully searchable resource, featuring complete episode transcriptions, powerful search tools, topic categories and many other resources that make it easier than ever to find exactly what you're looking for. Whether you're researching a specific custom, preparing for a holiday, settling a question from the Shabbat table or simply exploring the rich traditions of Sephardic Judaism, our hope is that Minhag of the Week will continue serving as a trusted resource for generations to come.</p>
           <p>Minhag of the Week has always been- and will always remain- a free resource for the community. Every episode, every transcription and every new feature has been made possible through the dedication of volunteers and supporters who believe that preserving our traditions is a responsibility we all share. If Minhag of the Week has enriched your understanding of our heritage or helped strengthen your family's connection to our community's customs, we invite you to <span class="card-pres-lnk" onclick="showPage('opp')">partner with us</span>. Your support will help us continue producing new episodes, expanding the website and ensuring that these treasured minhagim remain accessible to Jews around the world for generations to come.</p>
@@ -878,7 +893,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
     <a href="https://us.list-manage.com/OksJiO3RmfJ?e=fb9fa2429c&c2id=14219a4025956c69c2f3b48f8c556d8d" target="_blank" class="ft-sub">Subscribe to Our Email List</a>
     <div class="ft-links">
       <button class="ft-lnk" onclick="showHome()">Home</button>
-      <button class="ft-lnk" onclick="showPage('about')">About</button>
+      <button class="ft-lnk" onclick="showPage('about')">Our Story</button>
       <button class="ft-lnk" onclick="showPage('teachers')">Our Teachers</button>
       <button class="ft-lnk" onclick="showPlaylist()">My Playlist</button>
       <button class="ft-lnk" onclick="showPage('opp')">Sponsorship Opportunities</button>
@@ -950,6 +965,11 @@ function initAutoTheme(){
 initAutoTheme();
 
 const NAMES={Mosseri:'Joseph Mosseri',Arking:'Morris Arking',Harari:'Joey Harari','All 3':'Joseph Mosseri, Morris Arking & Joey Harari','Harari ft Arking':'Joey Harari & Morris Arking'};
+const BIOS={
+  Mosseri:{email:'joseph.mosseri@verizon.net',bio:"<p>Mr. Joseph Mosseri's expertise spans many areas related to Sephardim and the development of their culture, history and Halakhah. His passion for collecting rare and important books of teshubot and siddurim has helped fuel his deep knowledge on these subjects, and he holds a particular interest in the development and evolving nature of minhagim across Sephardic communities. Widely recognized, both locally and internationally, as an expert on the history, heritage, traditions and music of the Egyptian and Syrian communities, as well as many other facets of Sephardic life, he is frequently consulted and interviewed by researchers and historians for his insight.</p><p>Since its inception he has been a teacher at Minhag of the Week, an initiative of the Sephardic Community Alliance that teaches the Sephardic community its customs. He also teaches many other classes most of which are available on many online platforms.</p>"},
+  Arking:{email:'morris@arcadeorder.com',bio:"<p>Mr. Morris Arking has been teaching in the Sephardic community of Brooklyn, NY for over 20 years. He is a student of Hakham Shimon Alouf and he has taught perashah, halakhah and minhagim in community synagogues such as Beth Torah, Bnei Yosef and Ave N. Sephardic Congregation. He has recordings of his daily halakha at Bnei Yosef which can be found on his website, BirkatHaTorah.com.</p><p>He is known for his deep appreciation of Syrian minhagim and is often consulted by Rabbis, community members and friends from around the world regarding Syrian minhagim. He has written many articles over the years which eventually will be posted on BirkatHaTorah.com.</p><p>Since 2019, he has been recording videos for Minhag of the Week, an initiative by the Sephardic Community Alliance to teach the community about their customs.</p><p>He resides in Brooklyn, NY with his wife, children and grandchildren, where he works in business supply sales.</p>"},
+  Harari:{email:'joey@joeyharari.com',bio:"<p>Born and raised in Brooklyn, NY, Mr. Joey Harari has always been deeply involved in synagogue life- it's been his passion throughout. In the 1980s he served as president of Ahaba ve Ahva, and in the 1990s he helped build and run Bnei Yitzhak. In 1999, he and his wife Kady made Aliyah to Israel, where he served as Gabbai at the famous Ades Synagogue. After close to 25 years in Jerusalem, he moved to Ra'anana, where he currently serves as president of Aram Soba Ra'anana.</p><p>For over twenty years he is teaching at Yeshivat Eretz Hatzvi, and has also taught in the past at Yeshivat Moreshet Yerushalayim. Most recently, he recorded videos on the prayer customs of the Aleppo community as part of the SCA Minhag of the Week series.</p>"}
+};
 const PRESENTER_EMAILS={Mosseri:'joseph.mosseri@verizon.net',Arking:'morris@arcadeorder.com',Harari:'joey@joeyharari.com'};
 function getPresenterCcList(w){
   if(!w)return [];
@@ -1596,6 +1616,14 @@ function filterPres(w,push){
   document.getElementById('viewTitle').textContent='All Episodes — '+fn(w);
   document.getElementById('presName').textContent=fn(w);
   document.getElementById('presBar').classList.add('show');
+  const bioBlock=document.getElementById('presBioBlock');
+  if(BIOS[w]){
+    bioBlock.innerHTML=`<div class="teacher-photo">Photo<br>Coming Soon</div><div class="teacher-info"><div class="teacher-name">${fn(w)}</div>${BIOS[w].bio}<a class="teacher-contact-btn" href="mailto:${BIOS[w].email}">Contact ${fn(w).split(' ')[0]}</a></div>`;
+    bioBlock.style.display='flex';
+  } else {
+    bioBlock.style.display='none';
+    bioBlock.innerHTML='';
+  }
   document.querySelectorAll('.cat-btn,.sb-all,.sub-btn').forEach(b=>b.classList.remove('on'));
   pg=1; hidePgs();
   document.getElementById('listView').style.display='block';
@@ -3015,6 +3043,10 @@ function closeDrawer(){
   document.getElementById('drawer').classList.remove('open');
   document.getElementById('overlay').classList.remove('open');
   document.body.style.overflow='';
+}
+function toggleDrawerAbout(){
+  document.getElementById('aboutDrawerToggle').classList.toggle('open');
+  document.getElementById('aboutDrawerSub').classList.toggle('open');
 }
 
 // ── FORMS ──────────────────────────────────────────────────────────────────
