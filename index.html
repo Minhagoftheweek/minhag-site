@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787192994">
+<meta name="build-version" content="1787193139">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -451,7 +451,7 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .teacher-body.expanded{max-height:2500px;padding-top:1.3rem}
 .teacher-photo{float:left;width:200px;height:200px;border-radius:0;margin:0 1.8rem 1rem 0;background:linear-gradient(150deg,#e7edf4,#d3dee9);overflow:hidden}
 .teacher-photo img{width:100%;height:100%;object-fit:cover;display:block}
-.teacher-body p{font-size:.9rem;line-height:1.8;color:var(--tx);margin-bottom:1rem}
+.teacher-body p{font-size:.9rem;line-height:1.8;color:var(--tx);margin-bottom:1rem;text-align:justify}
 .teacher-body p:last-child{margin-bottom:0}
 .teacher-contact-btn{display:none;position:absolute;right:2.2rem;bottom:1.6rem;padding:.55rem 1.1rem;background:var(--hp);color:#fff;font-size:.82rem;font-weight:700;border-radius:6px;text-decoration:none;transition:opacity .15s}
 .teacher-card.expanded .teacher-contact-btn{display:inline-block}
@@ -460,10 +460,11 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 #presBioBlock.teacher-card{padding-bottom:1.4rem;display:flex !important;flex-wrap:wrap;gap:1.6rem;align-items:flex-start}
 #presBioBlock.teacher-card .teacher-photo{float:none !important;width:170px !important;height:170px !important;flex-shrink:0;margin:0 !important}
 #presBioBlock.teacher-card .teacher-info{flex:1;min-width:220px}
+#presBioBlock.teacher-card .teacher-info p{font-size:.9rem;line-height:1.8;color:var(--tx);margin-bottom:1rem;text-align:justify}
 @media(max-width:640px){
   #presBioBlock.teacher-card{flex-direction:column;align-items:center}
   #presBioBlock.teacher-card .teacher-name{text-align:center}
-  #presBioBlock.teacher-card .teacher-info p{text-align:left}
+  #presBioBlock.teacher-card .teacher-info p{text-align:justify}
   #presBioBlock.teacher-card .teacher-photo{width:140px !important;height:140px !important;margin:0 auto !important}
 }
 @media(max-width:640px){
