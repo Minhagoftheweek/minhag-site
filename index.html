@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787193139">
+<meta name="build-version" content="1787235107">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1261,13 +1261,22 @@ const SCHEDULE={
   // Example — remove or edit before real use:
   // 298: '2026-09-10T09:00:00-04:00',
 };
-(function hideScheduledEpisodes(){
+// Episodes with a future SCHEDULE date stay fully loaded (so a direct link
+// works immediately — useful for e.g. emailing out a link ahead of the
+// public release), but are excluded from every browsing/discovery surface
+// (grid, category/search filters, homepage picks, related videos) via
+// PUBLIC_EPS below. Nothing here needs updating once an episode's time
+// passes — every visitor's own browser clock decides.
+const HIDDEN_IDS=(function(){
   const now=new Date();
-  for(let i=EPS.length-1;i>=0;i--){
-    const pub=SCHEDULE[E.id(EPS[i])];
-    if(pub && new Date(pub)>now) EPS.splice(i,1);
-  }
+  const hidden=new Set();
+  EPS.forEach(ep=>{
+    const pub=SCHEDULE[E.id(ep)];
+    if(pub && new Date(pub)>now) hidden.add(E.id(ep));
+  });
+  return hidden;
 })();
+const PUBLIC_EPS=EPS.filter(ep=>!HIDDEN_IDS.has(E.id(ep)));
 function getSubsForCat(ep,catId){
   const s=E.subs(ep);
   if(!s)return null; // null = no sub data, not empty
@@ -1279,7 +1288,7 @@ function getSubsForCat(ep,catId){
 }
 
 const PS=48;
-let fil=[...EPS],pg=1;
+let fil=[...PUBLIC_EPS],pg=1;
 let currentEpId=null;
 let activeSproutPlayer=null;
 // iOS Safari sometimes leaves the picture frozen on a stale frame after the
@@ -1615,7 +1624,7 @@ function setActive(el){
 
 // ── FILTERS ────────────────────────────────────────────────────────────────
 function showHome(push){
-  fil=[...EPS];
+  fil=[...PUBLIC_EPS];
   document.getElementById('viewTitle').textContent='All Episodes';
   document.getElementById('presBar').classList.remove('show');
   document.getElementById('searchInput').value='';
@@ -1635,7 +1644,7 @@ function showHome(push){
 }
 
 function filterCat(id,push){
-  fil=EPS.filter(ep=>E.c(ep).includes(id)).slice().reverse();
+  fil=PUBLIC_EPS.filter(ep=>E.c(ep).includes(id)).slice().reverse();
   document.getElementById('viewTitle').textContent=getCL(id);
   document.getElementById('presBar').classList.remove('show');
   setActive(document.getElementById('cat-'+id));
@@ -1646,7 +1655,7 @@ function filterCat(id,push){
 }
 
 function filterSub(sub,catId,idx,push){
-  fil=EPS.filter(ep=>{
+  fil=PUBLIC_EPS.filter(ep=>{
     if(!E.c(ep).includes(catId))return false;
     const epSubs=getSubsForCat(ep,catId);
     if(epSubs===null)return true; // no sub data yet — include episode
@@ -1665,7 +1674,7 @@ function filterSub(sub,catId,idx,push){
 }
 
 function filterPres(w,push){
-  fil=EPS.filter(ep=>E.w(ep).split(',').map(p=>p.trim()).includes(w)).slice().reverse();
+  fil=PUBLIC_EPS.filter(ep=>E.w(ep).split(',').map(p=>p.trim()).includes(w)).slice().reverse();
   document.getElementById('viewTitle').textContent='All Episodes — '+fn(w);
   document.getElementById('presName').textContent=fn(w);
   document.getElementById('presBar').classList.add('show');
@@ -1745,7 +1754,7 @@ function handleSearch(fromRoute){
     const epNumMatch=qL.match(/^(?:episode|ep\.?|#)?\s*(\d+(?:\.\d+)?)$/);
     if(epNumMatch){
       const target=epNumMatch[1];
-      fil=EPS.filter(ep=>{
+      fil=PUBLIC_EPS.filter(ep=>{
         const n=E.num(ep).replace(/^Ep\.\s*/,'').replace(/^0+(?=\d)/,'');
         return n===target||n===target.replace(/^0+(?=\d)/,'');
       }).slice().reverse();
@@ -1829,7 +1838,7 @@ function handleSearch(fromRoute){
     // relaxing away would explode the result count — that explosion is the signal to
     // stop and accept there's just no match, rather than flooding back in.
     function bestMatches(groups){
-      const scored=EPS.map(ep=>({ep,...scoreEp(ep,groups)}));
+      const scored=PUBLIC_EPS.map(ep=>({ep,...scoreEp(ep,groups)}));
       const total=groups.length;
       const floor=total<=2?1:Math.max(2,Math.ceil(total*0.4));
       const CAP=10;
@@ -2004,7 +2013,7 @@ function getNextEpId(currentId){
   // so Up Next stays topically related instead of just the next chronological upload.
   const related=getRelatedEpisodes(currentId,3);
   if(related.length)return E.id(related[0]);
-  const sorted=EPS.slice().sort((a,b)=>epSortKey(a)-epSortKey(b));
+  const sorted=PUBLIC_EPS.slice().sort((a,b)=>epSortKey(a)-epSortKey(b));
   const idx=sorted.findIndex(ep=>E.id(ep)===currentId);
   if(idx===-1)return null;
   const nextIdx=(idx+1)%sorted.length; // wraps from last episode back to first
@@ -2360,7 +2369,7 @@ function parseSubs(ep){
   return out;
 }
 function episodesForTag(type,val){
-  return EPS.filter(ep=>{const s=parseSubs(ep);return s[type]&&s[type].has(val);});
+  return PUBLIC_EPS.filter(ep=>{const s=parseSubs(ep);return s[type]&&s[type].has(val);});
 }
 // Simple deterministic PRNG so picks stay stable for a given calendar day.
 function mulberry32(seed){
@@ -2603,13 +2612,13 @@ async function buildFeatured(){
     if(hit.titleHints){
       const found=[];
       for(const re of hit.titleHints){
-        const hinted=EPS.find(e=>re.test(E.t(e))&&!usedIds.has(E.id(e)));
+        const hinted=PUBLIC_EPS.find(e=>re.test(E.t(e))&&!usedIds.has(E.id(e)));
         if(hinted){found.push(hinted);usedIds.add(E.id(hinted));}
       }
       if(found.length)return found;
     }
     if(hit.titleHint){
-      const hinted=EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
+      const hinted=PUBLIC_EPS.find(e=>hit.titleHint.test(E.t(e))&&!usedIds.has(E.id(e)));
       if(hinted){usedIds.add(E.id(hinted));return[hinted];}
     }
     const reignOrdinal=hebYear?hebYear*14+(hit.subIndex||0):Math.floor(new Date(hit.date+'T12:00:00Z').getTime()/86400000);
@@ -2701,7 +2710,7 @@ async function buildFeatured(){
       const roll=mulberry32(seedFromString(slotSeed))();
       let nudged=null;
       if(travelSeason&&roll<0.25&&!usedIds.has(203)){
-        const ep203=EPS.find(e=>E.id(e)===203);
+        const ep203=PUBLIC_EPS.find(e=>E.id(e)===203);
         if(ep203)nudged=ep203;
       }else if(barMissvahSeason&&roll<0.30){
         const got=pickFromTag('lifecycle','Bar Missvah',1,slotSeed+'|barm');
@@ -2711,8 +2720,8 @@ async function buildFeatured(){
         if(got.length)nudged=got[0];
       }
       if(nudged){picks.push(nudged);usedIds.add(E.id(nudged));continue;}
-      let pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]&&!isTimely(ep));
-      if(!pool.length)pool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
+      let pool=PUBLIC_EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]&&!isTimely(ep));
+      if(!pool.length)pool=PUBLIC_EPS.filter(ep=>!usedIds.has(E.id(ep))&&!CONDITIONAL_BLOCK[E.id(ep)]);
       const rest=seededShuffle(pool,slotSeed+'|fallback');
       if(rest.length){picks.push(rest[0]);usedIds.add(E.id(rest[0]));}
       else break;
@@ -2727,8 +2736,8 @@ async function buildFeatured(){
     const presenters=picks.map(ep=>E.w(ep));
     const allSamePresenter=presenters.every(p=>p===presenters[0])&&!presenters[0].includes(',');
     if(allSamePresenter){
-      let altPool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&E.w(ep)!==presenters[0]&&!isTimely(ep));
-      if(!altPool.length)altPool=EPS.filter(ep=>!usedIds.has(E.id(ep))&&E.w(ep)!==presenters[0]);
+      let altPool=PUBLIC_EPS.filter(ep=>!usedIds.has(E.id(ep))&&E.w(ep)!==presenters[0]&&!isTimely(ep));
+      if(!altPool.length)altPool=PUBLIC_EPS.filter(ep=>!usedIds.has(E.id(ep))&&E.w(ep)!==presenters[0]);
       if(altPool.length){
         const alt=seededShuffle(altPool,todayStr+'|diversify')[0];
         usedIds.add(E.id(alt));
@@ -2753,7 +2762,7 @@ async function renderFeatured(){
   let result;
   try{result=await buildFeatured();}
   catch(e){
-    result={picks:seededShuffle(EPS,nyDateStr(new Date())+'|fallback').slice(0,3),reason:''};
+    result={picks:seededShuffle(PUBLIC_EPS,nyDateStr(new Date())+'|fallback').slice(0,3),reason:''};
   }
   const cards=result.picks.map(ep=>{
     const thumbUrl=THUMBS[E.id(ep)]||'';
@@ -2922,7 +2931,7 @@ function renderPlAddResults(){
   const q=(document.getElementById('plAddSearch').value||'').trim().toLowerCase();
   if(!q){box.innerHTML='';return;}
   const inPl=getPlaylist();
-  const matches=EPS.filter(ep=>{
+  const matches=PUBLIC_EPS.filter(ep=>{
     if(inPl.includes(E.id(ep)))return false;
     const num=E.num(ep).toLowerCase().replace(/^ep\.\s*/,'');
     return E.t(ep).toLowerCase().includes(q)||fn(E.w(ep)).toLowerCase().includes(q)||num.includes(q);
@@ -2971,7 +2980,7 @@ function getRelatedEpisodes(epId,maxResults){
   // tags at all, which would otherwise never surface as related to one another.
   const TITLE_STOP=new Set(['the','and','for','with','from','part','into','introduction','to','on','of','a','an','in']);
   const myTitleWords=new Set(E.t(ep).toLowerCase().replace(/[^a-z0-9\s']/g,' ').split(/\s+/).filter(w=>w.length>=4&&!TITLE_STOP.has(w)));
-  const scored=EPS.filter(other=>E.id(other)!==epId).map(other=>{
+  const scored=PUBLIC_EPS.filter(other=>E.id(other)!==epId).map(other=>{
     const otherSubsStr=E.subs(other);
     const otherCats=new Set(E.c(other));
     let subScore=0;
