@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787235107">
+<meta name="build-version" content="1787238017">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -234,9 +234,6 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
   .hamburger{position:absolute;right:1rem;top:50%;transform:translateY(-50%);margin-left:0}
   .logo-wrap img{height:52px}
 
-  /* Hide video size controls on mobile — full width is the only sensible option */
-  .vid-size-row{display:none !important}
-
   /* Further Insights: keep single-column stacked layout on mobile (desktop uses a side-by-side grid) */
   .insights-list{display:flex !important;flex-direction:column !important}
 
@@ -276,11 +273,6 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
   .ep-meta{font-size:.72rem;flex-wrap:wrap;gap:.3rem}
   .ep-cats-hdr{flex-wrap:wrap;gap:.3rem}
   .cat-tag{font-size:.6rem}
-
-  /* Video size row — smaller on mobile */
-  .vid-size-row{gap:.3rem}
-  .vid-size-label{font-size:.65rem}
-  .vid-size-btn{font-size:.65rem;padding:.2rem .5rem}
 
   /* Transcript */
   .tx-body p{font-size:.92rem;line-height:1.75}
@@ -387,19 +379,6 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .pres-lnk{color:var(--hp);cursor:pointer;font-weight:600;border-bottom:1px solid rgba(139,84,178,.3)}
 .pres-lnk:hover{border-bottom-color:var(--hp)}
 .vid{width:100%;aspect-ratio:16/9;background:var(--nd);border-radius:8px;overflow:hidden;margin-bottom:.5rem;display:flex;align-items:center;justify-content:center;margin-left:auto;margin-right:auto;transition:max-width .18s ease;position:relative}
-.vid.size-s{max-width:480px}
-.vid.size-m{max-width:720px}
-.vid.size-l{max-width:100%}
-.vid-size-row{display:flex;gap:.4rem;justify-content:center;align-items:center;margin-bottom:.88rem}
-.vid-size-label{font-size:.68rem;font-weight:600;color:var(--mu);margin-right:.2rem}
-.vid-size-btn{font-size:.68rem;font-weight:600;padding:.22rem .6rem;border-radius:4px;border:1.5px solid var(--bd);background:var(--w);color:var(--mu);cursor:pointer;font-family:Arial,sans-serif}
-.vid-size-btn.on{border-color:var(--hp);color:var(--hpd);background:var(--hpl)}
-@media (pointer:coarse) and (max-width:930px){
-  /* Hide video size controls on touch phones in any orientation — a rotated
-     phone can be wider than the normal 640px mobile breakpoint, so this is
-     a separate, orientation-safe rule from the main mobile media query. */
-  .vid-size-row{display:none !important}
-}
 .mini-player{position:fixed;bottom:18px;right:18px;width:300px;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.35);z-index:500;display:none}
 .mini-player.show{display:block}
 .mini-player video,.mini-player iframe{width:100%;height:100%;border:none}
@@ -1967,13 +1946,7 @@ function openEp(id,push){
     <div class="ep-title">${E.t(ep)}</div>
     <div class="ep-meta">${numDisplay}<span style="color:var(--bd)">·</span>${E.dt(ep)}<span style="color:var(--bd)">·</span>${presLinks(E.w(ep),'meta')}</div>
     ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
-    <div class="vid size-m" id="vidBox-${id}">${vidH}</div>
-    <div class="vid-size-row">
-      <span class="vid-size-label">Video Size:</span>
-      <button class="vid-size-btn" id="vsz-s-${id}" onclick="setVidSize(${id},'s')">Compact</button>
-      <button class="vid-size-btn on" id="vsz-m-${id}" onclick="setVidSize(${id},'m')">Standard</button>
-      <button class="vid-size-btn" id="vsz-l-${id}" onclick="setVidSize(${id},'l')">Full Width</button>
-    </div>
+    <div class="vid" id="vidBox-${id}">${vidH}</div>
     <div style="text-align:center;margin:.9rem 0"><a class="dl-btn dl-btn-ghost" href="${buildEpisodeQuestionMailto(ep)}">Ask a Question About This Episode</a></div>
     ${renderInsights(id)}
     <div class="tx-card">
@@ -1996,14 +1969,6 @@ function closeEp(){
   document.getElementById('epPage').classList.remove('show');
   document.getElementById('heroWrap').style.display='block';
   document.getElementById('listView').style.display='block';
-}
-
-function setVidSize(id,size){
-  const box=document.getElementById('vidBox-'+id);
-  if(!box)return;
-  box.classList.remove('size-s','size-m','size-l');
-  box.classList.add('size-'+size);
-  ['s','m','l'].forEach(s=>document.getElementById('vsz-'+s+'-'+id)?.classList.toggle('on',s===size));
 }
 
 // Episodes sorted oldest-to-newest by their display number (handles "Ep. 8.5" etc correctly)
