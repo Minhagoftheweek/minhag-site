@@ -169,7 +169,9 @@ If nothing applies well, respond {{"categories": [], "subs": ""}}."""
 
 
 def slugify_title(topic):
-    """Match the site's existing preview-folder naming: spaces -> dashes, strip unsafe chars."""
+    """Match the site's existing preview-folder naming: spaces -> dashes, strip unsafe chars.
+    NOTE: mirrored in the Google Apps Script (slugifyTitle) so the sheet can write
+    the direct-access URL back immediately, without waiting for this script to run."""
     cleaned = re.sub(r"[^\w\s-]", "", topic)
     return re.sub(r"\s+", "-", cleaned.strip())
 
