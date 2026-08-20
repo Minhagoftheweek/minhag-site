@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1787176365">
+<meta name="build-version" content="1787190475">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -387,9 +387,6 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .pres-lnk{color:var(--hp);cursor:pointer;font-weight:600;border-bottom:1px solid rgba(139,84,178,.3)}
 .pres-lnk:hover{border-bottom-color:var(--hp)}
 .vid{width:100%;aspect-ratio:16/9;background:var(--nd);border-radius:8px;overflow:hidden;margin-bottom:.5rem;display:flex;align-items:center;justify-content:center;margin-left:auto;margin-right:auto;transition:max-width .18s ease;position:relative}
-.vid-unmute-overlay{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.65);color:#fff;padding:.4rem .7rem;border-radius:20px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:.35rem;cursor:pointer;z-index:5;transition:opacity .15s}
-.vid-unmute-overlay:hover{background:rgba(0,0,0,.8)}
-.vid-unmute-overlay.hidden{display:none}
 .vid.size-s{max-width:480px}
 .vid.size-m{max-width:720px}
 .vid.size-l{max-width:100%}
@@ -397,6 +394,12 @@ nav{background:#fff;height:80px;display:flex;align-items:center;padding:0 1.5rem
 .vid-size-label{font-size:.68rem;font-weight:600;color:var(--mu);margin-right:.2rem}
 .vid-size-btn{font-size:.68rem;font-weight:600;padding:.22rem .6rem;border-radius:4px;border:1.5px solid var(--bd);background:var(--w);color:var(--mu);cursor:pointer;font-family:Arial,sans-serif}
 .vid-size-btn.on{border-color:var(--hp);color:var(--hpd);background:var(--hpl)}
+@media (pointer:coarse) and (max-width:930px){
+  /* Hide video size controls on touch phones in any orientation — a rotated
+     phone can be wider than the normal 640px mobile breakpoint, so this is
+     a separate, orientation-safe rule from the main mobile media query. */
+  .vid-size-row{display:none !important}
+}
 .mini-player{position:fixed;bottom:18px;right:18px;width:300px;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.35);z-index:500;display:none}
 .mini-player.show{display:block}
 .mini-player video,.mini-player iframe{width:100%;height:100%;border:none}
@@ -841,7 +844,7 @@ footer{background:var(--nd);border-top:2px solid var(--hp);padding:1rem 1.5rem;m
         <div class="about-hero">
           <h1>Our Teachers</h1>
           <div class="about-rule"></div>
-          <div class="about-tagline">Meet the Voices Behind Minhag of the Week</div>
+          <div class="about-tagline">Meet the voices behind Minhag of the Week</div>
         </div>
 
         <div class="teacher-card" id="teacher-Mosseri">
@@ -1354,19 +1357,23 @@ function routeSponsorship(){navigate('/sponsorship');}
 function routeQuestion(){navigate('/question');}
 function routeAbout(){navigate('/about');}
 function routeTeachers(){navigate('/teachers');}
+const TEACHER_NAMES=['Mosseri','Arking','Harari'];
 function toggleTeacherCard(name){
   const card=document.getElementById('teacher-'+name);
   const body=document.getElementById('body-'+name);
   const chev=document.getElementById('chev-'+name);
   if(!card||!body)return;
-  const expanded=body.classList.toggle('expanded');
-  card.classList.toggle('expanded',expanded);
-  if(chev)chev.classList.toggle('expanded',expanded);
-}
-function unmuteEpisodeVideo(id){
-  try{if(activeSproutPlayer)activeSproutPlayer.setVolume(1);}catch(e){}
-  const ov=document.getElementById('unmuteOverlay-'+id);
-  if(ov)ov.classList.add('hidden');
+  const opening=!body.classList.contains('expanded');
+  TEACHER_NAMES.forEach(n=>{
+    const c=document.getElementById('teacher-'+n);
+    const b=document.getElementById('body-'+n);
+    const ch=document.getElementById('chev-'+n);
+    if(!c||!b)return;
+    const shouldExpand=opening&&n===name;
+    c.classList.toggle('expanded',shouldExpand);
+    b.classList.toggle('expanded',shouldExpand);
+    if(ch)ch.classList.toggle('expanded',shouldExpand);
+  });
 }
 
 function applyRoute(){
@@ -1942,7 +1949,7 @@ function openEp(id,push){
     <div class="ep-title">${E.t(ep)}</div>
     <div class="ep-meta">${numDisplay}<span style="color:var(--bd)">·</span>${E.dt(ep)}<span style="color:var(--bd)">·</span>${presLinks(E.w(ep),'meta')}</div>
     ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
-    <div class="vid size-m" id="vidBox-${id}">${vidH}${streamId&&streamId.startsWith('SPROUT:')?`<div class="vid-unmute-overlay" id="unmuteOverlay-${id}" onclick="unmuteEpisodeVideo(${id})"><svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M3 10v4h4l5 5V5L7 10H3z"/><line x1="16" y1="9" x2="22" y2="15" stroke="white" stroke-width="2"/><line x1="22" y1="9" x2="16" y2="15" stroke="white" stroke-width="2"/></svg> Tap for sound</div>`:''}</div>
+    <div class="vid size-m" id="vidBox-${id}">${vidH}</div>
     <div class="vid-size-row">
       <span class="vid-size-label">Video Size:</span>
       <button class="vid-size-btn" id="vsz-s-${id}" onclick="setVidSize(${id},'s')">Compact</button>
