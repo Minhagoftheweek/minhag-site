@@ -26,6 +26,7 @@ const REPO_NAME = 'minhag-site';
 // Column indices (0-based, matches the sheet layout):
 // A=Date(0) B=Episode#(1) C=Dedication(2) D=Topic(3) E=Presenter(4)
 // F=Video#(5) G=SentToVictor(6) H=Edited(7) I=Scheduled(8) J=AutomationStatus(9) K=DirectLink(10)
+const COL_DATE = 0;
 const COL_EPISODE = 1;
 const COL_DEDICATION = 2;
 const COL_TOPIC = 3;
@@ -65,6 +66,12 @@ function checkForNewEpisodes() {
 
     if (!episodeNum || status) continue; // no episode # yet, or already triggered
     if (!isGreenish(episodeBg)) continue; // not marked ready
+
+    const rowDate = new Date(values[r][COL_DATE]);
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 3);
+    if (!isNaN(rowDate) && rowDate < cutoff) continue; // old row — ignore even if green
+
     if (!topic || !presenter) {
       console.log('Row ' + (r + 1) + ' is green but missing Topic/Presenter — skipping for now.');
       continue;
