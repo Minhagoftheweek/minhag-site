@@ -25,12 +25,21 @@ const REPO_NAME = 'minhag-site';
 
 // Column indices (0-based, matches the sheet layout):
 // A=Date(0) B=Episode#(1) C=Dedication(2) D=Topic(3) E=Presenter(4)
-// F=Video#(5) G=SentToVictor(6) H=Edited(7) I=Scheduled(8) J=AutomationStatus(9)
+// F=Video#(5) G=SentToVictor(6) H=Edited(7) I=Scheduled(8) J=AutomationStatus(9) K=DirectLink(10)
 const COL_EPISODE = 1;
 const COL_DEDICATION = 2;
 const COL_TOPIC = 3;
 const COL_PRESENTER = 4;
 const COL_STATUS = 9; // column J
+const COL_LINK = 10; // column K
+
+// Mirrors slugify_title() in scripts/publish_episode.py exactly — the link is fully
+// predictable from the topic text alone, so it can be written the moment the row is
+// triggered, without waiting for the GitHub Action to actually finish running.
+function slugifyTitle(topic) {
+  const cleaned = topic.replace(/[^\w\s-]/g, '');
+  return cleaned.trim().replace(/\s+/g, '-');
+}
 
 function checkForNewEpisodes() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -65,6 +74,8 @@ function checkForNewEpisodes() {
     const cell = sheet.getRange(r + 1, COL_STATUS + 1);
     if (ok) {
       cell.setValue('Triggered ' + new Date().toLocaleString());
+      const url = 'https://minhagoftheweek.com/' + slugifyTitle(topic);
+      sheet.getRange(r + 1, COL_LINK + 1).setValue(url);
     } else {
       cell.setValue('ERROR — check GitHub Actions');
     }
