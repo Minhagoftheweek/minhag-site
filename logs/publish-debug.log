@@ -10,3 +10,15 @@ Traceback (most recent call last):
     raise RuntimeError(
 RuntimeError: Missing required repo secret(s): ANTHROPIC_API_KEY. Set these under Settings > Secrets and variables > Actions.
 
+
+======================================================================
+[2026-09-02T11:36:01.901827-04:00]
+Publish failed with an unhandled exception:
+
+Traceback (most recent call last):
+  File "/home/runner/work/minhag-site/minhag-site/scripts/publish_episode.py", line 360, in <module>
+    main()
+  File "/home/runner/work/minhag-site/minhag-site/scripts/publish_episode.py", line 293, in main
+    raise RuntimeError(f"No SproutVideo upload found matching episode {episode_num}")
+RuntimeError: No SproutVideo upload found matching episode test-000
+
