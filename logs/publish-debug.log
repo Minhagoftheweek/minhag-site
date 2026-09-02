@@ -1,0 +1,12 @@
+
+======================================================================
+[2026-09-02T11:21:02.036886-04:00]
+Publish failed with an unhandled exception:
+
+Traceback (most recent call last):
+  File "/home/runner/work/minhag-site/minhag-site/scripts/publish_episode.py", line 358, in <module>
+    main()
+  File "/home/runner/work/minhag-site/minhag-site/scripts/publish_episode.py", line 271, in main
+    raise RuntimeError(
+RuntimeError: Missing required repo secret(s): ANTHROPIC_API_KEY. Set these under Settings > Secrets and variables > Actions.
+
