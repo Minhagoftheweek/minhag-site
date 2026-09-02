@@ -173,6 +173,25 @@ If nothing applies well, respond {{"categories": [], "subs": ""}}."""
     return parsed["categories"], parsed["subs"]
 
 
+PRESENTER_FULL_NAMES = {
+    'Mosseri': 'Joseph Mosseri',
+    'Arking': 'Morris Arking',
+    'Harari': 'Joey Harari',
+}
+
+
+def full_presenter_name(presenter):
+    """Expand last-name-only presenter values (whatever the sheet sends) to full
+    names for anything shown publicly (link-preview captions, etc). Matches the
+    NAMES map already used elsewhere on the site. Handles combos like
+    'Harari,Arking' or 'All 3' by expanding and joining each part with '&'."""
+    if presenter == 'All 3':
+        return ' & '.join(PRESENTER_FULL_NAMES[p] for p in ('Mosseri', 'Arking', 'Harari'))
+    parts = [p.strip() for p in re.split(r'[,&]| ft ', presenter) if p.strip()]
+    expanded = [PRESENTER_FULL_NAMES.get(p, p) for p in parts]
+    return ' & '.join(expanded)
+
+
 def slugify_title(topic):
     """Match the site's existing preview-folder naming: spaces -> dashes, strip unsafe chars.
     NOTE: mirrored in the Google Apps Script (slugifyTitle) so the sheet can write
@@ -185,7 +204,7 @@ def make_preview_page(episode_num, topic, presenter, thumb_url):
     """Static per-episode folder with og:/twitter: tags + redirect, for link previews (iMessage/WhatsApp/etc)."""
     slug = slugify_title(topic)
     title = f'SCA Minhag of the Week {episode_num}: &ldquo;{topic}&rdquo;'
-    desc = f"Presented by {presenter}. Watch this week&rsquo;s minhag from the Sephardic Community Alliance."
+    desc = f"Presented by {full_presenter_name(presenter)}. Watch this week&rsquo;s minhag from the Sephardic Community Alliance."
     url = f"https://minhagoftheweek.com/{slug}"
     html = f"""<!doctype html>
 <html lang="en"><head>
