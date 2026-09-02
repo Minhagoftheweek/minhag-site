@@ -247,7 +247,10 @@ def write_debug_log(message):
         # Discard any partial edits to tracked files (e.g. a half-written
         # index.html from a failure partway through main()) before adding
         # only the debug log — a failed run must never push a broken site.
-        subprocess.run(["git", "checkout", "--", "."], cwd=REPO_ROOT)
+        subprocess.run(
+            ["git", "checkout", "--", ".", ":!logs/publish-debug.log"],
+            cwd=REPO_ROOT,
+        )
         subprocess.run(["git", "clean", "-fd", "--exclude=logs"], cwd=REPO_ROOT)
         subprocess.run(["git", "config", "user.name", "minhag-publish-bot"], check=True, cwd=REPO_ROOT)
         subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True, cwd=REPO_ROOT)
