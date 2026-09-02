@@ -287,8 +287,7 @@ def main():
 
     video = find_sprout_video(episode_num)
     if not video:
-        print(f"ERROR: no SproutVideo upload found matching episode {episode_num}", file=sys.stderr)
-        sys.exit(1)
+        raise RuntimeError(f"No SproutVideo upload found matching episode {episode_num}")
 
     embed_url = f"https://videos.sproutvideo.com/embed/{video['id']}/{video['security_token']}"
     thumb_url = make_thumbnail(
