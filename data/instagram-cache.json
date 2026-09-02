@@ -1007,9 +1007,17 @@
       "timestamp": "2026-08-19T16:43:08+0000",
       "media_type": "VIDEO",
       "checked_at": "2026-08-19T19:12:01.529997+00:00"
+    },
+    "18084874079427618": {
+      "views": 241,
+      "views_unavailable": false,
+      "caption": "Episode 304: \u201cWhen to say Tashlikh on Rosh Hashanah\u201d\n\nMinhag of the Week is a weekly video series featuring Joey Mosseri, Morris Arking & Joseph Harari who educate our community about its Syrian and Middle Eastern traditions. Minhag of the Week is a project of the Sephardic Community Alliance. \n\n#SC",
+      "timestamp": "2026-09-02T16:56:06+0000",
+      "media_type": "VIDEO",
+      "checked_at": "2026-09-02T18:13:00.283379+00:00"
     }
   },
-  "newest_seen_id": "17944540833302024",
+  "newest_seen_id": "18084874079427618",
   "backfill_complete": true,
   "schema_version": 4,
   "backfill_until_ts": 1360876779
