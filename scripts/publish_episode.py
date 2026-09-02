@@ -27,6 +27,7 @@ import re
 import subprocess
 import sys
 import time
+import traceback
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta
@@ -35,9 +36,13 @@ from zoneinfo import ZoneInfo
 REPO_ROOT = os.environ.get("GITHUB_WORKSPACE", ".")
 INDEX_HTML = os.path.join(REPO_ROOT, "index.html")
 VERSION_JSON = os.path.join(REPO_ROOT, "version.json")
+DEBUG_LOG = os.path.join(REPO_ROOT, "logs", "publish-debug.log")
 
-SPROUT_KEY = os.environ["SPROUTVIDEO_API_KEY"]
-ANTHROPIC_KEY = os.environ["ANTHROPIC_API_KEY"]
+# Read lazily (inside main(), guarded) rather than at import time, so a
+# missing/misnamed secret produces a diagnosed, committed failure instead of
+# a bare KeyError that only exists in GitHub's log storage.
+SPROUT_KEY = os.environ.get("SPROUTVIDEO_API_KEY")
+ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 # The category taxonomy actually used across index.html's EPS tag arrays.
 # Kept here so the categorizer prompt stays anchored to real values.
@@ -227,7 +232,47 @@ def next_wednesday_1230_et(after_date=None):
     return target.isoformat()
 
 
+def write_debug_log(message):
+    """Write a failure report straight into the repo and push it, so the
+    next failure is diagnosable via a normal git pull — no GitHub Actions
+    log access (which requires blob-storage domains that may be blocked)
+    needed. This runs in its own git add/commit/push scope, separate from
+    any partial site changes, so a failed publish never leaves index.html
+    half-edited in a pushed commit."""
+    os.makedirs(os.path.dirname(DEBUG_LOG), exist_ok=True)
+    timestamp = datetime.now(ZoneInfo("America/New_York")).isoformat()
+    with open(DEBUG_LOG, "a", encoding="utf-8") as f:
+        f.write(f"\n{'='*70}\n[{timestamp}]\n{message}\n")
+    try:
+        # Discard any partial edits to tracked files (e.g. a half-written
+        # index.html from a failure partway through main()) before adding
+        # only the debug log — a failed run must never push a broken site.
+        subprocess.run(["git", "checkout", "--", "."], cwd=REPO_ROOT)
+        subprocess.run(["git", "clean", "-fd", "--exclude=logs"], cwd=REPO_ROOT)
+        subprocess.run(["git", "config", "user.name", "minhag-publish-bot"], check=True, cwd=REPO_ROOT)
+        subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True, cwd=REPO_ROOT)
+        subprocess.run(["git", "add", "logs/publish-debug.log"], check=True, cwd=REPO_ROOT)
+        subprocess.run(["git", "commit", "-m", f"Publish failure log ({timestamp})"], check=True, cwd=REPO_ROOT)
+        subprocess.run(["git", "push"], check=True, cwd=REPO_ROOT)
+    except Exception as log_push_error:
+        # If even the log push fails, at least this shows up in the Actions
+        # console output itself.
+        print(f"Also failed to push debug log: {log_push_error}", file=sys.stderr)
+
+
 def main():
+    missing_secrets = [
+        name for name, val in [
+            ("SPROUTVIDEO_API_KEY", SPROUT_KEY),
+            ("ANTHROPIC_API_KEY", ANTHROPIC_KEY),
+        ] if not val
+    ]
+    if missing_secrets:
+        raise RuntimeError(
+            "Missing required repo secret(s): " + ", ".join(missing_secrets) +
+            ". Set these under Settings > Secrets and variables > Actions."
+        )
+
     event_path = os.environ["GITHUB_EVENT_PATH"]
     with open(event_path) as f:
         event = json.load(f)
@@ -309,4 +354,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        tb = traceback.format_exc()
+        write_debug_log(
+            "Publish failed with an unhandled exception:\n\n" + tb
+        )
+        # Still exit non-zero so the Actions run shows failed, as before —
+        # the difference is the reason is now committed to the repo, not
+        # only visible in GitHub's log storage.
+        print(tb, file=sys.stderr)
+        sys.exit(1)
