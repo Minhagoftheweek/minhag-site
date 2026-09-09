@@ -16,8 +16,17 @@
  * - Looks at the sheet tab named for the current year (e.g. "2026").
  * - For each row, if the Episode # cell (column B) is highlighted green
  *   AND Topic/Presenter are filled in AND it hasn't been triggered yet
- *   (tracked in column J), it fires a GitHub repository_dispatch event.
- * - Marks column J with a timestamp so it's never triggered twice.
+ *   (tracked in column J), it fires a GitHub repository_dispatch event
+ *   and marks column J so it's never triggered twice.
+ * - The Website Link (column K) is intentionally NOT written at trigger
+ *   time. The GitHub Action + Cloudflare Pages deploy take roughly a
+ *   minute to actually put the per-episode preview page live — writing
+ *   the link immediately would let it be copied and shared before the
+ *   page exists, which gets a 404/generic preview permanently cached by
+ *   iMessage/WhatsApp/etc. for that URL. Instead, every run checks any
+ *   already-triggered row whose link is still blank, fetches the
+ *   expected URL, and only fills in the link once that page actually
+ *   returns 200 — so the link never appears until it's safe to share.
  */
 
 const REPO_OWNER = 'Minhagoftheweek';
@@ -34,9 +43,7 @@ const COL_PRESENTER = 4;
 const COL_STATUS = 9; // column J
 const COL_LINK = 10; // column K
 
-// Mirrors slugify_title() in scripts/publish_episode.py exactly — the link is fully
-// predictable from the topic text alone, so it can be written the moment the row is
-// triggered, without waiting for the GitHub Action to actually finish running.
+// Mirrors slugify_title() in scripts/publish_episode.py exactly.
 function slugifyTitle(topic) {
   const cleaned = topic.replace(/[^\w\s-]/g, '');
   return cleaned.trim().replace(/\s+/g, '-');
@@ -63,6 +70,15 @@ function checkForNewEpisodes() {
     const topic = values[r][COL_TOPIC];
     const presenter = values[r][COL_PRESENTER];
     const dedication = values[r][COL_DEDICATION];
+    const link = values[r][COL_LINK];
+
+    // Already triggered, just waiting on the live page — check it, and
+    // write the link in only once it's actually reachable. Runs on every
+    // 15-minute pass until it succeeds, then leaves it alone forever.
+    if (status && String(status).indexOf('Triggered') === 0 && !link) {
+      if (topic) tryWriteLinkIfLive(sheet, r, topic);
+      continue;
+    }
 
     if (!episodeNum || status) continue; // no episode # yet, or already triggered
     if (!isGreenish(episodeBg)) continue; // not marked ready
@@ -81,11 +97,25 @@ function checkForNewEpisodes() {
     const cell = sheet.getRange(r + 1, COL_STATUS + 1);
     if (ok) {
       cell.setValue('Triggered ' + new Date().toLocaleString());
-      const url = 'https://minhagoftheweek.com/' + slugifyTitle(topic);
-      sheet.getRange(r + 1, COL_LINK + 1).setValue(url);
+      // Link column left blank on purpose — see tryWriteLinkIfLive above.
     } else {
       cell.setValue('ERROR — check GitHub Actions');
     }
+  }
+}
+
+/** Checks whether the episode's live preview page is up yet; if so, writes
+  * the link into column K. If not, does nothing — it gets checked again
+  * automatically on the next 15-minute run. */
+function tryWriteLinkIfLive(sheet, r, topic) {
+  const url = 'https://minhagoftheweek.com/' + slugifyTitle(topic);
+  try {
+    const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+    if (resp.getResponseCode() === 200) {
+      sheet.getRange(r + 1, COL_LINK + 1).setValue(url);
+    }
+  } catch (e) {
+    console.log('Live-check failed for ' + url + ': ' + e);
   }
 }
 
