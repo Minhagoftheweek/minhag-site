@@ -174,7 +174,7 @@ function setupTrigger() {
   });
   ScriptApp.newTrigger('checkForNewEpisodes')
     .timeBased()
-    .everyMinutes(15)
+    .everyMinutes(5)
     .create();
   console.log('Trigger installed — checking every 15 minutes.');
 }
