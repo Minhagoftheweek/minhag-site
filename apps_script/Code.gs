@@ -10,7 +10,7 @@
  *    Add property: GITHUB_TOKEN = <your GitHub token>
  * 4. Run the `setupTrigger` function once (select it in the dropdown at
  *    top, click Run). Approve the permissions Google asks for.
- * 5. Done — it now checks every 15 minutes automatically.
+ * 5. Done — it now checks every 5 minutes automatically.
  *
  * HOW IT WORKS:
  * - Looks at the sheet tab named for the current year (e.g. "2026").
@@ -74,7 +74,7 @@ function checkForNewEpisodes() {
 
     // Already triggered, just waiting on the live page — check it, and
     // write the link in only once it's actually reachable. Runs on every
-    // 15-minute pass until it succeeds, then leaves it alone forever.
+    // 5-minute pass until it succeeds, then leaves it alone forever.
     if (status && String(status).indexOf('Triggered') === 0 && !link) {
       if (topic) tryWriteLinkIfLive(sheet, r, topic);
       continue;
@@ -106,7 +106,7 @@ function checkForNewEpisodes() {
 
 /** Checks whether the episode's live preview page is up yet; if so, writes
   * the link into column K. If not, does nothing — it gets checked again
-  * automatically on the next 15-minute run. */
+  * automatically on the next 5-minute run. */
 function tryWriteLinkIfLive(sheet, r, topic) {
   const url = 'https://minhagoftheweek.com/' + slugifyTitle(topic);
   try {
@@ -164,7 +164,7 @@ function triggerPublish(episodeNum, topic, presenter, dedication) {
   return code === 204;
 }
 
-/** Run this once manually to set up the recurring 15-minute check. */
+/** Run this once manually to set up the recurring 5-minute check. */
 function setupTrigger() {
   // Clear any existing triggers for this function first, so re-running is safe.
   ScriptTriggers().forEach(t => {
@@ -176,7 +176,7 @@ function setupTrigger() {
     .timeBased()
     .everyMinutes(5)
     .create();
-  console.log('Trigger installed — checking every 15 minutes.');
+  console.log('Trigger installed — checking every 5 minutes.');
 }
 
 function ScriptTriggers() {
