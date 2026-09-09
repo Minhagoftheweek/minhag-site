@@ -1015,9 +1015,17 @@
       "timestamp": "2026-09-02T16:56:06+0000",
       "media_type": "VIDEO",
       "checked_at": "2026-09-02T18:13:00.283379+00:00"
+    },
+    "18125460892880540": {
+      "views": 140,
+      "views_unavailable": false,
+      "caption": "Episode 305: \u201cReciting Yag Midot Before Taking Out the Torah on Yamim Noraim\u201d\n\nMinhag of the Week is a weekly video series featuring Joey Mosseri, Morris Arking & Joseph Harari who educate our community about its Syrian and Middle Eastern traditions. Minhag of the Week is a project of the Sephardic ",
+      "timestamp": "2026-09-09T17:06:53+0000",
+      "media_type": "VIDEO",
+      "checked_at": "2026-09-09T18:07:27.199271+00:00"
     }
   },
-  "newest_seen_id": "18084230306294324",
+  "newest_seen_id": "18125460892880540",
   "backfill_complete": true,
   "schema_version": 4,
   "backfill_until_ts": 1360876779
