@@ -1,0 +1,62 @@
+name: Validate index.html
+
+# Runs on every push to main that touches index.html — including pushes
+# made via the GitHub API (not just local git commits/hooks), which is how
+# the 2026-09-09 and 2026-09-16 incidents both actually happened. A local
+# pre-commit hook would not have caught either of those.
+on:
+  push:
+    branches: [main]
+    paths: [index.html]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Get the previous version of index.html
+        id: baseline
+        run: |
+          if git show HEAD^:index.html > /tmp/baseline_index.html 2>/dev/null; then
+            echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate
+        id: validate
+        run: |
+          if [ "${{ steps.baseline.outputs.has_baseline }}" = "true" ]; then
+            python3 scripts/validate_index.py index.html --baseline /tmp/baseline_index.html
+          else
+            python3 scripts/validate_index.py index.html
+          fi
+
+      - name: Auto-revert on failure
+        if: failure()
+        run: |
+          mkdir -p logs
+          {
+            echo ""
+            echo "======================================================================"
+            echo "[$(date -u +%Y-%m-%dT%H:%M:%S%z)]"
+            echo "index.html validation FAILED for commit ${{ github.sha }} — reverting."
+            echo "Commit message: ${{ github.event.head_commit.message }}"
+            echo "Author: ${{ github.event.head_commit.author.name }}"
+          } >> logs/publish-debug.log
+
+          git config user.name "minhag-validate-bot"
+          git config user.email "actions@github.com"
+          git add logs/publish-debug.log
+          git commit -m "Log validation failure for ${{ github.sha }}"
+          git revert --no-edit "${{ github.sha }}"
+          git push
