@@ -1023,9 +1023,17 @@
       "timestamp": "2026-09-09T17:06:53+0000",
       "media_type": "VIDEO",
       "checked_at": "2026-09-09T18:07:27.199271+00:00"
+    },
+    "18113547965328166": {
+      "views": 170,
+      "views_unavailable": false,
+      "caption": "Episode 306: \u201cWhen to go to the Cemetery During the High Holiday Season\u201d\n\nMinhag of the Week is a weekly video series featuring Joey Mosseri, Morris Arking & Joseph Harari who educate our community about its Syrian and Middle Eastern traditions. Minhag of the Week is a project of the Sephardic Commu",
+      "timestamp": "2026-09-16T17:03:27+0000",
+      "media_type": "VIDEO",
+      "checked_at": "2026-09-16T18:32:04.672317+00:00"
     }
   },
-  "newest_seen_id": "18189854773394189",
+  "newest_seen_id": "18113547965328166",
   "backfill_complete": true,
   "schema_version": 4,
   "backfill_until_ts": 1360876779
