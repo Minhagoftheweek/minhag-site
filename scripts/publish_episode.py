@@ -88,7 +88,7 @@ def find_sprout_video(episode_num):
     return None
 
 
-def make_thumbnail(video_id, security_token, video_480_url, duration):
+def make_thumbnail(episode_num, video_id, security_token, video_480_url, duration):
     """Download the video, extract a real mid-video frame, upload as custom poster frame."""
     local_mp4 = "/tmp/_ep_video.mp4"
     local_jpg = "/tmp/_ep_frame.jpg"
@@ -127,7 +127,24 @@ def make_thumbnail(video_id, security_token, video_480_url, duration):
 
     poster_frames = result["assets"]["poster_frames"]
     # The just-uploaded custom frame is the last one in the list.
-    return poster_frames[-1]
+    sprout_thumb_url = poster_frames[-1]
+
+    # SproutVideo serves poster-frame images with content-type
+    # application/octet-stream (not image/jpeg), which link-preview
+    # crawlers (iMessage/WhatsApp/Facebook) reject, silently falling back
+    # to a generic default image. Browsers don't care (they sniff <img>
+    # bytes), so the SproutVideo URL is still fine for THUMBS/on-site use
+    # -- but for og:image/twitter:image we self-host a copy in the repo
+    # so Cloudflare Pages serves it with a correct content-type.
+    images_dir = os.path.join(REPO_ROOT, "images")
+    os.makedirs(images_dir, exist_ok=True)
+    self_hosted_name = f"episode-{episode_num}-thumb.jpg"
+    with open(os.path.join(images_dir, self_hosted_name), "wb") as f:
+        f.write(img_bytes)
+    og_image_url = f"https://minhagoftheweek.com/{self_hosted_name}"
+    og_image_path = f"images/{self_hosted_name}"
+
+    return sprout_thumb_url, og_image_url, og_image_path
 
 
 def categorize(topic, presenter, dedication):
@@ -200,7 +217,7 @@ def slugify_title(topic):
     return re.sub(r"\s+", "-", cleaned.strip())
 
 
-def make_preview_page(episode_num, topic, presenter, thumb_url):
+def make_preview_page(episode_num, topic, presenter, og_image_url):
     """Static per-episode folder with og:/twitter: tags + redirect, for link previews (iMessage/WhatsApp/etc)."""
     slug = slugify_title(topic)
     title = f'SCA Minhag of the Week {episode_num}: &ldquo;{topic}&rdquo;'
@@ -217,15 +234,15 @@ def make_preview_page(episode_num, topic, presenter, thumb_url):
 <meta property="og:site_name" content="SCA Minhag of the Week">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
-<meta property="og:image" content="{thumb_url}">
-<meta property="og:image:width" content="1920">
-<meta property="og:image:height" content="1080">
+<meta property="og:image" content="{og_image_url}">
+<meta property="og:image:width" content="852">
+<meta property="og:image:height" content="480">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:url" content="{url}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{desc}">
-<meta name="twitter:image" content="{thumb_url}">
+<meta name="twitter:image" content="{og_image_url}">
 <meta http-equiv="refresh" content="0; url=/#ep-{episode_num}">
 <script>location.replace('/#ep-{episode_num}');</script>
 </head><body>
@@ -312,15 +329,15 @@ def main():
         raise RuntimeError(f"No SproutVideo upload found matching episode {episode_num}")
 
     embed_url = f"https://videos.sproutvideo.com/embed/{video['id']}/{video['security_token']}"
-    thumb_url = make_thumbnail(
-        video["id"], video["security_token"],
+    thumb_url, og_image_url, og_image_path = make_thumbnail(
+        episode_num, video["id"], video["security_token"],
         video["assets"]["videos"]["480p"], video["duration"],
     )
 
     categories, subs = categorize(topic, presenter, dedication)
     cats_js = json.dumps(categories)
 
-    slug = make_preview_page(episode_num, topic, presenter, thumb_url)
+    slug = make_preview_page(episode_num, topic, presenter, og_image_url)
 
     release_dt = datetime.now(ZoneInfo("America/New_York"))
     display_date = release_dt.strftime("%b %-d, %Y")
@@ -361,7 +378,7 @@ def main():
 
     subprocess.run(["git", "config", "user.name", "minhag-publish-bot"], check=True, cwd=REPO_ROOT)
     subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True, cwd=REPO_ROOT)
-    subprocess.run(["git", "add", "index.html", "version.json", slug], check=True, cwd=REPO_ROOT)
+    subprocess.run(["git", "add", "index.html", "version.json", slug, og_image_path], check=True, cwd=REPO_ROOT)
     subprocess.run(
         ["git", "commit", "-m", f"Publish Episode {episode_num}: {topic} (scheduled {schedule_iso})"],
         check=True, cwd=REPO_ROOT,
@@ -370,7 +387,8 @@ def main():
 
     print(f"Done. Episode {episode_num} scheduled to go live {schedule_iso}")
     print(f"  Categories: {categories} ({subs})")
-    print(f"  Thumbnail: {thumb_url}")
+    print(f"  Thumbnail (THUMBS/grid): {thumb_url}")
+    print(f"  Thumbnail (link preview): {og_image_url}")
     print(f"  Preview page: /{slug}")
 
 
@@ -387,3 +405,4 @@ if __name__ == "__main__":
         # only visible in GitHub's log storage.
         print(tb, file=sys.stderr)
         sys.exit(1)
+
