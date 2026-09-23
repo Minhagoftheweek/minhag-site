@@ -1031,9 +1031,17 @@
       "timestamp": "2026-09-16T17:03:27+0000",
       "media_type": "VIDEO",
       "checked_at": "2026-09-16T18:32:04.672317+00:00"
+    },
+    "18116529958995897": {
+      "views": 223,
+      "views_unavailable": false,
+      "caption": "Episode 307: \u201cHow Many Haqafot on Simhat Torah\u201d\n\nMinhag of the Week is a weekly video series featuring Joey Mosseri, Morris Arking & Joseph Harari who educate our community about its Syrian and Middle Eastern traditions. Minhag of the Week is a project of the Sephardic Community Alliance. \n\n#SCAMinh",
+      "timestamp": "2026-09-23T17:06:57+0000",
+      "media_type": "VIDEO",
+      "checked_at": "2026-09-23T18:43:17.850757+00:00"
     }
   },
-  "newest_seen_id": "18113547965328166",
+  "newest_seen_id": "18116529958995897",
   "backfill_complete": true,
   "schema_version": 4,
   "backfill_until_ts": 1360876779
