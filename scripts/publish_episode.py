@@ -141,7 +141,7 @@ def make_thumbnail(episode_num, video_id, security_token, video_480_url, duratio
     self_hosted_name = f"episode-{episode_num}-thumb.jpg"
     with open(os.path.join(images_dir, self_hosted_name), "wb") as f:
         f.write(img_bytes)
-    og_image_url = f"https://minhagoftheweek.com/{self_hosted_name}"
+    og_image_url = f"https://minhagoftheweek.com/images/{self_hosted_name}"
     og_image_path = f"images/{self_hosted_name}"
 
     return sprout_thumb_url, og_image_url, og_image_path
@@ -405,4 +405,4 @@ if __name__ == "__main__":
         # only visible in GitHub's log storage.
         print(tb, file=sys.stderr)
         sys.exit(1)
-
+        
