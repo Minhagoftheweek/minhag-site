@@ -36,7 +36,12 @@ function htmlToText(html) {
       .replace(/<\/p>/gi, '\n\n')
       .replace(/<\/div>/gi, '\n')
       .replace(/<[^>]+>/g, '')
-  ).trim();
+  )
+    // Google's published HTML sometimes glues a heading and the "Audio:"
+    // line together with no separator at all. Force a break before any
+    // "Audio:" that isn't already at the start of a line.
+    .replace(/([^\n])(Audio:)/g, '$1\n$2')
+    .trim();
 }
 
 async function fetchDoc(url) {
@@ -67,7 +72,10 @@ function parseEpisodes(html) {
   const headingIdxs = [];
   lines.forEach((line, idx) => {
     const m = line.match(headingLineRe);
-    if (m) headingIdxs.push({ idx, num: m[1], title: m[2].trim() });
+    if (m) {
+      const title = m[2].replace(/\s*Audio:.*$/i, '').trim();
+      headingIdxs.push({ idx, num: m[1], title });
+    }
   });
 
   for (let i = 0; i < headingIdxs.length; i++) {
