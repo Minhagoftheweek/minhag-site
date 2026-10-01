@@ -2,7 +2,9 @@ name: Sync transcripts
 
 on:
   schedule:
-    - cron: '0 */3 * * *'   # every 3 hours
+    - cron: '*/5 * * * *'   # every 5 min (GitHub's fastest allowed schedule) — safety-net catch-all
+  repository_dispatch:
+    types: [docs-updated]    # fired instantly by the Apps Script trigger in each Google Doc on every edit
   workflow_dispatch: {}
 
 permissions:
