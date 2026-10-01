@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790826086">
+<meta name="build-version" content="1790826619">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -3275,40 +3275,38 @@ function printPDF(id){
   @font-face{font-family:'Avenir Next LT Pro';src:url('https://minhagoftheweek.com/fonts/AvenirNextLTPro-Italic.otf') format('opentype');font-weight:400;font-style:italic}
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Avenir Next LT Pro',Arial,sans-serif;color:#1a2a3a}
-  .page{max-width:720px;margin:0 auto;padding:22px 36px 36px}
-  .logo-wrap{text-align:center;margin-bottom:8px}.logo-wrap img{height:48px;max-width:200px;object-fit:contain}
+  .page{max-width:720px;margin:0 auto;padding:6px 36px 30px}
+  .logo-wrap{text-align:center;margin-bottom:4px}.logo-wrap img{height:84px;max-width:320px;object-fit:contain}
   .hdr{text-align:center;padding-bottom:8px;border-bottom:4px solid #8b54b2;margin-bottom:14px}
   .hdr h1{font-family:'Bicyclette',Arial,sans-serif;font-size:17px;font-weight:700;color:#184878}
   .hdr p{font-size:10px;color:#5a7090;margin-top:2px;font-style:italic}
+  .hdr .url{font-size:10px;color:#8b54b2;margin-top:2px;font-weight:700;font-style:normal}
   .ephdr{padding:0;margin-bottom:14px}
   .enum{font-family:'Bicyclette',Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#8b54b2;margin-bottom:4px}
   .etit{font-family:'Bicyclette',Arial,sans-serif;font-size:19px;font-weight:700;color:#184878;line-height:1.25;margin-bottom:5px}
-  .edate{font-size:12px;color:#5a7090;margin-bottom:1px}
-  .eby{font-size:12px;color:#5a7090;margin-bottom:5px}
+  .eby{font-size:12px;color:#5a7090;margin-bottom:1px}
+  .edate{font-size:12px;color:#5a7090;margin-bottom:5px}
   .eded{font-size:12px;color:#6b3d8a;font-style:italic;margin-top:5px}
   hr{border:none;border-top:1px solid #d0dae8;margin:12px 0}
-  .tx p{font-size:15px;line-height:1.85;color:#2a3a4a;margin-bottom:12px}
+  .tx p{font-size:15px;line-height:1.5;color:#2a3a4a;margin-bottom:9px}
   .disclaimer{margin-top:20px;padding-top:14px;border-top:1px solid #d0dae8;font-size:11px;line-height:1.6;color:#45566b;font-style:italic}
-  .footer{margin-top:16px;padding-top:14px;border-top:4px solid #8b54b2;text-align:center;font-size:12px;color:#5a7090}
-  .footer strong{font-family:'Bicyclette',Arial,sans-serif;color:#184878;display:block;font-size:14px;margin-bottom:3px}
   @media print{
     @page{margin:12mm 12mm 16mm;@bottom-center{content:"Page " counter(page) " of " counter(pages);font-size:9px;color:#5a7090;font-family:Arial,sans-serif}}
   }
   </style>
   </head><body><div class="page">
   <div class="logo-wrap"><img src="/images/logo.png" alt="Sephardic Community Alliance"></div>
-  <div class="hdr"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p></div>
+  <div class="hdr"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p><div class="url">minhagoftheweek.com</div></div>
   <div class="ephdr">
     <div class="enum">${numDisplay}</div>
     <div class="etit">${E.t(ep)}</div>
-    <div class="edate">${E.dt(ep)}</div>
     <div class="eby">by ${fn(E.w(ep))}</div>
+    <div class="edate">${E.dt(ep)}</div>
     ${E.d(ep)?`<div class="eded">${E.d(ep)}</div>`:''}
   </div>
   <hr>
   <div class="tx">${bodyHtml}</div>
   <div class="disclaimer">${TX_DISCLAIMER}</div>
-  <div class="footer"><strong>Courtesy of Minhagoftheweek.com</strong>minhag@scaupdates.org · minhagoftheweek.org</div>
   </div><script>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
 }
