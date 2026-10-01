@@ -1,0 +1,34 @@
+name: Sync transcripts
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # every 3 hours
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run sync
+        run: node scripts/sync_transcripts.js
+
+      - name: Commit changes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet -- transcripts.json; then
+            git add transcripts.json
+            git commit -m "Auto-sync transcripts"
+            git push
+          else
+            echo "No changes to transcripts.json"
+          fi
