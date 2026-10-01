@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790825049">
+<meta name="build-version" content="1790825433">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -3279,12 +3279,13 @@ function printPDF(id){
   .hdr{text-align:center;padding-bottom:16px;border-bottom:4px solid #8b54b2;margin-bottom:22px}
   .hdr h1{font-family:'Bicyclette',Arial,sans-serif;font-size:26px;font-weight:700;color:#184878}
   .hdr p{font-size:13px;color:#5a7090;margin-top:4px;font-style:italic}
-  .ephdr{background:#f0e6fa;border-left:4px solid #8b54b2;padding:18px 20px;margin-bottom:18px}
-  .etit{font-family:'Bicyclette',Arial,sans-serif;font-size:28px;font-weight:700;color:#184878;line-height:1.25;margin-bottom:8px}
-  .emeta{font-size:14px;color:#5a7090}
-  .eded{font-size:13px;color:#6b3d8a;font-style:italic;margin-top:8px;padding-top:8px;border-top:1px solid rgba(139,84,178,.3)}
+  .ephdr{padding:0;margin-bottom:22px}
+  .enum{font-family:'Bicyclette',Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#8b54b2;margin-bottom:8px}
+  .etit{font-family:'Bicyclette',Arial,sans-serif;font-size:28px;font-weight:700;color:#184878;line-height:1.25;margin-bottom:10px}
+  .edate{font-size:14px;color:#5a7090;margin-bottom:2px}
+  .eby{font-size:14px;color:#5a7090;margin-bottom:8px}
+  .eded{font-size:13px;color:#6b3d8a;font-style:italic;margin-top:8px}
   hr{border:none;border-top:1px solid #d0dae8;margin:16px 0}
-  h2{font-family:'Bicyclette',Arial,sans-serif;font-size:18px;font-weight:700;color:#184878;margin-bottom:12px}
   .tx p{font-size:15px;line-height:1.85;color:#2a3a4a;margin-bottom:12px}
   .disclaimer{margin-top:20px;padding-top:14px;border-top:1px solid #d0dae8;font-size:11px;line-height:1.6;color:#7a8ba0;font-style:italic}
   .footer{margin-top:16px;padding-top:14px;border-top:4px solid #8b54b2;text-align:center;font-size:12px;color:#5a7090}
@@ -3295,15 +3296,17 @@ function printPDF(id){
   <div class="logo-wrap"><img src="/images/logo.png" alt="Sephardic Community Alliance"></div>
   <div class="hdr"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p></div>
   <div class="ephdr">
+    <div class="enum">${numDisplay}</div>
     <div class="etit">${E.t(ep)}</div>
-    <div class="emeta">${numDisplay} · ${E.dt(ep)} · Presented by ${fn(E.w(ep))}</div>
+    <div class="edate">${E.dt(ep)}</div>
+    <div class="eby">by ${fn(E.w(ep))}</div>
     ${E.d(ep)?`<div class="eded">${E.d(ep)}</div>`:''}
   </div>
-  <hr><h2>Episode Transcript</h2>
+  <hr>
   <div class="tx">${bodyHtml}</div>
   <div class="disclaimer">${TX_DISCLAIMER}</div>
   <div class="footer"><strong>Courtesy of Minhagoftheweek.com</strong>minhag@scaupdates.org · minhagoftheweek.org</div>
-  </div><scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt></body></html>`);
+  </div><script>window.onload=()=>window.print();<\/script></body></html>`);
   win.document.close();
 }
 
