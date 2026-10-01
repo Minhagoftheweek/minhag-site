@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790827726">
+<meta name="build-version" content="1790891414">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1756,6 +1756,46 @@ function fuzzyExpand(word){
   return VOCAB.filter(v=>Math.abs(v.length-word.length)<=maxDist&&lev(word,v)<=maxDist);
 }
 
+// Transcript-side typo tolerance. The VOCAB above only knows words from titles/
+// categories, so a misspelled word that only ever appears inside a transcript
+// had nothing to be corrected to. This builds a second vocabulary from the
+// transcripts themselves (word -> number of episodes it appears in), rebuilt
+// whenever transcripts.json finishes loading.
+let TXVOCAB=null,TXPARAS={};
+function txNorm(s){return (s||'').toLowerCase().replace(/['\u2019\u2018`]/g,'');}
+function txParas(ep){
+  const id=E.id(ep);
+  if(!(id in TXPARAS)){
+    const t=getTranscriptText(ep);
+    TXPARAS[id]=t?txNorm(t).split(/\n\s*\n/):[];
+  }
+  return TXPARAS[id];
+}
+function buildTxVocab(){
+  TXVOCAB=new Map();
+  PUBLIC_EPS.forEach(ep=>{
+    const seen=new Set();
+    txParas(ep).forEach(p=>p.split(/[^a-z]+/).forEach(w=>{if(w.length>=4)seen.add(w);}));
+    seen.forEach(w=>TXVOCAB.set(w,(TXVOCAB.get(w)||0)+1));
+  });
+}
+function fuzzyExpandTx(word){
+  const w=txNorm(word).replace(/[^a-z]/g,'');
+  if(w.length<5)return [];
+  if(!TXVOCAB)buildTxVocab();
+  // A word the speakers actually use in several episodes is spelled right —
+  // leave it alone so common words don't drag in look-alikes (turn/burn).
+  if((TXVOCAB.get(w)||0)>=3)return [];
+  const maxDist=w.length>=8?2:1,out=[];
+  TXVOCAB.forEach((n,v)=>{
+    if(v===w||Math.abs(v.length-w.length)>maxDist)return;
+    const d=lev(w,v);
+    if(d<=maxDist)out.push({v,d,n});
+  });
+  out.sort((a,b)=>a.d-b.d||b.n-a.n);
+  return out.slice(0,8).map(o=>o.v);
+}
+
 function trackSearch(q,resultCount){
   if(typeof gtag==='function'){
     gtag('event','search',{search_term:q,result_count:resultCount});
@@ -1803,8 +1843,14 @@ function handleSearch(fromRoute){
     }
     const wordGroups=[];
     if(AL[qL])wordGroups.push([qL,...AL[qL]]);
-    queryWords.forEach(w=>{wordGroups.push(wordGroup(w));});
+    queryWords.forEach(w=>{
+      const g=wordGroup(w);
+      // Extra spellings used ONLY when looking inside transcripts.
+      g.tx=[...new Set([...g,...fuzzyExpandTx(w)].map(txNorm).filter(Boolean))];
+      wordGroups.push(g);
+    });
     if(!wordGroups.length)wordGroups.push([qL]);
+    wordGroups.forEach(g=>{if(!g.tx)g.tx=[...new Set(g.map(txNorm).filter(Boolean))];});
 
     // Score a group against an episode's short fields (title/subcategory/presenter/
     // donation) only — NOT the transcript. Title matches matter far more than an
@@ -1822,8 +1868,7 @@ function handleSearch(fromRoute){
     function scoreEp(ep,groups){
       const title=E.t(ep).toLowerCase(),
             subs=(E.subs(ep)+' '+(MANUAL_KEYWORDS[E.id(ep)]||'')).toLowerCase(),
-            pres=(E.w(ep)+' '+fn(E.w(ep))).toLowerCase(),don=(E.d(ep)||'').toLowerCase(),
-            txt=(getTranscriptText(ep)||'').toLowerCase();
+            pres=(E.w(ep)+' '+fn(E.w(ep))).toLowerCase(),don=(E.d(ep)||'').toLowerCase();
       let score=0,matchedCount=0;
       const transcriptOnly=[];
       groups.forEach(group=>{
@@ -1831,18 +1876,15 @@ function handleSearch(fromRoute){
         score+=s;
         if(s)matchedCount++;else transcriptOnly.push(group);
       });
-      if(transcriptOnly.length&&txt){
+      const paras=transcriptOnly.length?txParas(ep):[];
+      if(paras.length){
         // Any group not already anchored by a short field (title/category/presenter/
         // donation) has to be found in the transcript — but a word appearing ANYWHERE
         // in a ~2000-word transcript is nearly meaningless (that's what let "turn"
         // and "around" match almost every episode). Instead require all such words
         // to co-occur in the SAME paragraph, which actually means they're being
         // discussed together rather than just coincidentally both present somewhere.
-        const paras=txt.split(/\n\s*\n/);
-        const paraHasAll=paras.some(p=>{
-          const pl=p.toLowerCase();
-          return transcriptOnly.every(g=>g.some(t=>t&&pl.includes(t)));
-        });
+        const paraHasAll=paras.some(pl=>transcriptOnly.every(g=>g.tx.some(t=>pl.includes(t))));
         if(paraHasAll){score+=1;matchedCount+=transcriptOnly.length;}
       }
       return {score,matchedCount};
@@ -3326,7 +3368,7 @@ applyRoute();
 // this resolves (e.g. a direct link), re-render it so the transcript appears
 // without the visitor needing to do anything.
 fetch('/transcripts.json').then(r=>r.ok?r.json():{}).then(data=>{
-  TRANSCRIPTS=data||{};
+  TRANSCRIPTS=data||{};TXVOCAB=null;TXPARAS={};
   if(document.getElementById('epPage').classList.contains('show')&&currentEpId!=null){
     openEp(currentEpId,false);
   }else{
