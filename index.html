@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790827182">
+<meta name="build-version" content="1790827726">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1823,7 +1823,7 @@ function handleSearch(fromRoute){
       const title=E.t(ep).toLowerCase(),
             subs=(E.subs(ep)+' '+(MANUAL_KEYWORDS[E.id(ep)]||'')).toLowerCase(),
             pres=(E.w(ep)+' '+fn(E.w(ep))).toLowerCase(),don=(E.d(ep)||'').toLowerCase(),
-            txt=(E.txt(ep)||'').toLowerCase();
+            txt=(getTranscriptText(ep)||'').toLowerCase();
       let score=0,matchedCount=0;
       const transcriptOnly=[];
       groups.forEach(group=>{
@@ -3327,7 +3327,12 @@ applyRoute();
 // without the visitor needing to do anything.
 fetch('/transcripts.json').then(r=>r.ok?r.json():{}).then(data=>{
   TRANSCRIPTS=data||{};
-  if(currentEpId!=null)openEp(currentEpId,false);
+  if(document.getElementById('epPage').classList.contains('show')&&currentEpId!=null){
+    openEp(currentEpId,false);
+  }else{
+    const si=document.getElementById('searchInput');
+    if(si&&si.value.trim()&&document.getElementById('listView').style.display!=='none')handleSearch(true);
+  }
 }).catch(()=>{});
 </script>
 </body>
