@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790823094">
+<meta name="build-version" content="1790825049">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -3257,7 +3257,6 @@ function copyTranscript(id){
 
 function printPDF(id){
   const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
-  const cats=E.c(ep).map(c=>getCL(c)).join(' · ');
   const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   const txt=getTranscriptText(ep);
   const bodyHtml=txt
@@ -3265,12 +3264,41 @@ function printPDF(id){
     :'<p style="color:#888;font-style:italic">Transcript coming soon.</p>';
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>${E.t(ep)}</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#1a2a3a}.page{max-width:720px;margin:0 auto;padding:32px 36px;border:2px solid #184878;min-height:96vh}.logo-wrap{text-align:center;margin-bottom:12px}.logo-wrap img{height:60px;max-width:220px;object-fit:contain}.hdr{text-align:center;padding-bottom:14px;border-bottom:4px solid #8b54b2;margin-bottom:20px}.hdr h1{font-size:18px;font-weight:700;color:#184878}.hdr p{font-size:11px;color:#5a7090;margin-top:2px;font-style:italic}.ephdr{background:#f0e6fa;border-left:4px solid #8b54b2;padding:14px 18px;margin-bottom:16px}.ecat{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#8b54b2;font-weight:700;margin-bottom:5px}.etit{font-size:20px;font-weight:700;color:#184878;line-height:1.2;margin-bottom:5px}.emeta{font-size:11px;color:#5a7090}.ded{background:#f0e6fa;border-left:3px solid #8b54b2;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6b3d8a;font-style:italic}hr{border:none;border-top:1px solid #d0dae8;margin:14px 0}h2{font-size:14px;font-weight:700;color:#184878;margin-bottom:10px}.tx p{font-size:12px;line-height:1.85;color:#2a3a4a;margin-bottom:10px}.disclaimer{margin-top:18px;padding-top:12px;border-top:1px solid #d0dae8;font-size:9.5px;line-height:1.55;color:#7a8ba0;font-style:italic}.footer{margin-top:14px;padding-top:12px;border-top:4px solid #8b54b2;text-align:center;font-size:10px;color:#5a7090}.footer strong{color:#184878;display:block;font-size:11px;margin-bottom:2px}@media print{@page{margin:12mm}}</style>
+  <style>
+  @font-face{font-family:'Bicyclette';src:url('https://minhagoftheweek.com/fonts/Bicyclette-Regular.ttf') format('truetype');font-weight:400;font-style:normal}
+  @font-face{font-family:'Bicyclette';src:url('https://minhagoftheweek.com/fonts/Bicyclette-Light.ttf') format('truetype');font-weight:300;font-style:normal}
+  @font-face{font-family:'Bicyclette';src:url('https://minhagoftheweek.com/fonts/Bicyclette-Bold.ttf') format('truetype');font-weight:700;font-style:normal}
+  @font-face{font-family:'Avenir Next LT Pro';src:url('https://minhagoftheweek.com/fonts/AvenirNextLTPro-Regular.otf') format('opentype');font-weight:400;font-style:normal}
+  @font-face{font-family:'Avenir Next LT Pro';src:url('https://minhagoftheweek.com/fonts/AvenirNextLTPro-Light.otf') format('opentype');font-weight:300;font-style:normal}
+  @font-face{font-family:'Avenir Next LT Pro';src:url('https://minhagoftheweek.com/fonts/AvenirNextLTPro-Medium.otf') format('opentype');font-weight:600;font-style:normal}
+  @font-face{font-family:'Avenir Next LT Pro';src:url('https://minhagoftheweek.com/fonts/AvenirNextLTPro-Italic.otf') format('opentype');font-weight:400;font-style:italic}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Avenir Next LT Pro',Arial,sans-serif;color:#1a2a3a}
+  .page{max-width:720px;margin:0 auto;padding:32px 36px;border:2px solid #184878;min-height:96vh}
+  .logo-wrap{text-align:center;margin-bottom:14px}.logo-wrap img{height:68px;max-width:240px;object-fit:contain}
+  .hdr{text-align:center;padding-bottom:16px;border-bottom:4px solid #8b54b2;margin-bottom:22px}
+  .hdr h1{font-family:'Bicyclette',Arial,sans-serif;font-size:26px;font-weight:700;color:#184878}
+  .hdr p{font-size:13px;color:#5a7090;margin-top:4px;font-style:italic}
+  .ephdr{background:#f0e6fa;border-left:4px solid #8b54b2;padding:18px 20px;margin-bottom:18px}
+  .etit{font-family:'Bicyclette',Arial,sans-serif;font-size:28px;font-weight:700;color:#184878;line-height:1.25;margin-bottom:8px}
+  .emeta{font-size:14px;color:#5a7090}
+  .eded{font-size:13px;color:#6b3d8a;font-style:italic;margin-top:8px;padding-top:8px;border-top:1px solid rgba(139,84,178,.3)}
+  hr{border:none;border-top:1px solid #d0dae8;margin:16px 0}
+  h2{font-family:'Bicyclette',Arial,sans-serif;font-size:18px;font-weight:700;color:#184878;margin-bottom:12px}
+  .tx p{font-size:15px;line-height:1.85;color:#2a3a4a;margin-bottom:12px}
+  .disclaimer{margin-top:20px;padding-top:14px;border-top:1px solid #d0dae8;font-size:11px;line-height:1.6;color:#7a8ba0;font-style:italic}
+  .footer{margin-top:16px;padding-top:14px;border-top:4px solid #8b54b2;text-align:center;font-size:12px;color:#5a7090}
+  .footer strong{font-family:'Bicyclette',Arial,sans-serif;color:#184878;display:block;font-size:14px;margin-bottom:3px}
+  @media print{@page{margin:12mm}}
+  </style>
   </head><body><div class="page">
   <div class="logo-wrap"><img src="/images/logo.png" alt="Sephardic Community Alliance"></div>
   <div class="hdr"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p></div>
-  <div class="ephdr"><div class="ecat">${cats}</div><div class="etit">${E.t(ep)}</div><div class="emeta">${numDisplay} · ${E.dt(ep)} · Presented by ${fn(E.w(ep))}</div></div>
-  ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
+  <div class="ephdr">
+    <div class="etit">${E.t(ep)}</div>
+    <div class="emeta">${numDisplay} · ${E.dt(ep)} · Presented by ${fn(E.w(ep))}</div>
+    ${E.d(ep)?`<div class="eded">${E.d(ep)}</div>`:''}
+  </div>
   <hr><h2>Episode Transcript</h2>
   <div class="tx">${bodyHtml}</div>
   <div class="disclaimer">${TX_DISCLAIMER}</div>
