@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790176005">
+<meta name="build-version" content="1790823094">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -407,6 +407,10 @@ a.dl-btn{text-decoration:none;display:inline-flex;align-items:center}
 .tx-body{padding:.2rem 0}
 .tx-body p{font-size:1.05rem;line-height:1.85;color:var(--tx);margin-bottom:1.1rem;font-family:Georgia,'Times New Roman',serif}
 .tx-body p:last-child{margin-bottom:0}
+.tx-copyhdr{font-family:Arial,sans-serif;font-size:.78rem;line-height:1.5;color:var(--mu);padding-bottom:.7rem;margin-bottom:1rem;border-bottom:1px dashed var(--bd)}
+.tx-copyhdr strong{display:block;font-size:.95rem;color:var(--navy);margin-bottom:.15rem}
+.tx-disclaimer{font-family:Arial,sans-serif;font-size:.74rem;line-height:1.55;color:var(--mu);font-style:italic;padding-top:.9rem;margin-top:.4rem;border-top:1px dashed var(--bd)}
+.tx-courtesy{font-family:Arial,sans-serif;font-size:.74rem;font-weight:700;color:var(--hpd);margin-top:.6rem}
 /* FULL PAGES — sponsorship + question: full width */
 .full-pg{display:none}.full-pg.show{display:block}
 .fp-title{font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:1rem;letter-spacing:-.015em}
@@ -1231,6 +1235,29 @@ const E={
   pdf:    e=>e[9]||'',
   txt:    e=>e[10]||''
 };
+
+// ── TRANSCRIPTS ──────────────────────────────────────────────────────────
+// Pulled from /transcripts.json, which is auto-synced from the team's 2
+// Google Docs (see scripts/sync_transcripts.js + the sync-transcripts.yml
+// GitHub Action). Keyed by episode number as a string. Loaded async at init
+// below; falls back to any transcript baked directly into EPS (e[10]).
+let TRANSCRIPTS={};
+const TX_DISCLAIMER="This is a transcript of a video episode and may contain spelling or grammatical errors. As this transcript was generated from video, it may not fully capture the speaker's tone, emphasis, or intent — we recommend watching the video for the full experience and accuracy.";
+const TX_COURTESY="Courtesy of Minhagoftheweek.com";
+function getTranscriptText(ep){
+  const rec=TRANSCRIPTS[String(E.id(ep))];
+  if(rec&&rec.text)return rec.text;
+  return E.txt(ep)||'';
+}
+function transcriptHeaderLines(ep){
+  const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+  return {title:E.t(ep),meta:`${numDisplay} · Presented by ${fn(E.w(ep))}`};
+}
+function fullTranscriptPlainText(ep){
+  const txt=getTranscriptText(ep);
+  const hdr=transcriptHeaderLines(ep);
+  return `${hdr.title}\n${hdr.meta}\n\n${txt}\n\n${TX_DISCLAIMER}\n\n${TX_COURTESY}`;
+}
 // ── SCHEDULING ───────────────────────────────────────────────────────────
 // Add an entry here to hold an episode back until a specific future moment.
 // Key = episode id (E.id). Value = ISO 8601 datetime WITH a timezone offset
@@ -1930,8 +1957,8 @@ function openEp(id,push){
     return `<span class="ep-cat-lnk" onclick="filterCat('${cid}')">${lbl}</span>${sep}`;
   }).join('');
   const streamId=E.stream(ep);
-  const pdfUrl=E.pdf(ep);
-  const txt=E.txt(ep);
+  const txt=getTranscriptText(ep);
+  const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   const vidH=streamId
     ?(streamId.startsWith('DATAURI:')
       ?`<video src="${streamId.slice(8)}" controls style="width:100%;height:100%;background:#000" controlsList="nodownload" onended="showUpNext(${id})"></video>`
@@ -1939,18 +1966,23 @@ function openEp(id,push){
       ?`<iframe class="sproutvideo-player" src="${streamId.slice(7)}${streamId.slice(7).includes('?')?'&':'?'}autoPlay=true" style="width:100%;height:100%;border:none" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Video Player"></iframe>`
       :`<iframe src="https://customer-XXXX.cloudflarestream.com/${streamId}/iframe" style="width:100%;height:100%;border:none" allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`)
     :`<div class="vid-ph"><div class="play-lg"><svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg></div><p style="color:rgba(255,255,255,.4);font-size:.72rem;margin-top:6px">Video coming soon</p></div>`;
-  const pdfBtn=pdfUrl
-    ?`<a class="dl-btn" href="${pdfUrl}" download>&#8595; Download PDF Transcript</a>`
+  const pdfBtn=txt
+    ?`<button class="dl-btn" onclick="printPDF(${id})">&#8595; Download PDF Transcript</button>`
     :`<button class="dl-btn" disabled style="opacity:.4;cursor:not-allowed">&#8595; PDF coming soon</button>`;
+  const txHdr=transcriptHeaderLines(ep);
   const txHtml=txt
-    ?`<div class="tx-body" id="txBody-${id}">${txt.split(String.fromCharCode(10,10)).map(p=>'<p>'+p+'</p>').join('')}</div>`
+    ?`<div class="tx-body" id="txBody-${id}">
+        <div class="tx-copyhdr"><strong>${txHdr.title}</strong>${txHdr.meta}</div>
+        ${txt.split(String.fromCharCode(10,10)).map(p=>'<p>'+p+'</p>').join('')}
+        <div class="tx-disclaimer">${TX_DISCLAIMER}</div>
+        <div class="tx-courtesy">${TX_COURTESY}</div>
+      </div>`
     :`<div class="tx-cs">Transcript coming soon</div>`;
   const copyBtn=txt
     ?`<button class="dl-btn dl-btn-ghost" onclick="copyTranscript(${id})">Copy Text</button>`
     :'';
   const plOnEp=isInPlaylist(id);
   const playlistBtn=`<button class="dl-btn ${plOnEp?'dl-btn-active':'dl-btn-ghost'}" id="epPlaylistBtn" onclick="togglePlaylist(${id})">${plOnEp?'\u2713 In Playlist':'+ Add to Playlist'}</button>`;
-  const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   document.getElementById('epContent').innerHTML=`
     <div class="ep-cats-hdr">${catHtml}</div>
     <div class="ep-title">${E.t(ep)}</div>
@@ -3215,9 +3247,9 @@ function submitQ(){
 // ── PDF ────────────────────────────────────────────────────────────────────
 function copyTranscript(id){
   const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
-  const txt=E.txt(ep);
+  const txt=getTranscriptText(ep);
   if(!txt)return;
-  navigator.clipboard.writeText(txt).then(()=>{
+  navigator.clipboard.writeText(fullTranscriptPlainText(ep)).then(()=>{
     const btn=document.querySelector('#epContent .dl-btn-ghost');
     if(btn){const orig=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=orig,1500);}
   });
@@ -3227,16 +3259,22 @@ function printPDF(id){
   const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
   const cats=E.c(ep).map(c=>getCL(c)).join(' · ');
   const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+  const txt=getTranscriptText(ep);
+  const bodyHtml=txt
+    ?txt.split(String.fromCharCode(10,10)).map(p=>`<p>${p}</p>`).join('')
+    :'<p style="color:#888;font-style:italic">Transcript coming soon.</p>';
   const win=window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>${E.t(ep)}</title>
-  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#1a2a3a}.page{max-width:720px;margin:0 auto;padding:32px 36px;border:2px solid #184878;min-height:96vh}.hdr{display:flex;align-items:center;gap:16px;padding-bottom:14px;border-bottom:4px solid #8b54b2;margin-bottom:20px}.logo{width:54px;height:54px;border-radius:50%;background:#184878;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;border:2px solid #8b54b2}.logo b{font-size:6px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.06em;display:block}.logo s{font-size:14px;font-weight:900;color:#fff;display:block;text-decoration:none}.htxt h1{font-size:18px;font-weight:700;color:#184878}.htxt p{font-size:11px;color:#5a7090;margin-top:2px;font-style:italic}.ephdr{background:#f0e6fa;border-left:4px solid #8b54b2;padding:14px 18px;margin-bottom:16px}.ecat{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#8b54b2;font-weight:700;margin-bottom:5px}.etit{font-size:20px;font-weight:700;color:#184878;line-height:1.2;margin-bottom:5px}.emeta{font-size:11px;color:#5a7090}.ded{background:#f0e6fa;border-left:3px solid #8b54b2;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6b3d8a;font-style:italic}hr{border:none;border-top:1px solid #d0dae8;margin:14px 0}h2{font-size:14px;font-weight:700;color:#184878;margin-bottom:10px}.tx p{font-size:12px;line-height:1.85;color:#2a3a4a;margin-bottom:10px}.footer{margin-top:28px;padding-top:12px;border-top:4px solid #8b54b2;text-align:center;font-size:10px;color:#5a7090}.footer strong{color:#184878;display:block;font-size:11px;margin-bottom:2px}@media print{@page{margin:12mm}}</style>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#1a2a3a}.page{max-width:720px;margin:0 auto;padding:32px 36px;border:2px solid #184878;min-height:96vh}.logo-wrap{text-align:center;margin-bottom:12px}.logo-wrap img{height:60px;max-width:220px;object-fit:contain}.hdr{text-align:center;padding-bottom:14px;border-bottom:4px solid #8b54b2;margin-bottom:20px}.hdr h1{font-size:18px;font-weight:700;color:#184878}.hdr p{font-size:11px;color:#5a7090;margin-top:2px;font-style:italic}.ephdr{background:#f0e6fa;border-left:4px solid #8b54b2;padding:14px 18px;margin-bottom:16px}.ecat{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:#8b54b2;font-weight:700;margin-bottom:5px}.etit{font-size:20px;font-weight:700;color:#184878;line-height:1.2;margin-bottom:5px}.emeta{font-size:11px;color:#5a7090}.ded{background:#f0e6fa;border-left:3px solid #8b54b2;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#6b3d8a;font-style:italic}hr{border:none;border-top:1px solid #d0dae8;margin:14px 0}h2{font-size:14px;font-weight:700;color:#184878;margin-bottom:10px}.tx p{font-size:12px;line-height:1.85;color:#2a3a4a;margin-bottom:10px}.disclaimer{margin-top:18px;padding-top:12px;border-top:1px solid #d0dae8;font-size:9.5px;line-height:1.55;color:#7a8ba0;font-style:italic}.footer{margin-top:14px;padding-top:12px;border-top:4px solid #8b54b2;text-align:center;font-size:10px;color:#5a7090}.footer strong{color:#184878;display:block;font-size:11px;margin-bottom:2px}@media print{@page{margin:12mm}}</style>
   </head><body><div class="page">
-  <div class="hdr"><div class="logo"><b>HERITAGE</b><s>SCA</s></div><div class="htxt"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p></div></div>
+  <div class="logo-wrap"><img src="/images/logo.png" alt="Sephardic Community Alliance"></div>
+  <div class="hdr"><h1>Minhag of the Week</h1><p>Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"</p></div>
   <div class="ephdr"><div class="ecat">${cats}</div><div class="etit">${E.t(ep)}</div><div class="emeta">${numDisplay} · ${E.dt(ep)} · Presented by ${fn(E.w(ep))}</div></div>
   ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
   <hr><h2>Episode Transcript</h2>
-  <div class="tx"><p style="color:#888;font-style:italic">Transcript coming soon.</p></div>
-  <div class="footer"><strong>Courtesy of SCA Minhag of the Week · Sephardic Community Alliance</strong>minhag@scaupdates.org · minhagoftheweek.org</div>
+  <div class="tx">${bodyHtml}</div>
+  <div class="disclaimer">${TX_DISCLAIMER}</div>
+  <div class="footer"><strong>Courtesy of Minhagoftheweek.com</strong>minhag@scaupdates.org · minhagoftheweek.org</div>
   </div><scr'+'ipt>window.onload=()=>window.print();<\/scr'+'ipt></body></html>`);
   win.document.close();
 }
@@ -3251,6 +3289,16 @@ updateDrawerPlaylistCount();
 // Load whatever page the URL points to (episode / category / presenter / etc.)
 // so shared and bookmarked links, and the browser back/forward buttons, work.
 applyRoute();
+
+// Transcripts load async from the site's own domain (never fetched live by
+// visitors from Google) and are kept in sync by a scheduled GitHub Action —
+// see scripts/sync_transcripts.js. If an episode page is already open when
+// this resolves (e.g. a direct link), re-render it so the transcript appears
+// without the visitor needing to do anything.
+fetch('/transcripts.json').then(r=>r.ok?r.json():{}).then(data=>{
+  TRANSCRIPTS=data||{};
+  if(currentEpId!=null)openEp(currentEpId,false);
+}).catch(()=>{});
 </script>
 </body>
 </html>
