@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790954275">
+<meta name="build-version" content="1790958644">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1258,7 +1258,8 @@ function transcriptHeaderLines(ep){
 function fullTranscriptPlainText(ep){
   const txt=getTranscriptText(ep);
   const hdr=transcriptHeaderLines(ep);
-  return `${hdr.title}\n${hdr.meta}\n\n${txt}\n\n${TX_DISCLAIMER}\n\n${TX_COURTESY}`;
+  const dt=E.dt(ep);
+  return `${hdr.title}\n${hdr.meta}${dt?' · '+dt:''}\n${TX_COURTESY}\n\n${txt}\n\n${TX_DISCLAIMER}`;
 }
 // ── SCHEDULING ───────────────────────────────────────────────────────────
 // Add an entry here to hold an episode back until a specific future moment.
@@ -2019,7 +2020,6 @@ function openEp(id,push){
         <div class="tx-copyhdr"><strong>${txHdr.title}</strong>${txHdr.meta}</div>
         ${txt.split(String.fromCharCode(10,10)).map(p=>'<p>'+p+'</p>').join('')}
         <div class="tx-disclaimer">${TX_DISCLAIMER}</div>
-        <div class="tx-courtesy">${TX_COURTESY}</div>
       </div>`
     :`<div class="tx-cs">Transcript coming soon</div>`;
   const copyBtn=txt
