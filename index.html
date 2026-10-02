@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790958644">
+<meta name="build-version" content="1790958789">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -3293,10 +3293,24 @@ function copyTranscript(id){
   const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
   const txt=getTranscriptText(ep);
   if(!txt)return;
-  navigator.clipboard.writeText(fullTranscriptPlainText(ep)).then(()=>{
+  const plain=fullTranscriptPlainText(ep);
+  const done=()=>{
     const btn=document.querySelector('#epContent .dl-btn-ghost');
     if(btn){const orig=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=orig,1500);}
-  });
+  };
+  // Rich-text copy so apps that keep formatting (Word, Google Docs, email)
+  // show the disclaimer smaller; plain-text apps get the same text unstyled.
+  const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const hdr=transcriptHeaderLines(ep),dt=E.dt(ep);
+  const html=`<p><strong>${esc(hdr.title)}</strong><br>${esc(hdr.meta)}${dt?' · '+esc(dt):''}<br>${esc(TX_COURTESY)}</p>`
+    +txt.split(String.fromCharCode(10,10)).map(p=>'<p>'+esc(p)+'</p>').join('')
+    +`<p style="font-size:8pt;font-style:italic;color:#555"><small>${esc(TX_DISCLAIMER)}</small></p>`;
+  try{
+    navigator.clipboard.write([new ClipboardItem({
+      'text/plain':new Blob([plain],{type:'text/plain'}),
+      'text/html':new Blob([html],{type:'text/html'})
+    })]).then(done,()=>navigator.clipboard.writeText(plain).then(done));
+  }catch(e){navigator.clipboard.writeText(plain).then(done);}
 }
 
 function printPDF(id){
