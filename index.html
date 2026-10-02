@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790959345">
+<meta name="build-version" content="1790959519">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -3314,7 +3314,128 @@ function copyTranscript(id){
   }catch(e){navigator.clipboard.writeText(plain).then(done);}
 }
 
-function printPDF(id){
+// Builds a real PDF file in the browser and downloads it directly (no print
+// dialog). Falls back to the old print-window method if anything fails.
+let _pdfLib=null,_pdfAssets=null;
+function loadPdfLib(){
+  if(_pdfLib)return _pdfLib;
+  _pdfLib=new Promise((res,rej)=>{
+    if(window.jspdf)return res(window.jspdf.jsPDF);
+    const sc=document.createElement('script');sc.src='/vendor/jspdf.umd.min.js';
+    sc.onload=()=>res(window.jspdf.jsPDF);sc.onerror=()=>{_pdfLib=null;rej(new Error('pdf lib failed to load'));};
+    document.head.appendChild(sc);
+  });
+  return _pdfLib;
+}
+function loadPdfAssets(){
+  if(_pdfAssets)return _pdfAssets;
+  const b64=buf=>{let s='';const u=new Uint8Array(buf);for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s);};
+  const font=fetch('/fonts/Bicyclette-Bold.ttf').then(r=>{if(!r.ok)throw new Error('font');return r.arrayBuffer();}).then(b64);
+  const logo=new Promise((res,rej)=>{
+    const im=new Image();
+    im.onload=()=>{
+      const h=252,w=Math.round(im.naturalWidth*h/im.naturalHeight);
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);
+      res({data:c.toDataURL('image/jpeg',.9),w,h});
+    };
+    im.onerror=()=>rej(new Error('logo'));im.src='/images/logo.png';
+  });
+  _pdfAssets=Promise.all([font,logo]).catch(e=>{_pdfAssets=null;throw e;});
+  return _pdfAssets;
+}
+async function printPDF(id){
+  const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
+  const btn=document.querySelector('#epContent .tx-btns .dl-btn:not(.dl-btn-ghost)');
+  const orig=btn?btn.innerHTML:'';
+  if(btn){btn.disabled=true;btn.textContent='Preparing PDF…';}
+  try{
+    const [jsPDF,[fontB64,logo]]=await Promise.all([loadPdfLib(),loadPdfAssets()]);
+    const doc=new jsPDF({unit:'pt',format:'letter'});
+    doc.addFileToVFS('Bicyclette-Bold.ttf',fontB64);doc.addFont('Bicyclette-Bold.ttf','Bicyclette','bold');
+    const PW=612,PH=792,MX=63,W=PW-MX*2,TOP=40,BOT=PH-52;
+    const clean=t=>String(t||'').replace(/ /g,' ');
+    const plain=t=>!/[^\u0000-ÿ–—‘’“”•…]/.test(t);
+    let y=TOP;
+    const need=h=>{if(y+h>BOT){doc.addPage();y=TOP;}};
+    // header
+    const lh=63,lw=logo.w*lh/logo.h;
+    doc.addImage(logo.data,'JPEG',(PW-lw)/2,y,lw,lh);y+=lh+16;
+    doc.setFont('Bicyclette','bold');doc.setFontSize(13);doc.setTextColor('#184878');
+    doc.text('Minhag of the Week',PW/2,y,{align:'center'});y+=11;
+    doc.setFont('helvetica','italic');doc.setFontSize(7.5);doc.setTextColor('#5a7090');
+    doc.text('Sephardic Community Alliance · "Preserving Our Rich Heritage, One Minhag at a Time"',PW/2,y,{align:'center'});y+=10;
+    doc.setFont('helvetica','bold');doc.setTextColor('#8b54b2');
+    doc.text('minhagoftheweek.com',PW/2,y,{align:'center'});y+=7;
+    doc.setDrawColor('#8b54b2');doc.setLineWidth(3);doc.line(MX,y,PW-MX,y);y+=22;
+    // episode block
+    const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
+    doc.setFont('Bicyclette','bold');doc.setFontSize(7.5);doc.setTextColor('#8b54b2');
+    doc.text(numDisplay.toUpperCase(),MX,y,{charSpace:.5});y+=17;
+    doc.setFontSize(14.5);doc.setTextColor('#184878');
+    for(const ln of doc.splitTextToSize(clean(E.t(ep)),W)){doc.text(ln,MX,y);y+=18;}
+    y-=3;
+    doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor('#5a7090');
+    doc.text(`By ${clean(fn(E.w(ep)))} · ${clean(E.dt(ep))}`,MX,y);y+=13;
+    const ded=clean(E.d(ep));
+    if(ded){
+      if(plain(ded)){
+        doc.setFont('helvetica','italic');doc.setTextColor('#6b3d8a');
+        for(const ln of doc.splitTextToSize(ded,W)){doc.text(ln,MX,y);y+=12;}
+      }else{
+        // Contains characters the built-in PDF font can't draw (e.g. Hebrew):
+        // let the browser draw the line and place it as an image.
+        const sc=3,c=document.createElement('canvas'),x=c.getContext('2d'),f=`italic ${9*sc}px Arial,sans-serif`;
+        x.font=f;const lines=[];let cur='';
+        for(const wd of ded.split(' ')){const t=cur?cur+' '+wd:wd;if(x.measureText(t).width>W*sc&&cur){lines.push(cur);cur=wd;}else cur=t;}
+        if(cur)lines.push(cur);
+        c.width=W*sc;c.height=lines.length*12*sc+2*sc;
+        x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.font=f;x.fillStyle='#6b3d8a';x.textBaseline='alphabetic';
+        lines.forEach((l,i)=>x.fillText(l,0,(i*12+9)*sc));
+        doc.addImage(c.toDataURL('image/jpeg',.92),'JPEG',MX,y-9,W,c.height/sc);y+=lines.length*12;
+      }
+    }
+    y+=2;doc.setDrawColor('#d0dae8');doc.setLineWidth(.75);doc.line(MX,y,PW-MX,y);y+=20;
+    // body, justified
+    const FS=11.25,LH=FS*1.5;
+    doc.setFont('helvetica','normal');doc.setFontSize(FS);doc.setTextColor('#2a3a4a');
+    const txt=clean(getTranscriptText(ep));
+    for(const para of txt.split(/\n\s*\n/)){
+      const p=para.replace(/\s+/g,' ').trim();if(!p)continue;
+      const lines=doc.splitTextToSize(p,W);
+      lines.forEach((ln,i)=>{
+        need(LH);
+        const words=ln.trim().split(' ');
+        if(i<lines.length-1&&words.length>1){
+          const tw=words.reduce((a,w)=>a+doc.getTextWidth(w),0),gap=(W-tw)/(words.length-1);
+          let x=MX;for(const w of words){doc.text(w,x,y);x+=doc.getTextWidth(w)+gap;}
+        }else doc.text(ln,MX,y);
+        y+=LH;
+      });
+      y+=FS*.6;
+    }
+    // disclaimer
+    doc.setFont('helvetica','italic');doc.setFontSize(8.25);
+    const dl=doc.splitTextToSize(TX_DISCLAIMER_PAREN,W);
+    need(dl.length*13+24);
+    y+=4;doc.setDrawColor('#d0dae8');doc.setLineWidth(.75);doc.line(MX,y,PW-MX,y);y+=18;
+    doc.setTextColor('#45566b');
+    for(const ln of dl){doc.text(ln,MX,y);y+=13;}
+    // page numbers
+    const n=doc.getNumberOfPages();
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor('#5a7090');
+    for(let i=1;i<=n;i++){doc.setPage(i);doc.text(`Page ${i} of ${n}`,PW/2,PH-28,{align:'center'});}
+    const safe=clean(E.t(ep)).replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').trim();
+    doc.save(`Minhag of the Week - ${numDisplay} - ${safe}.pdf`);
+  }catch(err){
+    console.error('PDF download failed, falling back to print view',err);
+    printPDFLegacy(id);
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML=orig;}
+  }
+}
+
+function printPDFLegacy(id){
   const ep=EPS.find(x=>E.id(x)===id);if(!ep)return;
   const numDisplay=E.num(ep).replace('Ep.','Episode').replace(/Episode (0+)(\d)/,'Episode $2');
   const txt=getTranscriptText(ep);
