@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790959611">
+<meta name="build-version" content="1790959689">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2029,10 +2029,10 @@ function openEp(id,push){
   document.getElementById('epContent').innerHTML=`
     <div class="ep-cats-hdr">${catHtml}</div>
     <div class="ep-title">${E.t(ep)}</div>
-    <div class="ep-meta">${numDisplay}<span style="color:var(--bd)">·</span>${E.dt(ep)}<span style="color:var(--bd)">·</span>${presLinks(E.w(ep),'meta')}</div>
+    <div class="ep-meta">${numDisplay}<span style="color:var(--bd)">·</span>${E.dt(ep)}<span style="color:var(--bd)">·</span>${presLinks(E.w(ep),'meta')}<span style="margin-left:auto">${playlistBtn}</span></div>
     ${E.d(ep)?`<div class="ded">${E.d(ep)}</div>`:''}
     <div class="vid" id="vidBox-${id}">${vidH}</div>
-    <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:.5rem;margin:.9rem 0">${playlistBtn}<a class="dl-btn dl-btn-ghost" href="${buildEpisodeQuestionMailto(ep)}">Ask a Question About This Episode</a></div>
+    <div style="text-align:center;margin:.9rem 0"><a class="dl-btn dl-btn-ghost" href="${buildEpisodeQuestionMailto(ep)}">Ask a Question About This Episode</a></div>
     ${renderInsights(id)}
     <div class="tx-card">
       <div class="tx-hdr">
