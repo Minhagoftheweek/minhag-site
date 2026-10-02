@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790959519">
+<meta name="build-version" content="1790959611">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -2015,10 +2015,8 @@ function openEp(id,push){
   const pdfBtn=txt
     ?`<button class="dl-btn" onclick="printPDF(${id})">&#8595; Download PDF Transcript</button>`
     :`<button class="dl-btn" disabled style="opacity:.4;cursor:not-allowed">&#8595; PDF coming soon</button>`;
-  const txHdr=transcriptHeaderLines(ep);
   const txHtml=txt
     ?`<div class="tx-body" id="txBody-${id}">
-        <div class="tx-copyhdr"><strong>${txHdr.title}</strong>${txHdr.meta}</div>
         ${txt.split(String.fromCharCode(10,10)).map(p=>'<p>'+p+'</p>').join('')}
         <div class="tx-disclaimer">${TX_DISCLAIMER}</div>
       </div>`
