@@ -243,8 +243,7 @@ def make_preview_page(episode_num, topic, presenter, og_image_url):
 <meta name="twitter:title" content="{title}">
 <meta name="twitter:description" content="{desc}">
 <meta name="twitter:image" content="{og_image_url}">
-<meta http-equiv="refresh" content="0; url=/#ep-{episode_num}">
-<script>location.replace('/#ep-{episode_num}');</script>
+<script>if(!/facebookexternalhit|Facebot|Twitterbot/i.test(navigator.userAgent))location.replace('/#ep-{episode_num}');</script>
 </head><body>
 <p>Redirecting to <a href="/#ep-{episode_num}">Episode {episode_num}</a>&hellip;</p>
 </body></html>
