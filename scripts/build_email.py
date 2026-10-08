@@ -20,7 +20,6 @@ import os
 import re
 import sys
 from datetime import datetime, timedelta
-from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,11 +33,6 @@ NAMES = {
     "Harari": "Joey Harari",
     "All 3": "Joseph Mosseri, Morris Arking & Joey Harari",
     "Harari ft Arking": "Joey Harari & Morris Arking",
-}
-PRESENTER_EMAILS = {
-    "Mosseri": "joseph.mosseri@verizon.net",
-    "Arking": "morris@arcadeorder.com",
-    "Harari": "joey@joeyharari.com",
 }
 
 # Site colors (same values as :root in index.html)
@@ -153,46 +147,35 @@ def parse_ep_date(s):
     return None
 
 
-def question_mailto(ep):
-    num = re.sub(r"^Ep\.\s*", "", ep[1])
-    subject = f"Question on episode {num}, {ep[2]}"
-    body = "Hi, I was just watching an episode of Minhag of the Week and have a question..."
-    cc = []
-    w = ep[3] or ""
-    if w == "All 3":
-        cc = list(PRESENTER_EMAILS.values())
-    else:
-        for p in re.split(r",|\sft\s?", w):
-            e = PRESENTER_EMAILS.get(p.strip())
-            if e and e not in cc:
-                cc.append(e)
-    url = f"mailto:minhag@scaupdates.org?subject={quote(subject)}&body={quote(body)}"
-    if cc:
-        url += "&cc=" + quote(",".join(cc))
-    return url
-
-
 def excerpt(text, max_words=EXCERPT_WORDS):
-    """First few paragraphs of the transcript, cut at a sentence end."""
-    paras = [p.strip() for p in text.split("\n\n") if p.strip()]
-    out, count = [], 0
-    for p in paras:
+    """First few paragraphs of the transcript, cut at a sentence end.
+
+    Returns (paragraphs, truncated, resume) where resume is the paragraph the
+    reader should land on when they click through, counted the same way the
+    website splits the transcript (1 = first paragraph).
+    """
+    raw = text.split("\n\n")
+    out, count, resume = [], 0, None
+    for idx, p in enumerate(raw, start=1):
+        p = p.strip()
+        if not p:
+            continue
         words = p.split()
         if count + len(words) <= max_words:
             out.append(p)
             count += len(words)
             continue
+        resume = idx
         if count < max_words * 0.6:
             room = max_words - count
             cut = " ".join(words[:room])
-            ends = [m.end() for m in re.finditer(r"[.!?][\"')”]?(?=\s|$)", cut)]
+            ends = [m.end() for m in re.finditer(r"[.!?][\"')\u201d]?(?=\s|$)", cut)]
             if ends and ends[-1] > len(cut) * 0.4:
                 out.append(cut[:ends[-1]])
             else:
-                out.append(cut.rstrip(",;:") + "…")
+                out.append(cut.rstrip(",;:") + "\u2026")
         break
-    truncated = len(" ".join(out).split()) < len(text.split())
-    return out, truncated
+    return out, resume is not None, resume or 1
 
 
 # ── Images ────────────────────────────────────────────────────────────────
@@ -306,24 +289,24 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
     num = num_display(ep)
 
     tx = (transcripts.get(str(ep_id)) or {}).get("text") or (ep[10] if len(ep) > 10 else "")
-    paras, truncated = excerpt(tx) if tx else ([], False)
+    paras, truncated, resume = excerpt(tx) if tx else ([], False, 1)
+    # Opens the episode page already scrolled to where the email left off.
+    read_url = f"{SITE}/?ep={ep_id}&read={resume}"
 
     # Archive emails: the title only. New episodes: "Episode 308: Title".
     subject = title if not is_new else f"{num}: {title}"
     preheader = f"{num} with {presenter}. Watch it now, or read the transcript."
 
     # Archive emails mark the label with an asterisk and tie it to the air date.
-    star = "" if is_new else "*"
+    top_label = "New Episode" if is_new else "*From the Archives"
     aired = ep[5] if is_new else f"*First aired {ep[5]}"
-    meta_bits = [num, presenter, aired]
-    meta = f' <span style="color:{BORDER};">&middot;</span> '.join(e(b) for b in meta_bits if b)
 
     ded_html = ""
     if dedication:
         ded_html = f"""
           <tr><td style="padding:14px 36px 0 36px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="background:{PURPLE_LIGHT};border-left:3px solid {PURPLE};padding:11px 16px;font-family:{SERIF};font-style:italic;font-size:15px;line-height:1.5;color:{PURPLE_DARK};">{e(dedication)}</td>
+              <td style="background:{PURPLE_LIGHT};padding:11px 16px;text-align:center;font-family:{SERIF};font-style:italic;font-size:15px;line-height:1.5;color:{PURPLE_DARK};">{e(dedication)}</td>
             </tr></table>
           </td></tr>"""
 
@@ -336,7 +319,7 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
         more = ""
         if truncated:
             more = (f'<p style="margin:4px 0 0 0;font-family:{SANS};font-size:15px;font-weight:bold;">'
-                    f'<a href="{e(ep_url)}" target="_blank" style="color:{PURPLE};text-decoration:underline;">'
+                    f'<a href="{e(read_url)}" target="_blank" style="color:{PURPLE};text-decoration:underline;">'
                     f'Click here to keep reading</a></p>')
         tx_html = f"""
           <tr><td style="padding:30px 36px 0 36px;">
@@ -409,17 +392,17 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
     <tr><td align="center" bgcolor="{NAVY_DARK}" style="padding:30px 24px 28px 24px;background:{NAVY_DARK};background-image:linear-gradient(135deg,{NAVY_DARK} 0%,#2a2a6a 55%,#3b2a6e 100%);">
       <div class="hero-name" style="font-family:{SERIF};font-style:italic;font-weight:bold;font-size:34px;line-height:1.15;color:#c9a3e6;">Minhag of the Week</div>
       <div style="font-family:{SERIF};font-style:italic;font-size:14px;letter-spacing:.5px;color:#d9c7ec;padding-top:8px;">Preserving Our Rich Heritage, One Minhag at a Time</div>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top:18px;"><tr>
-        <td style="border:1px solid #8b6bb5;border-radius:4px;background:#33316f;padding:6px 14px;font-family:{SANS};font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#e2d1f3;">{star}{e(label)}</td>
-      </tr></table>
     </td></tr>
 
     <tr><td>
       <table role="presentation" class="pad" width="100%" cellpadding="0" cellspacing="0" border="0">
 
-        <tr><td style="padding:30px 36px 0 36px;">
-          <a href="{e(ep_url)}" target="_blank" class="title" style="display:block;font-family:{SANS};font-size:28px;font-weight:bold;line-height:1.2;color:{NAVY};text-decoration:none;">{e(title)}</a>
-          <div style="padding-top:10px;font-family:{SANS};font-size:14px;line-height:1.5;color:{MUTED};">{meta}</div>
+        <tr><td align="center" style="padding:30px 36px 0 36px;text-align:center;">
+          <div style="font-family:{SANS};font-size:12px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:{PURPLE};">{e(top_label)}</div>
+          <div style="padding-top:6px;font-family:{SANS};font-size:15px;color:{MUTED};">{e(num)}</div>
+          <a href="{e(ep_url)}" target="_blank" class="title" style="display:block;padding-top:10px;font-family:{SANS};font-size:28px;font-weight:bold;line-height:1.2;color:{NAVY};text-decoration:none;">{e(title)}</a>
+          <div style="padding-top:12px;font-family:{SANS};font-size:16px;line-height:1.5;color:{TEXT};">By {e(presenter)}</div>
+          <div style="padding-top:2px;font-family:{SANS};font-size:13px;line-height:1.5;color:{MUTED};">{e(aired)}</div>
         </td></tr>
         {ded_html}
         <tr><td style="padding:20px 36px 0 36px;">
@@ -428,7 +411,6 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
 
         {tx_html}
         {ins_html}
-        <tr><td align="center" style="padding:22px 36px 0 36px;">{button("Ask a Question About This Episode", question_mailto(ep), primary=False)}</td></tr>
         <tr><td style="padding:34px 36px 0 36px;font-size:0;line-height:0;">&nbsp;</td></tr>
       </table>
     </td></tr>
@@ -438,7 +420,7 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
         <a href="{SITE}" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Watch Previous Episodes</a><br>
         <a href="{SITE}/question" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Suggest a Minhag Topic for Future Episodes</a><br>
         <a href="{SITE}/sponsorship" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Sponsor a Future Episode</a><br>
-        <a href="{SUBSCRIBE_URL}" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Subscribe to Minhagim Email List</a>
+        <a href="{SUBSCRIBE_URL}" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Subscribe to Minhag of the Week Emails</a>
       </div>
       <div style="padding-top:16px;font-family:{SANS};font-size:13px;line-height:1.6;color:#b9c6d8;">Minhag of the Week is a project of the Sephardic Community Alliance.</div>
       <div style="padding-top:16px;font-family:{SANS};font-size:11px;line-height:1.6;color:#8fa1b8;">*|LIST:ADDRESSLINE|*<br>

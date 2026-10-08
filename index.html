@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1791486792">
+<meta name="build-version" content="1791490438">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -1310,6 +1310,9 @@ function getSubsForCat(ep,catId){
 const PS=48;
 let fil=[...PUBLIC_EPS],pg=1;
 let currentEpId=null;
+// Set by links like /?ep=23&read=3 (used by the weekly email's "keep reading"
+// link): open that episode and scroll to that paragraph of the transcript.
+let PENDING_READ=null;
 let activeSproutPlayer=null;
 // iOS Safari sometimes leaves the picture frozen on a stale frame after the
 // phone is locked/unlocked while a SproutVideo iframe is playing in
@@ -1424,6 +1427,13 @@ function applyRoute(){
     document.getElementById('listView').style.display='none';
     document.getElementById('playlistPage').style.display='block';
     renderPlaylistPage(ids);
+    return;
+  }
+  const epParam=parseInt(params.get('ep'),10);
+  if(!isNaN(epParam)&&EP_SLUG_BY_ID[epParam]){
+    const rp=parseInt(params.get('read'),10);
+    if(!isNaN(rp)&&rp>0)PENDING_READ={id:epParam,p:rp};
+    openEp(epParam,'replace');
     return;
   }
   let path=location.pathname;
@@ -2042,7 +2052,19 @@ function openEp(id,push){
       ${txHtml}
     </div>
     ${renderRelatedEpisodes(id)}`;
-  window.scrollTo({top:0,behavior:'smooth'});
+  if(PENDING_READ&&PENDING_READ.id===id&&txt){
+    const want=PENDING_READ.p;PENDING_READ=null;
+    window.scrollTo(0,0);
+    setTimeout(()=>{
+      const ps=document.querySelectorAll('#txBody-'+id+' p');
+      const el=ps[Math.min(want,ps.length)-1];
+      if(!el)return;
+      window.scrollTo({top:el.getBoundingClientRect().top+window.scrollY-110,behavior:'smooth'});
+      const old=el.style.background;
+      el.style.transition='background .6s';el.style.background='var(--hpl)';
+      setTimeout(()=>{el.style.background=old;},2600);
+    },400);
+  }else window.scrollTo({top:0,behavior:'smooth'});
   const vEl=document.querySelector('#epContent video');
   if(vEl)attachWatchTracking(vEl,id);
   else if(streamId&&streamId.startsWith('SPROUT:'))attachSproutTracking(streamId.slice(7),id);
