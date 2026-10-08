@@ -1,0 +1,83 @@
+name: Weekly email
+
+# Builds the Minhag of the Week email for one episode and puts it in Mailchimp.
+#   mode "test":     saves a draft and emails a test copy. Nothing goes to the list.
+#   mode "schedule": schedules it for the coming Wednesday at 1:00 PM New York time.
+
+on:
+  workflow_dispatch:
+    inputs:
+      episode:
+        description: "Episode number (for example 23)"
+        required: true
+      mode:
+        description: "test = draft + test copy only; schedule = schedule for Wednesday 1:00 PM"
+        type: choice
+        options: [test, schedule]
+        default: test
+      test_email:
+        description: "Where to send the test copy"
+        default: "vdweck1@gmail.com"
+  repository_dispatch:
+    types: [weekly_email]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-email
+  cancel-in-progress: false
+
+jobs:
+  email:
+    runs-on: ubuntu-latest
+    env:
+      EPISODE: ${{ github.event.inputs.episode || github.event.client_payload.episode }}
+      MODE: ${{ github.event.inputs.mode || github.event.client_payload.mode || 'test' }}
+      TEST_EMAIL: ${{ github.event.inputs.test_email || github.event.client_payload.test_email || 'vdweck1@gmail.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install tools
+        run: |
+          pip install --quiet pillow playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Build images and PDF
+        run: python scripts/send_weekly_email.py prepare "$EPISODE"
+
+      - name: Publish images and PDF to the site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add images/email transcripts/pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "Weekly email assets for episode $EPISODE"
+            for i in 1 2 3 4 5; do
+              git pull --rebase && git push && break
+              sleep 5
+            done
+          else
+            echo "Assets already published"
+          fi
+
+      - name: Create the email in Mailchimp
+        env:
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+        run: python scripts/send_weekly_email.py send "$EPISODE" --mode "$MODE" --test-email "$TEST_EMAIL"
+
+      - name: Save the run log
+        if: always()
+        run: |
+          git add logs/weekly-email.log 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Weekly email log (episode $EPISODE, $MODE)"
+            for i in 1 2 3 4 5; do
+              git pull --rebase && git push && break
+              sleep 5
+            done
+          fi

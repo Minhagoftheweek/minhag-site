@@ -308,8 +308,8 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
     tx = (transcripts.get(str(ep_id)) or {}).get("text") or (ep[10] if len(ep) > 10 else "")
     paras, truncated = excerpt(tx) if tx else ([], False)
 
-    # Archive emails: the title only. New episodes: wording still to be confirmed.
-    subject = title if not is_new else f"New Minhag of the Week: {title}"
+    # Archive emails: the title only. New episodes: "Episode 308: Title".
+    subject = title if not is_new else f"{num}: {title}"
     preheader = f"{num} with {presenter}. Watch it now, or read the transcript."
 
     # Archive emails mark the label with an asterisk and tie it to the air date.
