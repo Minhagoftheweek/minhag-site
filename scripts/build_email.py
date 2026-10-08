@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = "https://minhagoftheweek.com"
 NY = ZoneInfo("America/New_York")
+SUBSCRIBE_URL = "https://youtube.us3.list-manage.com/subscribe?u=af8f644070b5e43b83849c47c&id=ad6b593467"
 
 NAMES = {
     "Mosseri": "Joseph Mosseri",
@@ -310,7 +311,10 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
     subject = f"{label}: {title}" if not is_new else f"New Minhag of the Week: {title}"
     preheader = f"{num} with {presenter}. Watch it now, or read the transcript."
 
-    meta_bits = [num, ep[5], presenter]
+    # Archive emails mark the label with an asterisk and tie it to the air date.
+    star = "" if is_new else "*"
+    aired = ep[5] if is_new else f"*Originally aired {ep[5]}"
+    meta_bits = [num, presenter, aired]
     meta = f' <span style="color:{BORDER};">&middot;</span> '.join(e(b) for b in meta_bits if b)
 
     ded_html = ""
@@ -405,7 +409,7 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
       <div class="hero-name" style="font-family:{SERIF};font-style:italic;font-weight:bold;font-size:34px;line-height:1.15;color:#c9a3e6;">Minhag of the Week</div>
       <div style="font-family:{SERIF};font-style:italic;font-size:14px;letter-spacing:.5px;color:#d9c7ec;padding-top:8px;">Preserving Our Rich Heritage, One Minhag at a Time</div>
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top:18px;"><tr>
-        <td style="border:1px solid #8b6bb5;border-radius:4px;background:#33316f;padding:6px 14px;font-family:{SANS};font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#e2d1f3;">{e(label)}</td>
+        <td style="border:1px solid #8b6bb5;border-radius:4px;background:#33316f;padding:6px 14px;font-family:{SANS};font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#e2d1f3;">{star}{e(label)}</td>
       </tr></table>
     </td></tr>
 
@@ -429,9 +433,13 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
     </td></tr>
 
     <tr><td align="center" bgcolor="{NAVY_DARK}" style="background:{NAVY_DARK};padding:28px 30px 26px 30px;">
-      <a href="{SITE}" target="_blank" style="display:inline-block;border:1px solid #8b6bb5;border-radius:6px;padding:10px 22px;font-family:{SANS};font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;">Browse All {len(eps) - len(hidden)} Episodes</a>
-      <div style="padding-top:18px;font-family:{SANS};font-size:13px;line-height:1.6;color:#b9c6d8;">Minhag of the Week is a project of the Sephardic Community Alliance.<br>
-        <a href="{SITE}/sponsorship" target="_blank" style="color:#d9c7ec;text-decoration:underline;">Dedicate an episode</a></div>
+      <div style="font-family:{SANS};font-size:14px;line-height:2.1;">
+        <a href="{SITE}" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Watch Previous Episodes</a><br>
+        <a href="{SITE}/question" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Suggest a Minhag Topic for Future Episodes</a><br>
+        <a href="{SITE}/sponsorship" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Sponsor a Future Episode</a><br>
+        <a href="{SUBSCRIBE_URL}" target="_blank" style="color:#ffffff;font-weight:bold;text-decoration:underline;">Subscribe to Minhagim Email List</a>
+      </div>
+      <div style="padding-top:16px;font-family:{SANS};font-size:13px;line-height:1.6;color:#b9c6d8;">Minhag of the Week is a project of the Sephardic Community Alliance.</div>
       <div style="padding-top:16px;font-family:{SANS};font-size:11px;line-height:1.6;color:#8fa1b8;">*|LIST:ADDRESSLINE|*<br>
         <a href="*|UNSUB|*" style="color:#8fa1b8;text-decoration:underline;">Unsubscribe</a> &nbsp;&middot;&nbsp; <a href="*|UPDATE_PROFILE|*" style="color:#8fa1b8;text-decoration:underline;">Update preferences</a> &nbsp;&middot;&nbsp; <a href="*|ARCHIVE|*" style="color:#8fa1b8;text-decoration:underline;">View in browser</a></div>
     </td></tr>
