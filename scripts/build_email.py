@@ -320,7 +320,7 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
         if truncated:
             more = (f'<p style="margin:4px 0 0 0;font-family:{SANS};font-size:15px;font-weight:bold;">'
                     f'<a href="{e(read_url)}" target="_blank" style="color:{PURPLE};text-decoration:underline;">'
-                    f'Click here to keep reading</a></p>')
+                    f'Click here to continue reading</a></p>')
         tx_html = f"""
           <tr><td style="padding:30px 36px 0 36px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid {BORDER};border-top:3px solid {PURPLE};border-radius:8px;">
