@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="build-version" content="1790959689">
+<meta name="build-version" content="1791486792">
 <script>
 // If we were just bounced here from 404.html (a deep link like /sponsorship
 // that isn't a real file), restore the original URL before anything else
@@ -3502,7 +3502,7 @@ applyRoute();
 // see scripts/sync_transcripts.js. If an episode page is already open when
 // this resolves (e.g. a direct link), re-render it so the transcript appears
 // without the visitor needing to do anything.
-fetch('/transcripts.json').then(r=>r.ok?r.json():{}).then(data=>{
+fetch('/transcripts.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(data=>{
   TRANSCRIPTS=data||{};TXVOCAB=null;TXPARAS={};
   if(document.getElementById('epPage').classList.contains('show')&&currentEpId!=null){
     openEp(currentEpId,false);
