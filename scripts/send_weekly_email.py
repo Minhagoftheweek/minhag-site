@@ -12,11 +12,20 @@ Run by .github/workflows/weekly-email.yml. Two steps:
         schedule: makes the campaign, schedules it for the coming Wednesday at
                   1:00 PM New York time, and also emails a test copy.
 
+    python scripts/send_weekly_email.py check --test-email you@example.com
+        Run on Wednesday before the send. If the episode's transcript or details
+        changed on the website since the email was scheduled, the scheduled
+        email (and its PDF) is rebuilt with the latest version. If nothing
+        changed, or anything goes wrong, the email already scheduled stays put.
+
 The audience, "from" name and reply-to address are copied from the most recent
 Minhag of the Week email that was sent, so this always goes to the same people.
 """
 import argparse
 import base64
+import hashlib
+import re
+import subprocess
 import json
 import os
 import sys
@@ -32,6 +41,7 @@ import build_email  # noqa: E402
 ROOT = build_email.ROOT
 NY = ZoneInfo("America/New_York")
 LOG_PATH = os.path.join(ROOT, "logs", "weekly-email.log")
+STATE_PATH = os.path.join(ROOT, "logs", "weekly-email-state.json")
 TITLE_PREFIX = "Minhag Auto"  # internal campaign name in Mailchimp, never shown to readers
 SEND_WEEKDAY, SEND_HOUR = 2, 13  # Wednesday, 1:00 PM New York time
 
@@ -48,6 +58,43 @@ def write_log():
     stamp = datetime.now(NY).strftime("%Y-%m-%d %I:%M %p ET")
     with open(LOG_PATH, "w", encoding="utf-8") as f:
         f.write(f"Last run: {stamp}\n" + "\n".join(_log_lines) + "\n")
+
+
+def load_state():
+    try:
+        with open(STATE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_state(state):
+    os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
+    with open(STATE_PATH, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2)
+
+
+def fingerprints(ep_id, html_text):
+    """Short codes that change whenever the email body or the transcript changes."""
+    with open(os.path.join(ROOT, "transcripts.json"), encoding="utf-8") as f:
+        tx = (json.load(f).get(str(ep_id)) or {}).get("text") or ""
+    h = lambda t: hashlib.sha256(t.encode("utf-8")).hexdigest()[:16]
+    return h(html_text), h(tx)
+
+
+def publish_assets(message):
+    """Commits the email images and PDF and pushes them to the site."""
+    def git(*args, check=True):
+        return subprocess.run(["git", *args], cwd=ROOT, check=check, capture_output=True, text=True)
+    git("add", "images/email", "transcripts/pdf")
+    if git("diff", "--cached", "--quiet", check=False).returncode == 0:
+        return False
+    git("commit", "-m", message)
+    for _ in range(5):
+        if git("pull", "--rebase", check=False).returncode == 0 and git("push", check=False).returncode == 0:
+            return True
+        time.sleep(5)
+    raise SystemExit("Could not publish the updated PDF to the site.")
 
 
 def mc(method, path, body=None):
@@ -169,6 +216,14 @@ def cmd_send(a):
             mc("DELETE", f"/campaigns/{c['id']}")
             log(f"Removed an older draft ({c['id']}).")
 
+    if a.mode == "schedule":
+        sched = mc("GET", "/campaigns?status=schedule&count=100&fields=campaigns.id,campaigns.settings.title")
+        for c in sched.get("campaigns", []):
+            if (c.get("settings", {}).get("title") or "") == f"{TITLE_PREFIX}: Episode {ep_id} (schedule)":
+                mc("POST", f"/campaigns/{c['id']}/actions/unschedule")
+                mc("DELETE", f"/campaigns/{c['id']}")
+                log(f"Replaced the email already scheduled for this episode ({c['id']}).")
+
     camp = mc("POST", "/campaigns", {
         "type": "regular",
         "recipients": recipients,
@@ -199,8 +254,89 @@ def cmd_send(a):
         when_utc = send_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
         mc("POST", f"/campaigns/{cid}/actions/schedule", {"schedule_time": when_utc})
         log(f"SCHEDULED for {send_at.strftime('%A, %b %d, %Y at %I:%M %p')} New York time.")
+        fp_html, fp_tx = fingerprints(ep_id, email["html"])
+        state = load_state()
+        state[cid] = {"episode": ep_id, "send_time": when_utc, "fp_html": fp_html, "fp_tx": fp_tx}
+        save_state(state)
     else:
         log("Test only: nothing was sent to the list. The draft is saved in Mailchimp, unscheduled.")
+
+
+def cmd_check(a):
+    """Wednesday pre-send check: refresh the scheduled email if the site changed."""
+    now = datetime.now(timezone.utc)
+    fields = "campaigns.id,campaigns.send_time,campaigns.settings.title,campaigns.settings.subject_line"
+    sched = mc("GET", f"/campaigns?status=schedule&count=100&fields={fields}")
+    mine = [c for c in sched.get("campaigns", [])
+            if (c.get("settings", {}).get("title") or "").startswith(TITLE_PREFIX)]
+    if not mine:
+        log("Check: no automated Minhag email is scheduled. Nothing to do.")
+        return
+    state = load_state()
+    for c in mine:
+        cid = c["id"]
+        m = re.search(r"Episode (\d+)", c["settings"]["title"])
+        send_time = datetime.fromisoformat(c["send_time"].replace("Z", "+00:00"))
+        mins = (send_time - now).total_seconds() / 60
+        if not m:
+            continue
+        ep_id = int(m.group(1))
+        if mins > 5 * 60:
+            log(f"Check: episode {ep_id} sends in {mins / 60:.0f} hours. Too early to check; skipping.")
+            continue
+        if mins < 20:
+            log(f"Check: episode {ep_id} sends in {mins:.0f} minutes. Too close to change safely; leaving it.")
+            continue
+
+        send_date = send_time.astimezone(NY).date()
+        has_pdf = os.path.exists(os.path.join(ROOT, build_email.pdf_rel_path(ep_id)))
+        email = build_email.build(ep_id, send_date=send_date, has_pdf=has_pdf)
+        fp_html, fp_tx = fingerprints(ep_id, email["html"])
+        old = state.get(cid, {})
+        tx_changed = old.get("fp_tx") != fp_tx
+        html_changed = old.get("fp_html") != fp_html or c["settings"].get("subject_line") != email["subject"]
+        if not tx_changed and not html_changed:
+            log(f"Check: episode {ep_id} is unchanged since it was scheduled. Leaving it as is.")
+            continue
+
+        if tx_changed:
+            try:
+                build_email.make_images(ep_id)
+                build_email.make_pdf(ep_id)
+                publish_assets(f"Weekly email: refreshed PDF for episode {ep_id}")
+                log(f"Check: transcript changed, so the PDF for episode {ep_id} was rebuilt.")
+                if not has_pdf:
+                    email = build_email.build(ep_id, send_date=send_date, has_pdf=True)
+                    fp_html, _ = fingerprints(ep_id, email["html"])
+                    html_changed = True
+            except SystemExit:
+                raise
+            except Exception as err:
+                log(f"Check: the PDF could not be rebuilt ({err}). The older PDF stays.")
+
+        if html_changed:
+            when = send_time.strftime("%Y-%m-%dT%H:%M:%S+00:00")
+            mc("POST", f"/campaigns/{cid}/actions/unschedule")
+            try:
+                mc("PUT", f"/campaigns/{cid}/content", {"html": email["html"]})
+                mc("PATCH", f"/campaigns/{cid}",
+                   {"settings": {"subject_line": email["subject"], "preview_text": email["preheader"]}})
+                log(f"Check: episode {ep_id} changed on the website, so the scheduled email was updated.")
+            finally:
+                # Whatever happened above, put it back on the schedule so it still sends.
+                mc("POST", f"/campaigns/{cid}/actions/schedule", {"schedule_time": when})
+                log(f"Check: episode {ep_id} is back on the schedule for "
+                    f"{send_time.astimezone(NY).strftime('%A %I:%M %p')} New York time.")
+            if a.test_email:
+                try:
+                    mc("POST", f"/campaigns/{cid}/actions/test",
+                       {"test_emails": [e.strip() for e in a.test_email.split(",") if e.strip()],
+                        "send_type": "html"})
+                    log(f"Check: updated test copy sent to {a.test_email}.")
+                except SystemExit as err:
+                    log(f"Check: could not send the updated test copy ({err.code}). The email is still scheduled.")
+        state[cid] = {"episode": ep_id, "send_time": c["send_time"], "fp_html": fp_html, "fp_tx": fp_tx}
+        save_state(state)
 
 
 def main():
@@ -212,9 +348,11 @@ def main():
     s.add_argument("episode", type=int)
     s.add_argument("--mode", choices=["test", "schedule"], default="test")
     s.add_argument("--test-email", default="")
+    k = sub.add_parser("check")
+    k.add_argument("--test-email", default="")
     a = ap.parse_args()
     try:
-        (cmd_prepare if a.cmd == "prepare" else cmd_send)(a)
+        {"prepare": cmd_prepare, "send": cmd_send, "check": cmd_check}[a.cmd](a)
     except SystemExit as err:
         if err.code not in (0, None):
             log(f"FAILED: {err.code}")
@@ -223,7 +361,7 @@ def main():
         log(f"FAILED: {type(err).__name__}: {err}")
         raise
     finally:
-        if a.cmd == "send":
+        if a.cmd in ("send", "check"):
             write_log()
 
 

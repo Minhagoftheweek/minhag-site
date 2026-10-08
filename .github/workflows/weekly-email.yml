@@ -20,6 +20,11 @@ on:
         default: "vdweck1@gmail.com"
   repository_dispatch:
     types: [weekly_email]
+  schedule:
+    # Wednesday pre-send check. In New York time this is 11 AM, 12 PM and 1 PM
+    # in summer and 10 AM, 11 AM and 12 PM in winter. A run that lands less
+    # than 20 minutes before the send leaves the email alone.
+    - cron: "0 15,16,17 * * 3"
 
 permissions:
   contents: write
@@ -47,10 +52,21 @@ jobs:
           pip install --quiet pillow playwright
           python -m playwright install --with-deps chromium
 
+      - name: Wednesday check (refresh the scheduled email if the site changed)
+        if: github.event_name == 'schedule'
+        env:
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          python scripts/send_weekly_email.py check --test-email "vdweck1@gmail.com"
+
       - name: Build images and PDF
+        if: github.event_name != 'schedule'
         run: python scripts/send_weekly_email.py prepare "$EPISODE"
 
       - name: Publish images and PDF to the site
+        if: github.event_name != 'schedule'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -66,6 +82,7 @@ jobs:
           fi
 
       - name: Create the email in Mailchimp
+        if: github.event_name != 'schedule'
         env:
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
         run: python scripts/send_weekly_email.py send "$EPISODE" --mode "$MODE" --test-email "$TEST_EMAIL"
@@ -73,9 +90,9 @@ jobs:
       - name: Save the run log
         if: always()
         run: |
-          git add logs/weekly-email.log 2>/dev/null || true
+          git add logs/weekly-email.log logs/weekly-email-state.json 2>/dev/null || true
           if ! git diff --cached --quiet; then
-            git commit -m "Weekly email log (episode $EPISODE, $MODE)"
+            git commit -m "Weekly email log"
             for i in 1 2 3 4 5; do
               git pull --rebase && git push && break
               sleep 5
