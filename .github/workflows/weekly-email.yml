@@ -2,8 +2,10 @@ name: Weekly email
 
 # Builds the Minhag of the Week email for one episode and puts it in Mailchimp.
 #
-# Hands-off: on a timer it reads the episode tracking sheet, finds the row dated
-# the coming Wednesday, and schedules that episode for 1:00 PM New York time.
+# Hands-off: every 5 minutes it reads the episode tracking sheet. Any upcoming
+# row with "Yes" in the "Ready for mailchimp?" column gets its email scheduled
+# for that row's date at 1:00 PM New York time, and a test copy is sent.
+# "23 (Old)" in Episode # = From the Archives; a plain number = new episode.
 # On Wednesday it re-checks the site and refreshes the email if anything changed.
 #
 # By hand (Run workflow):
@@ -28,12 +30,12 @@ on:
   repository_dispatch:
     types: [weekly_email]
   schedule:
-    # Every morning (9 AM New York in summer, 8 AM in winter): schedule the
-    # coming Wednesday's email from the tracking sheet if it isn't scheduled yet.
-    - cron: "0 13 * * *"
+    # Quick look at the tracking sheet every 5 minutes (the fastest GitHub allows).
+    # It only does real work when a row's "Ready for mailchimp?" changed.
+    - cron: "*/5 * * * *"
     # Wednesday before the send (11 AM, 12 PM, 1 PM New York in summer; 10 AM,
-    # 11 AM, 12 PM in winter): catch a late entry and refresh the email if the
-    # site changed. A run less than 20 minutes before the send changes nothing.
+    # 11 AM, 12 PM in winter): refresh the email if the site changed. A run
+    # less than 20 minutes before the send changes nothing.
     - cron: "0 15,16,17 * * 3"
 
 permissions:
@@ -50,36 +52,47 @@ jobs:
       EPISODE: ${{ github.event.inputs.episode || github.event.client_payload.episode }}
       MODE: ${{ github.event.inputs.mode || github.event.client_payload.mode || 'test' }}
       TEST_EMAIL: ${{ github.event.inputs.test_email || github.event.client_payload.test_email || 'vdweck1@gmail.com' }}
+      HANDS_OFF: ${{ github.event_name == 'schedule' || github.event.inputs.mode == 'auto' || github.event.client_payload.mode == 'auto' }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Quick look (is there anything to do?)
+        id: decide
+        env:
+          CRON: ${{ github.event.schedule }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$CRON" = "0 15,16,17 * * 3" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+          else
+            python3 scripts/send_weekly_email.py plan >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.decide.outputs.heavy == 'true'
         with:
           python-version: "3.12"
 
       - name: Install tools
+        if: steps.decide.outputs.heavy == 'true'
         run: |
           pip install --quiet pillow playwright
           python -m playwright install --with-deps chromium
-
-      - name: Hands-off run (schedule from the tracking sheet, then pre-send check)
-        if: github.event_name == 'schedule' || env.MODE == 'auto'
-        env:
-          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          python scripts/send_weekly_email.py weekly --test-email "vdweck1@gmail.com"
+
+      - name: Hands-off run (match Mailchimp to the tracking sheet, then pre-send check)
+        if: steps.decide.outputs.heavy == 'true' && env.HANDS_OFF == 'true'
+        env:
+          MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+        run: python scripts/send_weekly_email.py weekly --test-email "vdweck1@gmail.com"
 
       - name: Build images and PDF
-        if: github.event_name != 'schedule' && env.MODE != 'auto'
+        if: env.HANDS_OFF != 'true'
         run: python scripts/send_weekly_email.py prepare "$EPISODE"
 
       - name: Publish images and PDF to the site
-        if: github.event_name != 'schedule' && env.MODE != 'auto'
+        if: env.HANDS_OFF != 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add images/email transcripts/pdf
           if ! git diff --cached --quiet; then
             git commit -m "Weekly email assets for episode $EPISODE"
@@ -92,13 +105,13 @@ jobs:
           fi
 
       - name: Create the email in Mailchimp
-        if: github.event_name != 'schedule' && env.MODE != 'auto'
+        if: env.HANDS_OFF != 'true'
         env:
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
         run: python scripts/send_weekly_email.py send "$EPISODE" --mode "$MODE" --test-email "$TEST_EMAIL"
 
       - name: Save the run log
-        if: always()
+        if: always() && steps.decide.outputs.heavy == 'true'
         run: |
           git add logs/weekly-email.log logs/weekly-email-state.json 2>/dev/null || true
           if ! git diff --cached --quiet; then

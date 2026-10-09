@@ -270,7 +270,7 @@ def button(label, url, primary=True):
             f'line-height:1.2;">{e(label)}</a>')
 
 
-def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
+def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
     eps, cats, insights, schedule, transcripts = load_site()
     ep = next((x for x in eps if x[0] == ep_id), None)
     if not ep:
@@ -281,7 +281,8 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False):
 
     send_date = send_date or now.date()
     released = parse_ep_date(ep[5])
-    is_new = bool(released and abs((send_date - released).days) <= NEW_WINDOW_DAYS)
+    if is_new is None:  # not told by the tracking sheet, so go by the release date
+        is_new = bool(released and abs((send_date - released).days) <= NEW_WINDOW_DAYS)
     label = "New Episode" if is_new else "From the Archives"
 
     title, presenter, dedication = ep[2], full_name(ep[3]), ep[4]

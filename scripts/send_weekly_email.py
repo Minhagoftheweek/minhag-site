@@ -13,10 +13,17 @@ Run by .github/workflows/weekly-email.yml. Two steps:
                   1:00 PM New York time, and also emails a test copy.
 
     python scripts/send_weekly_email.py weekly --test-email you@example.com
-        The hands-off mode, run on a timer. Reads the episode tracking sheet,
-        finds the row dated the coming Wednesday, and schedules that episode's
-        email if it is not scheduled yet (or swaps it if the sheet now names a
-        different episode). Then runs the same check as "check" below.
+        The hands-off mode, run on a timer. Reads the episode tracking sheet.
+        Any upcoming row with "Yes" in the "Ready for mailchimp?" column gets
+        its email scheduled for that row's date at 1:00 PM New York time, with
+        a test copy sent. "23 (Old)" in the Episode # column means From the
+        Archives; a plain number means a new episode. Changing the episode
+        swaps the email; removing the Yes takes it off the schedule.
+        Then runs the same check as "check" below.
+
+    python scripts/send_weekly_email.py plan
+        Quick look (no Mailchimp, nothing installed) at whether "weekly" has
+        anything to do. Prints heavy=true or heavy=false for the workflow.
 
     python scripts/send_weekly_email.py check --test-email you@example.com
         Run on Wednesday before the send. If the episode's transcript or details
@@ -199,9 +206,10 @@ def cmd_prepare(a):
 
 def cmd_send(a):
     ep_id = a.episode
-    send_at = next_send_time()
+    send_at = getattr(a, "send_at", None) or next_send_time()
+    is_new = getattr(a, "is_new", None)
     has_pdf = os.path.exists(os.path.join(ROOT, build_email.pdf_rel_path(ep_id)))
-    email = build_email.build(ep_id, send_date=send_at.date(), has_pdf=has_pdf)
+    email = build_email.build(ep_id, send_date=send_at.date(), has_pdf=has_pdf, is_new=is_new)
     log(f"Episode {ep_id}: {email['title']} ({email['label']})")
     log(f"Subject: {email['subject']}")
 
@@ -269,7 +277,8 @@ def cmd_send(a):
         log(f"SCHEDULED for {send_at.strftime('%A, %b %d, %Y at %I:%M %p')} New York time.")
         fp_html, fp_tx = fingerprints(ep_id, email["html"])
         state = load_state()
-        state[cid] = {"episode": ep_id, "send_time": when_utc, "fp_html": fp_html, "fp_tx": fp_tx}
+        state[cid] = {"episode": ep_id, "send_time": when_utc, "fp_html": fp_html, "fp_tx": fp_tx,
+                      "is_new": is_new}
         save_state(state)
     else:
         log("Test only: nothing was sent to the list. The draft is saved in Mailchimp, unscheduled.")
@@ -281,28 +290,88 @@ def _fetch(url):
         return r.read().decode("utf-8", "replace")
 
 
-def sheet_row_for(day):
-    """The tracking sheet's row for a given release date.
-    Returns {"episode": text in the Episode # column, "topic": text in Topic} or None."""
-    want = (day.month, day.day, day.year)
-    gid = SHEET_TAB_GIDS.get(day.year)
+def sheet_rows(year):
+    """Rows of the tracking sheet's tab for one year, as dicts with
+    date, episode (Episode # text), topic and ready (True when the
+    "Ready for mailchimp?" column says yes)."""
+    gid = SHEET_TAB_GIDS.get(year)
     base = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
     if gid is not None:
-        text, cols = _fetch(f"{base}/export?format=csv&gid={gid}"), (0, 1, 3)
+        text, cols = _fetch(f"{base}/export?format=csv&gid={gid}"), (0, 1, 3, 5)
     else:
-        # A tab we have no id for yet: read it by name. This route drops text
+        # A tab we have no id for yet: read it by name. This route can drop text
         # like "23 (Old)" from the number column, so the topic is matched instead.
-        text, cols = _fetch(f"{base}/gviz/tq?tqx=out:csv&sheet={day.year}&tq=select%20A,B,D"), (0, 1, 2)
+        text, cols = _fetch(f"{base}/gviz/tq?tqx=out:csv&sheet={year}&tq=select%20A,B,D,F"), (0, 1, 2, 3)
     if "<html" in text[:300].lower():
         raise SystemExit("Could not read the tracking sheet (it may no longer be shared by link).")
+    rows = []
     for row in csv.reader(io.StringIO(text)):
-        if not row:
+        get = lambda i: row[i].strip() if len(row) > i else ""
+        m = re.match(r"(\d{1,2})/(\d{1,2})/(\d{4})$", get(cols[0]))
+        if not m:
             continue
-        m = re.match(r"\s*(\d{1,2})/(\d{1,2})/(\d{4})\s*$", row[cols[0]] if len(row) > cols[0] else "")
-        if m and (int(m.group(1)), int(m.group(2)), int(m.group(3))) == want:
-            get = lambda i: row[i].strip() if len(row) > i else ""
-            return {"episode": get(cols[1]), "topic": get(cols[2])}
-    return None
+        try:
+            day = datetime(int(m.group(3)), int(m.group(1)), int(m.group(2))).date()
+        except ValueError:
+            continue
+        rows.append({"date": day, "episode": get(cols[1]), "topic": get(cols[2]),
+                     "ready": get(cols[3]).lower() in ("yes", "y")})
+    return rows
+
+
+def ready_rows(now):
+    """Upcoming rows marked ready, each with the moment its email should send."""
+    today = now.date()
+    rows = sheet_rows(today.year)
+    if len(rows) < 5:
+        raise SystemExit("The tracking sheet came back nearly empty, so nothing was changed.")
+    if today.month == 12:
+        try:
+            rows += sheet_rows(today.year + 1)
+        except BaseException:
+            pass
+    out = []
+    for r in rows:
+        if not r["ready"] or not (0 <= (r["date"] - today).days <= 60):
+            continue
+        send_at = datetime(r["date"].year, r["date"].month, r["date"].day, SEND_HOUR, 0, tzinfo=NY)
+        if send_at > now + timedelta(minutes=20):
+            out.append(dict(r, send_at=send_at, is_new="old" not in r["episode"].lower()))
+    return out
+
+
+def _state_schedule(state, now):
+    """What our own records say is scheduled: {date: episode} for future sends."""
+    have = {}
+    for v in state.values():
+        try:
+            when = datetime.fromisoformat(v["send_time"].replace("Z", "+00:00")).astimezone(NY)
+        except Exception:
+            continue
+        if when > now:
+            have[when.date()] = v.get("episode")
+    return have
+
+
+def cmd_plan(a):
+    """Prints heavy=true when the sheet and our records disagree."""
+    heavy = False
+    try:
+        now = datetime.now(NY)
+        eps = build_email.load_site()[0]
+        want = {}
+        for r in ready_rows(now):
+            ep, problem = resolve_episode(r, eps)
+            if ep:
+                want[r["date"]] = ep[0]
+            else:
+                print(f"Row {r['date']}: marked ready but {problem}.", file=sys.stderr)
+        have = _state_schedule(load_state(), now)
+        heavy = want != have
+        print(f"Sheet wants {want}; scheduled {have}.", file=sys.stderr)
+    except BaseException as err:
+        print(f"Quick look failed, will try again next time: {err}", file=sys.stderr)
+    print(f"heavy={'true' if heavy else 'false'}")
 
 
 def _words(t):
@@ -337,43 +406,71 @@ def resolve_episode(row, eps):
 
 
 def cmd_auto(a):
-    """Schedules the coming Wednesday's email from the tracking sheet."""
-    send_at = next_send_time()
-    day = send_at.date()
-    label = send_at.strftime("%A, %b %d")
-    urgent = (send_at - datetime.now(NY)) < timedelta(hours=4)
-    row = sheet_row_for(day)
+    """Makes Mailchimp's schedule match the tracking sheet's "Ready" rows."""
+    now = datetime.now(NY)
     eps = build_email.load_site()[0]
-    ep, problem = resolve_episode(row, eps) if row else (None, "the sheet has no row for that date")
-    if not ep:
-        log(f"Auto: nothing scheduled for {label}: {problem}.")
-        if urgent:
-            raise SystemExit(f"The {label} email is NOT scheduled: {problem}.")
-        return
-    ep_id = ep[0]
+    rows = ready_rows(now)
+    today_row_problem = None
 
     fields = "campaigns.id,campaigns.send_time,campaigns.settings.title"
-    sched = mc("GET", f"/campaigns?status=schedule&count=100&fields={fields}")
-    for c in sched.get("campaigns", []):
+    sched = {}
+    for c in mc("GET", f"/campaigns?status=schedule&count=100&fields={fields}").get("campaigns", []):
         title = c.get("settings", {}).get("title") or ""
-        if not title.startswith(TITLE_PREFIX):
-            continue
-        when = datetime.fromisoformat(c["send_time"].replace("Z", "+00:00")).astimezone(NY)
-        if when.date() != day:
-            continue
         m = re.search(r"Episode (\d+)", title)
-        if m and int(m.group(1)) == ep_id:
-            log(f"Auto: episode {ep_id} is already scheduled for {label}. Nothing to do.")
-            return
-        mc("POST", f"/campaigns/{c['id']}/actions/unschedule")
-        mc("DELETE", f"/campaigns/{c['id']}")
-        log(f"Auto: the sheet now says episode {ep_id} for {label}, so the email that was scheduled "
-            f"({title}) was removed.")
+        if title.startswith(TITLE_PREFIX) and m:
+            when = datetime.fromisoformat(c["send_time"].replace("Z", "+00:00")).astimezone(NY)
+            sched[when.date()] = (c["id"], int(m.group(1)), c["send_time"])
 
-    log(f"Auto: the sheet says episode {ep_id} (\"{ep[2]}\") for {label}. Scheduling it.")
-    cmd_prepare(_argparse.Namespace(episode=ep_id))
-    publish_assets(f"Weekly email assets for episode {ep_id}")
-    cmd_send(_argparse.Namespace(episode=ep_id, mode="schedule", test_email=a.test_email))
+    state = load_state()
+    keep_dates = set()
+    for r in rows:
+        day, label = r["date"], r["send_at"].strftime("%A, %b %d")
+        keep_dates.add(day)
+        ep, problem = resolve_episode(r, eps)
+        if not ep:
+            log(f"Auto: {label} is marked ready but {problem}. Left as is.")
+            if day == now.date():
+                today_row_problem = f"The {label} email is NOT scheduled: {problem}."
+            continue
+        ep_id = ep[0]
+        if day in sched and sched[day][1] == ep_id:
+            cid = sched[day][0]
+            if cid not in state:
+                state[cid] = {"episode": ep_id, "send_time": sched[day][2], "is_new": r["is_new"]}
+                save_state(state)
+            log(f"Auto: episode {ep_id} is already scheduled for {label}.")
+            continue
+        if day in sched:
+            mc("POST", f"/campaigns/{sched[day][0]}/actions/unschedule")
+            mc("DELETE", f"/campaigns/{sched[day][0]}")
+            state.pop(sched[day][0], None)
+            save_state(state)
+            log(f"Auto: the sheet now says episode {ep_id} for {label}, so episode {sched[day][1]}'s email was removed.")
+        kind = "new episode" if r["is_new"] else "from the archives"
+        log(f"Auto: the sheet says episode {ep_id} (\"{ep[2]}\", {kind}) is ready for {label}. Scheduling it.")
+        cmd_prepare(_argparse.Namespace(episode=ep_id))
+        publish_assets(f"Weekly email assets for episode {ep_id}")
+        cmd_send(_argparse.Namespace(episode=ep_id, mode="schedule", test_email=a.test_email,
+                                     send_at=r["send_at"], is_new=r["is_new"]))
+        state = load_state()
+
+    # A scheduled email whose row no longer says Yes comes off the schedule (kept as a draft).
+    for day, (cid, ep_id, _) in sched.items():
+        if day in keep_dates or day < now.date() or (day - now.date()).days > 60:
+            continue
+        mc("POST", f"/campaigns/{cid}/actions/unschedule")
+        state.pop(cid, None)
+        log(f"Auto: {day.strftime('%A, %b %d')} is no longer marked ready, so episode {ep_id}'s email was "
+            f"taken off the schedule. It is saved in Mailchimp as a draft.")
+
+    # Forget sends that are in the past.
+    for cid in [k for k, v in state.items()
+                if datetime.fromisoformat(v["send_time"].replace("Z", "+00:00")) < datetime.now(timezone.utc) - timedelta(days=1)]:
+        state.pop(cid)
+    save_state(state)
+
+    if today_row_problem:
+        raise SystemExit(today_row_problem)
 
 
 def cmd_weekly(a):
@@ -420,9 +517,10 @@ def cmd_check(a):
 
         send_date = send_time.astimezone(NY).date()
         has_pdf = os.path.exists(os.path.join(ROOT, build_email.pdf_rel_path(ep_id)))
-        email = build_email.build(ep_id, send_date=send_date, has_pdf=has_pdf)
-        fp_html, fp_tx = fingerprints(ep_id, email["html"])
         old = state.get(cid, {})
+        is_new = old.get("is_new")
+        email = build_email.build(ep_id, send_date=send_date, has_pdf=has_pdf, is_new=is_new)
+        fp_html, fp_tx = fingerprints(ep_id, email["html"])
         tx_changed = old.get("fp_tx") != fp_tx
         html_changed = old.get("fp_html") != fp_html or c["settings"].get("subject_line") != email["subject"]
         if not tx_changed and not html_changed:
@@ -436,7 +534,7 @@ def cmd_check(a):
                 publish_assets(f"Weekly email: refreshed PDF for episode {ep_id}")
                 log(f"Check: transcript changed, so the PDF for episode {ep_id} was rebuilt.")
                 if not has_pdf:
-                    email = build_email.build(ep_id, send_date=send_date, has_pdf=True)
+                    email = build_email.build(ep_id, send_date=send_date, has_pdf=True, is_new=is_new)
                     fp_html, _ = fingerprints(ep_id, email["html"])
                     html_changed = True
             except SystemExit:
@@ -465,7 +563,8 @@ def cmd_check(a):
                     log(f"Check: updated test copy sent to {a.test_email}.")
                 except SystemExit as err:
                     log(f"Check: could not send the updated test copy ({err.code}). The email is still scheduled.")
-        state[cid] = {"episode": ep_id, "send_time": c["send_time"], "fp_html": fp_html, "fp_tx": fp_tx}
+        state[cid] = {"episode": ep_id, "send_time": c["send_time"], "fp_html": fp_html, "fp_tx": fp_tx,
+                      "is_new": is_new}
         save_state(state)
 
 
@@ -482,9 +581,11 @@ def main():
     k.add_argument("--test-email", default="")
     w = sub.add_parser("weekly")
     w.add_argument("--test-email", default="")
+    sub.add_parser("plan")
     a = ap.parse_args()
     try:
-        {"prepare": cmd_prepare, "send": cmd_send, "check": cmd_check, "weekly": cmd_weekly}[a.cmd](a)
+        {"prepare": cmd_prepare, "send": cmd_send, "check": cmd_check, "weekly": cmd_weekly,
+         "plan": cmd_plan}[a.cmd](a)
     except SystemExit as err:
         if err.code not in (0, None):
             log(f"FAILED: {err.code}")
