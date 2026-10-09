@@ -1,19 +1,26 @@
 name: Weekly email
 
 # Builds the Minhag of the Week email for one episode and puts it in Mailchimp.
+#
+# Hands-off: on a timer it reads the episode tracking sheet, finds the row dated
+# the coming Wednesday, and schedules that episode for 1:00 PM New York time.
+# On Wednesday it re-checks the site and refreshes the email if anything changed.
+#
+# By hand (Run workflow):
 #   mode "test":     saves a draft and emails a test copy. Nothing goes to the list.
-#   mode "schedule": schedules it for the coming Wednesday at 1:00 PM New York time.
+#   mode "schedule": schedules the episode you type for the coming Wednesday.
+#   mode "auto":     does right now what the timer does (episode box is ignored).
 
 on:
   workflow_dispatch:
     inputs:
       episode:
-        description: "Episode number (for example 23)"
-        required: true
+        description: "Episode number (for example 23). Ignored in auto mode."
+        required: false
       mode:
-        description: "test = draft + test copy only; schedule = schedule for Wednesday 1:00 PM"
+        description: "test = draft + test copy only; schedule = schedule for Wednesday 1:00 PM; auto = read the tracking sheet"
         type: choice
-        options: [test, schedule]
+        options: [test, schedule, auto]
         default: test
       test_email:
         description: "Where to send the test copy"
@@ -21,9 +28,12 @@ on:
   repository_dispatch:
     types: [weekly_email]
   schedule:
-    # Wednesday pre-send check. In New York time this is 11 AM, 12 PM and 1 PM
-    # in summer and 10 AM, 11 AM and 12 PM in winter. A run that lands less
-    # than 20 minutes before the send leaves the email alone.
+    # Every morning (9 AM New York in summer, 8 AM in winter): schedule the
+    # coming Wednesday's email from the tracking sheet if it isn't scheduled yet.
+    - cron: "0 13 * * *"
+    # Wednesday before the send (11 AM, 12 PM, 1 PM New York in summer; 10 AM,
+    # 11 AM, 12 PM in winter): catch a late entry and refresh the email if the
+    # site changed. A run less than 20 minutes before the send changes nothing.
     - cron: "0 15,16,17 * * 3"
 
 permissions:
@@ -52,21 +62,21 @@ jobs:
           pip install --quiet pillow playwright
           python -m playwright install --with-deps chromium
 
-      - name: Wednesday check (refresh the scheduled email if the site changed)
-        if: github.event_name == 'schedule'
+      - name: Hands-off run (schedule from the tracking sheet, then pre-send check)
+        if: github.event_name == 'schedule' || env.MODE == 'auto'
         env:
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          python scripts/send_weekly_email.py check --test-email "vdweck1@gmail.com"
+          python scripts/send_weekly_email.py weekly --test-email "vdweck1@gmail.com"
 
       - name: Build images and PDF
-        if: github.event_name != 'schedule'
+        if: github.event_name != 'schedule' && env.MODE != 'auto'
         run: python scripts/send_weekly_email.py prepare "$EPISODE"
 
       - name: Publish images and PDF to the site
-        if: github.event_name != 'schedule'
+        if: github.event_name != 'schedule' && env.MODE != 'auto'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -82,7 +92,7 @@ jobs:
           fi
 
       - name: Create the email in Mailchimp
-        if: github.event_name != 'schedule'
+        if: github.event_name != 'schedule' && env.MODE != 'auto'
         env:
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
         run: python scripts/send_weekly_email.py send "$EPISODE" --mode "$MODE" --test-email "$TEST_EMAIL"

@@ -12,6 +12,12 @@ Run by .github/workflows/weekly-email.yml. Two steps:
         schedule: makes the campaign, schedules it for the coming Wednesday at
                   1:00 PM New York time, and also emails a test copy.
 
+    python scripts/send_weekly_email.py weekly --test-email you@example.com
+        The hands-off mode, run on a timer. Reads the episode tracking sheet,
+        finds the row dated the coming Wednesday, and schedules that episode's
+        email if it is not scheduled yet (or swaps it if the sheet now names a
+        different episode). Then runs the same check as "check" below.
+
     python scripts/send_weekly_email.py check --test-email you@example.com
         Run on Wednesday before the send. If the episode's transcript or details
         changed on the website since the email was scheduled, the scheduled
@@ -22,7 +28,10 @@ The audience, "from" name and reply-to address are copied from the most recent
 Minhag of the Week email that was sent, so this always goes to the same people.
 """
 import argparse
+import argparse as _argparse
 import base64
+import csv
+import io
 import hashlib
 import re
 import subprocess
@@ -44,6 +53,10 @@ LOG_PATH = os.path.join(ROOT, "logs", "weekly-email.log")
 STATE_PATH = os.path.join(ROOT, "logs", "weekly-email-state.json")
 TITLE_PREFIX = "Minhag Auto"  # internal campaign name in Mailchimp, never shown to readers
 SEND_WEEKDAY, SEND_HOUR = 2, 13  # Wednesday, 1:00 PM New York time
+
+# The episode tracking sheet. Each year has its own tab, named for the year.
+SHEET_ID = "1Zrh6pF5CA2KQTupnb3QLNKjuVD1JcwE3aFoqls8D9iQ"
+SHEET_TAB_GIDS = {2026: 916376778}
 
 _log_lines = []
 
@@ -262,6 +275,123 @@ def cmd_send(a):
         log("Test only: nothing was sent to the list. The draft is saved in Mailchimp, unscheduled.")
 
 
+def _fetch(url):
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def sheet_row_for(day):
+    """The tracking sheet's row for a given release date.
+    Returns {"episode": text in the Episode # column, "topic": text in Topic} or None."""
+    want = (day.month, day.day, day.year)
+    gid = SHEET_TAB_GIDS.get(day.year)
+    base = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}"
+    if gid is not None:
+        text, cols = _fetch(f"{base}/export?format=csv&gid={gid}"), (0, 1, 3)
+    else:
+        # A tab we have no id for yet: read it by name. This route drops text
+        # like "23 (Old)" from the number column, so the topic is matched instead.
+        text, cols = _fetch(f"{base}/gviz/tq?tqx=out:csv&sheet={day.year}&tq=select%20A,B,D"), (0, 1, 2)
+    if "<html" in text[:300].lower():
+        raise SystemExit("Could not read the tracking sheet (it may no longer be shared by link).")
+    for row in csv.reader(io.StringIO(text)):
+        if not row:
+            continue
+        m = re.match(r"\s*(\d{1,2})/(\d{1,2})/(\d{4})\s*$", row[cols[0]] if len(row) > cols[0] else "")
+        if m and (int(m.group(1)), int(m.group(2)), int(m.group(3))) == want:
+            get = lambda i: row[i].strip() if len(row) > i else ""
+            return {"episode": get(cols[1]), "topic": get(cols[2])}
+    return None
+
+
+def _words(t):
+    return {w for w in re.sub(r"[^a-z0-9 ]", " ", (t or "").lower()).split() if len(w) >= 4}
+
+
+def resolve_episode(row, eps):
+    """Turns a sheet row into a website episode. Returns (episode, problem)."""
+    num = re.search(r"\d+(?:\.\d+)?", row["episode"])
+    ep = None
+    if num:
+        n = float(num.group(0))
+        ep = next((e for e in eps if float(re.sub(r"^Ep\.\s*", "", e[1])) == n), None)
+        if not ep:
+            return None, f"episode {num.group(0)} is not on the website yet"
+        # Guard against a typo in the number: the sheet's topic should resemble the site's title.
+        if row["topic"] and not (_words(row["topic"]) & _words(ep[2])):
+            return None, (f"the sheet says episode {num.group(0)} is \"{row['topic']}\" but on the website "
+                          f"episode {num.group(0)} is \"{ep[2]}\"")
+    elif row["topic"]:
+        norm = lambda t: re.sub(r"[^a-z0-9]", "", t.lower())
+        ep = next((e for e in eps if norm(e[2]) == norm(row["topic"])), None)
+        if not ep:
+            return None, f"could not match \"{row['topic']}\" to an episode on the website"
+    else:
+        return None, "no episode is entered"
+    if not isinstance(ep[0], int):
+        return None, f"\"{ep[2]}\" has no whole episode number, so it needs to be scheduled by hand"
+    if not os.path.exists(os.path.join(ROOT, "images", f"episode-{ep[0]}-thumb.jpg")):
+        return None, f"episode {ep[0]} has no thumbnail on the website yet"
+    return ep, None
+
+
+def cmd_auto(a):
+    """Schedules the coming Wednesday's email from the tracking sheet."""
+    send_at = next_send_time()
+    day = send_at.date()
+    label = send_at.strftime("%A, %b %d")
+    urgent = (send_at - datetime.now(NY)) < timedelta(hours=4)
+    row = sheet_row_for(day)
+    eps = build_email.load_site()[0]
+    ep, problem = resolve_episode(row, eps) if row else (None, "the sheet has no row for that date")
+    if not ep:
+        log(f"Auto: nothing scheduled for {label}: {problem}.")
+        if urgent:
+            raise SystemExit(f"The {label} email is NOT scheduled: {problem}.")
+        return
+    ep_id = ep[0]
+
+    fields = "campaigns.id,campaigns.send_time,campaigns.settings.title"
+    sched = mc("GET", f"/campaigns?status=schedule&count=100&fields={fields}")
+    for c in sched.get("campaigns", []):
+        title = c.get("settings", {}).get("title") or ""
+        if not title.startswith(TITLE_PREFIX):
+            continue
+        when = datetime.fromisoformat(c["send_time"].replace("Z", "+00:00")).astimezone(NY)
+        if when.date() != day:
+            continue
+        m = re.search(r"Episode (\d+)", title)
+        if m and int(m.group(1)) == ep_id:
+            log(f"Auto: episode {ep_id} is already scheduled for {label}. Nothing to do.")
+            return
+        mc("POST", f"/campaigns/{c['id']}/actions/unschedule")
+        mc("DELETE", f"/campaigns/{c['id']}")
+        log(f"Auto: the sheet now says episode {ep_id} for {label}, so the email that was scheduled "
+            f"({title}) was removed.")
+
+    log(f"Auto: the sheet says episode {ep_id} (\"{ep[2]}\") for {label}. Scheduling it.")
+    cmd_prepare(_argparse.Namespace(episode=ep_id))
+    publish_assets(f"Weekly email assets for episode {ep_id}")
+    cmd_send(_argparse.Namespace(episode=ep_id, mode="schedule", test_email=a.test_email))
+
+
+def cmd_weekly(a):
+    failure = None
+    try:
+        cmd_auto(a)
+    except SystemExit as err:
+        failure = err
+        if err.code not in (0, None):
+            log(f"FAILED: {err.code}")
+    except Exception as err:
+        failure = SystemExit(f"{type(err).__name__}: {err}")
+        log(f"FAILED: {failure.code}")
+    cmd_check(a)
+    if failure and failure.code not in (0, None):
+        raise SystemExit(1)
+
+
 def cmd_check(a):
     """Wednesday pre-send check: refresh the scheduled email if the site changed."""
     now = datetime.now(timezone.utc)
@@ -350,9 +480,11 @@ def main():
     s.add_argument("--test-email", default="")
     k = sub.add_parser("check")
     k.add_argument("--test-email", default="")
+    w = sub.add_parser("weekly")
+    w.add_argument("--test-email", default="")
     a = ap.parse_args()
     try:
-        {"prepare": cmd_prepare, "send": cmd_send, "check": cmd_check}[a.cmd](a)
+        {"prepare": cmd_prepare, "send": cmd_send, "check": cmd_check, "weekly": cmd_weekly}[a.cmd](a)
     except SystemExit as err:
         if err.code not in (0, None):
             log(f"FAILED: {err.code}")
@@ -361,7 +493,7 @@ def main():
         log(f"FAILED: {type(err).__name__}: {err}")
         raise
     finally:
-        if a.cmd in ("send", "check"):
+        if a.cmd in ("send", "check", "weekly"):
             write_log()
 
 
