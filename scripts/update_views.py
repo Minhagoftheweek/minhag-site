@@ -23,6 +23,7 @@ rather than the whole job failing silently.
 import json
 import os
 import sys
+import time
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -347,6 +348,23 @@ def get_instagram_total_views(access_token, account_id):
                 cache["backfill_complete"] = True
                 save_instagram_cache(cache)
                 break
+
+    # ── Refresh view counts on already-known Minhag posts (once a day each).
+    #    The cache only ever holds posts whose caption has #SCAMinhagOfTheWeek,
+    #    so other reels on the account are never touched. A new number only
+    #    replaces the old one if it's higher (a glitchy lookup can't lower it).
+    now_ts = int(time.time())
+    refreshed_views = 0
+    for media_id, entry in cache["media"].items():
+        if now_ts - entry.get("views_refreshed_at", 0) < 86400:
+            continue
+        v = fetch_media_view_count(media_id, access_token)
+        entry["views_refreshed_at"] = now_ts
+        if v is not None and v > entry.get("views", 0):
+            entry["views"] = v
+            entry["views_unavailable"] = False
+            refreshed_views += 1
+    save_instagram_cache(cache)
 
     total_views = sum(v["views"] for v in cache["media"].values())
     views_unavailable_count = sum(1 for v in cache["media"].values() if v.get("views_unavailable"))

@@ -2,7 +2,7 @@ name: Update total view count
 
 on:
   push:
-    paths: ['scripts/ig_token.py']
+    paths: ['scripts/ig_token.py', 'scripts/update_views.py']
   schedule:
     - cron: '0 */3 * * *'
   workflow_dispatch: {}
