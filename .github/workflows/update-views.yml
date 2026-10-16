@@ -1,6 +1,8 @@
 name: Update total view count
 
 on:
+  push:
+    paths: ['scripts/ig_token.py']
   schedule:
     - cron: '0 */3 * * *'
   workflow_dispatch: {}
@@ -11,6 +13,7 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   update-views:
@@ -24,12 +27,30 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Keep Instagram token alive (auto-refresh)
+        id: igtoken
+        continue-on-error: true
+        env:
+          TOKEN_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        run: python scripts/ig_token.py
+
+      - name: Email alert if Instagram token is dead
+        if: steps.igtoken.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          T="Instagram view count connection expired - needs new token"
+          if [ -z "$(gh issue list -R ${{ github.repository }} --state open --search "$T in:title" --json number -q '.[].number')" ]; then
+            gh issue create -R ${{ github.repository }} --title "$T" --body "The Instagram token stopped working, so the homepage Instagram views are frozen. Ask Claude to generate a new token and update the INSTAGRAM_ACCESS_TOKEN secret."
+          fi
+
       - name: Pull view counts and update data file
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YOUTUBE_PLAYLIST_ID: 'PLS3KTNjJqUerF8CfHShZg1HCKhgEiaJS8'
           SPROUTVIDEO_API_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
-          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+          INSTAGRAM_ACCESS_TOKEN: ${{ env.INSTAGRAM_ACCESS_TOKEN || secrets.INSTAGRAM_ACCESS_TOKEN }}
           INSTAGRAM_BUSINESS_ACCOUNT_ID: ${{ secrets.INSTAGRAM_BUSINESS_ACCOUNT_ID }}
         run: python scripts/update_views.py
 
@@ -37,7 +58,8 @@ jobs:
         run: |
           git config user.name "view-count-bot"
           git config user.email "actions@github.com"
-          git add data/view-count.json data/instagram-cache.json
+          git add data/view-count.json data/instagram-cache.json data/ig-token-state.json
+          [ -f data/ig-token.enc ] && git add data/ig-token.enc
           if ! git diff --cached --quiet; then
             git commit -m "Auto-update total view count"
             for i in 1 2 3 4 5; do
