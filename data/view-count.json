@@ -1,5 +1,5 @@
 {
-  "total_views": 422932,
+  "total_views": 429382,
   "breakdown": {
     "youtube": {
       "views": 132587,
@@ -10,9 +10,9 @@
       "video_count": 316
     },
     "instagram": {
-      "views": 286306,
-      "note": "105,764 legacy baseline (pre-2023, API-inaccessible episodes) + 180,542 live API total = 286,306; 130 tagged videos indexed live (0 newly found this run); full history scan complete (walked back to 2015); NEW matches found during backfill this run (by type): {}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
+      "views": 292756,
+      "note": "105,764 legacy baseline (pre-2023, API-inaccessible episodes) + 186,992 live API total = 292,756; 130 tagged videos indexed live (0 newly found this run); full history scan complete (walked back to 2015); NEW matches found during backfill this run (by type): {}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
     }
   },
-  "updated_at": "2026-10-16T15:23:26.172051+00:00"
+  "updated_at": "2026-10-16T15:28:35.640217+00:00"
 }
