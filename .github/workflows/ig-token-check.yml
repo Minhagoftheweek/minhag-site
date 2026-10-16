@@ -1,0 +1,29 @@
+name: Instagram token check
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/ig-token-check.yml']
+permissions:
+  contents: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test token
+        env:
+          T: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        run: |
+          mkdir -p logs
+          curl -s "https://graph.instagram.com/me?fields=id,username,media_count&access_token=$T" > /tmp/me.json || true
+          curl -s "https://graph.instagram.com/me/media?fields=id,timestamp&limit=1&access_token=$T" > /tmp/media.json || true
+          python3 - <<'PY'
+          import json,datetime
+          out={"checked_at":datetime.datetime.utcnow().isoformat()+"Z"}
+          for k in ["me","media"]:
+              try: out[k]=json.load(open(f"/tmp/{k}.json"))
+              except Exception as e: out[k]=str(e)
+          open("logs/ig-token-check.json","w").write(json.dumps(out,indent=1))
+          PY
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add logs/ig-token-check.json; git commit -m "Instagram token check result" && git pull --rebase -q && git push
