@@ -30,9 +30,10 @@ on:
   repository_dispatch:
     types: [weekly_email]
   schedule:
-    # Quick look at the tracking sheet every 5 minutes (the fastest GitHub allows).
+    # Backup look at the tracking sheet every 6 hours. The sheet itself triggers this
+    # instantly when a "Ready for mailchimp?" Yes is added or removed.
     # It only does real work when a row's "Ready for mailchimp?" changed.
-    - cron: "*/5 * * * *"
+    - cron: "0 */6 * * *"
     # Wednesday before the send (11 AM, 12 PM, 1 PM New York in summer; 10 AM,
     # 11 AM, 12 PM in winter): refresh the email if the site changed. A run
     # less than 20 minutes before the send changes nothing.
