@@ -296,7 +296,17 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
 
     # Archive emails: the title only. New episodes: "Episode 308: Title".
     subject = title if not is_new else f"{num}: {title}"
-    preheader = f"{num} with {presenter}. Watch it now, or read the transcript."
+    # Inbox preview line: "Teacher Name | first words of the transcript..."
+    # Long enough to fill wide screens; always ends in "..." so it never looks
+    # cut off mid-word, even on clients that don't add their own ellipsis.
+    words = " ".join(tx.split()).split(" ") if tx else []
+    snippet = ""
+    for w in words:
+        if len(snippet) + len(w) + 1 > 110:
+            break
+        snippet = f"{snippet} {w}".strip()
+    snippet = snippet.rstrip(".,;:!?-")
+    preheader = f"{presenter} | {snippet}..." if snippet else presenter
 
     # Archive emails mark the label with an asterisk and tie it to the air date.
     top_label = "New Episode" if is_new else "*From the Archives"
