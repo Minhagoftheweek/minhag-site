@@ -87,6 +87,7 @@ jobs:
         if: steps.decide.outputs.heavy == 'true' && env.HANDS_OFF == 'true'
         env:
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          APPROVE_URL: ${{ secrets.APPROVE_URL }}
         run: python scripts/send_weekly_email.py weekly --test-email "vdweck1@gmail.com"
 
       - name: Build images and PDF
@@ -111,6 +112,7 @@ jobs:
         if: env.HANDS_OFF != 'true'
         env:
           MAILCHIMP_API_KEY: ${{ secrets.MAILCHIMP_API_KEY }}
+          APPROVE_URL: ${{ secrets.APPROVE_URL }}
         run: python scripts/send_weekly_email.py send "$EPISODE" --mode "$MODE" --test-email "$TEST_EMAIL"
 
       - name: Save the run log

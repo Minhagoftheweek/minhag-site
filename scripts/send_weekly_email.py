@@ -210,7 +210,9 @@ def cmd_send(a):
     send_at = getattr(a, "send_at", None) or next_send_time()
     is_new = getattr(a, "is_new", None)
     has_pdf = os.path.exists(os.path.join(ROOT, build_email.pdf_rel_path(ep_id)))
-    email = build_email.build(ep_id, send_date=send_at.date(), has_pdf=has_pdf, is_new=is_new)
+    approve_url = os.environ.get("APPROVE_URL") if a.mode == "test" else None
+    email = build_email.build(ep_id, send_date=send_at.date(), has_pdf=has_pdf, is_new=is_new,
+                              approve_url=approve_url)
     log(f"Episode {ep_id}: {email['title']} ({email['label']})")
     log(f"Subject: {email['subject']}")
 

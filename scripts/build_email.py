@@ -270,7 +270,7 @@ def button(label, url, primary=True):
             f'line-height:1.2;white-space:nowrap;">{e(label)}</a>')
 
 
-def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
+def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None, approve_url=None):
     eps, cats, insights, schedule, transcripts = load_site()
     ep = next((x for x in eps if x[0] == ep_id), None)
     if not ep:
@@ -345,6 +345,18 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
             </table>
           </td></tr>"""
 
+    approve_html = ""
+    if approve_url:
+        # Only in Victor's test copy, never in the email that goes to the list.
+        link = f"{approve_url}{'&' if '?' in approve_url else '?'}ep={ep_id}&date={send_date.isoformat()}"
+        when = send_date.strftime("%A, %b %-d") + " at 1:00 PM"
+        approve_html = f"""
+    <tr><td align="center" style="padding:20px 20px 22px 20px;background:#fff7d6;border-bottom:1px solid #e8d48a;">
+      <div style="font-family:{SANS};font-size:14px;color:#5a4a00;padding-bottom:12px;">Test copy. This email is not scheduled yet.</div>
+      <a href="{e(link)}" target="_blank" style="display:inline-block;background:#1e8e3e;color:#ffffff;font-family:{SANS};font-weight:bold;font-size:17px;text-decoration:none;padding:14px 30px;border-radius:6px;white-space:nowrap;">Approve</a>
+      <div style="font-family:{SANS};font-size:13px;color:#5a4a00;padding-top:10px;">Sends to the list {e(when)}</div>
+    </td></tr>"""
+
     ins_html = ""
     items = insights.get(ep_id) or []
     if items:
@@ -397,7 +409,7 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
 
   <table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border:1px solid {BORDER};border-radius:10px;overflow:hidden;">
 
-    <tr><td align="center" style="padding:18px 20px 16px 20px;border-bottom:3px solid {PURPLE};background:#ffffff;">
+{approve_html}    <tr><td align="center" style="padding:18px 20px 16px 20px;border-bottom:3px solid {PURPLE};background:#ffffff;">
       <a href="{SITE}" target="_blank"><img src="{asset_base}/images/email/logo.png" width="170" alt="Sephardic Community Alliance" style="display:block;width:170px;height:auto;border:0;"></a>
     </td></tr>
 
