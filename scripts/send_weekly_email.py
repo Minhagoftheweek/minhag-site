@@ -59,6 +59,9 @@ NY = ZoneInfo("America/New_York")
 LOG_PATH = os.path.join(ROOT, "logs", "weekly-email.log")
 STATE_PATH = os.path.join(ROOT, "logs", "weekly-email-state.json")
 TESTS_PATH = os.path.join(ROOT, "logs", "weekly-email-tests.json")  # {date: episode} test copies already sent
+# "Approve" button in test copies: the tracking sheet's Apps Script web app (apps_script/Approve.gs).
+APPROVE_URL = ("https://script.google.com/macros/s/"
+               "AKfycbxhsvXhUHyyk3GcbBJ4SPp17x3rbzo3E5SUlKmr7m1SV3iQtIiJiQLHO1Lhc41bCI2J/exec")
 TITLE_PREFIX = "Minhag Auto"  # internal campaign name in Mailchimp, never shown to readers
 SEND_WEEKDAY, SEND_HOUR = 2, 13  # Wednesday, 1:00 PM New York time
 
@@ -210,7 +213,7 @@ def cmd_send(a):
     send_at = getattr(a, "send_at", None) or next_send_time()
     is_new = getattr(a, "is_new", None)
     has_pdf = os.path.exists(os.path.join(ROOT, build_email.pdf_rel_path(ep_id)))
-    approve_url = os.environ.get("APPROVE_URL") if a.mode == "test" else None
+    approve_url = (os.environ.get("APPROVE_URL") or APPROVE_URL) if a.mode == "test" else None
     email = build_email.build(ep_id, send_date=send_at.date(), has_pdf=has_pdf, is_new=is_new,
                               approve_url=approve_url)
     log(f"Episode {ep_id}: {email['title']} ({email['label']})")
