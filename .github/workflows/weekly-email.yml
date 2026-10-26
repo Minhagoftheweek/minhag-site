@@ -2,9 +2,10 @@ name: Weekly email
 
 # Builds the Minhag of the Week email for one episode and puts it in Mailchimp.
 #
-# Hands-off: every 5 minutes it reads the episode tracking sheet. Any upcoming
-# row with "Yes" in the "Ready for mailchimp?" column gets its email scheduled
-# for that row's date at 1:00 PM New York time, and a test copy is sent.
+# Hands-off: the tracking sheet triggers this when column F ("Ready for mailchimp?")
+# changes. "Yes" = build the email and send Victor a test copy (NOT scheduled).
+# "Approved" = schedule it for that row's date at 1:00 PM New York time.
+# If release day comes and the row is still only "Yes", Victor gets an alert.
 # "23 (Old)" in Episode # = From the Archives; a plain number = new episode.
 # On Wednesday it re-checks the site and refreshes the email if anything changed.
 #
@@ -41,6 +42,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: weekly-email
@@ -114,11 +116,30 @@ jobs:
       - name: Save the run log
         if: always() && steps.decide.outputs.heavy == 'true'
         run: |
-          git add logs/weekly-email.log logs/weekly-email-state.json 2>/dev/null || true
+          git add logs/weekly-email.log logs/weekly-email-state.json logs/weekly-email-tests.json 2>/dev/null || true
           if ! git diff --cached --quiet; then
             git commit -m "Weekly email log"
             for i in 1 2 3 4 5; do
               git pull --rebase && git push && break
               sleep 5
             done
+          fi
+
+      - name: Alert Victor if something needs attention
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_ALERT_TO: ${{ secrets.WHAPI_ALERT_TO }}
+        run: |
+          REASON=$(grep "FAILED:" logs/weekly-email.log 2>/dev/null | tail -1 | sed 's/.*FAILED: //' | cut -c1-400)
+          [ -z "$REASON" ] && REASON="The weekly email job hit an error."
+          MSG="Minhag of the Week email: $REASON
+
+          Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh issue create -R ${{ github.repository }} --title "Weekly email needs attention" --body "$MSG" || true
+          if [ -n "$WHAPI_TOKEN" ] && [ -n "$WHAPI_ALERT_TO" ]; then
+            jq -n --arg to "$WHAPI_ALERT_TO" --arg body "$MSG" '{to:$to, body:$body}' \
+              | curl -sS -X POST https://gate.whapi.cloud/messages/text \
+                  -H "Authorization: Bearer $WHAPI_TOKEN" -H "Content-Type: application/json" -d @-
           fi

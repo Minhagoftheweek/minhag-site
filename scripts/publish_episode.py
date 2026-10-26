@@ -88,7 +88,7 @@ def find_sprout_video(episode_num):
     return None
 
 
-def make_thumbnail(episode_num, video_id, security_token, video_480_url, duration):
+def make_thumbnail(episode_num, video_id, security_token, video_480_url, duration, at_seconds=None):
     """Download the video, extract a real mid-video frame, upload as custom poster frame."""
     local_mp4 = "/tmp/_ep_video.mp4"
     local_jpg = "/tmp/_ep_frame.jpg"
@@ -97,12 +97,10 @@ def make_thumbnail(episode_num, video_id, security_token, video_480_url, duratio
     with urllib.request.urlopen(req) as resp, open(local_mp4, "wb") as f:
         f.write(resp.read())
 
-    midpoint = max(1, int(duration / 2))
-    subprocess.run(
-        ["ffmpeg", "-y", "-ss", str(midpoint), "-i", local_mp4,
-         "-frames:v", "1", "-q:v", "2", local_jpg],
-        check=True, capture_output=True,
-    )
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from thumbnail import choose_frame
+    chosen = choose_frame(local_mp4, duration, local_jpg, at_seconds)
+    print(f"Thumbnail frame taken at {chosen:.1f}s of {duration}s")
 
     # Upload as custom poster frame (multipart/form-data)
     boundary = "----minhagpublish"
@@ -350,9 +348,8 @@ def main():
 
     slug = make_preview_page(episode_num, topic, presenter, og_image_url)
 
-    release_dt = datetime.now(ZoneInfo("America/New_York"))
-    display_date = release_dt.strftime("%b %-d, %Y")
     schedule_iso = next_wednesday_1230_et()
+    display_date = datetime.fromisoformat(schedule_iso).strftime("%b %-d, %Y")
 
     with open(INDEX_HTML, "r", encoding="utf-8") as f:
         html = f.read()

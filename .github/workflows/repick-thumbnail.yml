@@ -1,0 +1,41 @@
+name: Re-pick episode thumbnail
+
+# Run by hand (or by Claude) when an episode's thumbnail is bad (e.g. a blink).
+on:
+  workflow_dispatch:
+    inputs:
+      episode:
+        description: "Episode number (for example 308)"
+        required: true
+      at_seconds:
+        description: "Exact second of the video to use (leave blank to auto-pick a sharp, eyes-open frame)"
+        required: false
+        default: ""
+
+concurrency:
+  group: repick-thumbnail
+  cancel-in-progress: false
+
+jobs:
+  repick:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg && pip install --quiet opencv-python-headless
+      - name: Re-pick thumbnail
+        env:
+          SPROUTVIDEO_API_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
+          EP: ${{ github.event.inputs.episode }}
+          AT: ${{ github.event.inputs.at_seconds }}
+        run: |
+          if [ -n "$AT" ]; then
+            python scripts/repick_thumbnail.py "$EP" --at "$AT"
+          else
+            python scripts/repick_thumbnail.py "$EP"
+          fi

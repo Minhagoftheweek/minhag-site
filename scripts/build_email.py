@@ -267,7 +267,7 @@ def button(label, url, primary=True):
                  "padding:9px 18px;")
     return (f'<a href="{e(url)}" target="_blank" style="display:inline-block;{style}'
             f'font-family:{SANS};font-weight:bold;text-decoration:none;border-radius:6px;'
-            f'line-height:1.2;">{e(label)}</a>')
+            f'line-height:1.2;white-space:nowrap;">{e(label)}</a>')
 
 
 def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
@@ -333,12 +333,12 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
                     f'<a href="{e(read_url)}" target="_blank" style="color:{PURPLE};text-decoration:underline;">'
                     f'Click here to continue reading</a></p>')
         tx_html = f"""
-          <tr><td style="padding:30px 36px 0 36px;">
+          <tr><td class="px" style="padding:30px 36px 0 36px;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid {BORDER};border-top:3px solid {PURPLE};border-radius:8px;">
-              <tr><td style="padding:14px 22px 12px 22px;border-bottom:1px solid {BORDER};">
+              <tr><td class="txhead" style="padding:14px 22px 12px 22px;border-bottom:1px solid {BORDER};">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-                  <td valign="middle" style="font-family:{SANS};font-size:15px;font-weight:bold;color:{NAVY};">Episode Transcript</td>
-                  <td valign="middle" align="right">{pdf_btn}</td>
+                  <td valign="middle" style="font-family:{SANS};font-size:15px;font-weight:bold;color:{NAVY};white-space:nowrap;">Episode Transcript</td>
+                  <td valign="middle" align="right" style="white-space:nowrap;">{pdf_btn}</td>
                 </tr></table>
               </td></tr>
               <tr><td style="padding:20px 22px 22px 22px;">{body}{more}</td></tr>
@@ -386,6 +386,7 @@ def build(ep_id, send_date=None, asset_base=SITE, has_pdf=False, is_new=None):
     .px{{padding-left:20px !important;padding-right:20px !important;}}
     .title{{font-size:25px !important;}}
     .hero-name{{font-size:29px !important;}}
+    .txhead{{padding-left:14px !important;padding-right:14px !important;}}
   }}
 </style>
 </head>

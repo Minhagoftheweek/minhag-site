@@ -58,6 +58,7 @@ ROOT = build_email.ROOT
 NY = ZoneInfo("America/New_York")
 LOG_PATH = os.path.join(ROOT, "logs", "weekly-email.log")
 STATE_PATH = os.path.join(ROOT, "logs", "weekly-email-state.json")
+TESTS_PATH = os.path.join(ROOT, "logs", "weekly-email-tests.json")  # {date: episode} test copies already sent
 TITLE_PREFIX = "Minhag Auto"  # internal campaign name in Mailchimp, never shown to readers
 SEND_WEEKDAY, SEND_HOUR = 2, 13  # Wednesday, 1:00 PM New York time
 
@@ -314,8 +315,10 @@ def sheet_rows(year):
             day = datetime(int(m.group(3)), int(m.group(1)), int(m.group(2))).date()
         except ValueError:
             continue
+        f = get(cols[3]).lower()
+        status = "approved" if f.startswith("approv") else ("yes" if f in ("yes", "y") else None)
         rows.append({"date": day, "episode": get(cols[1]), "topic": get(cols[2]),
-                     "ready": get(cols[3]).lower() in ("yes", "y")})
+                     "ready": status is not None, "status": status})
     return rows
 
 
@@ -340,6 +343,19 @@ def ready_rows(now):
     return out
 
 
+def load_tests():
+    try:
+        with open(TESTS_PATH) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def save_tests(tests):
+    with open(TESTS_PATH, "w") as f:
+        json.dump(tests, f, indent=2, sort_keys=True)
+
+
 def _state_schedule(state, now):
     """What our own records say is scheduled: {date: episode} for future sends."""
     have = {}
@@ -359,15 +375,17 @@ def cmd_plan(a):
     try:
         now = datetime.now(NY)
         eps = build_email.load_site()[0]
-        want = {}
+        want, tests = {}, load_tests()
         for r in ready_rows(now):
             ep, problem = resolve_episode(r, eps)
-            if ep:
-                want[r["date"]] = ep[0]
-            else:
+            if not ep:
                 print(f"Row {r['date']}: marked ready but {problem}.", file=sys.stderr)
+            elif r["status"] == "approved":
+                want[r["date"]] = ep[0]
+            elif tests.get(r["date"].isoformat()) != ep[0]:
+                heavy = True  # needs a test copy
         have = _state_schedule(load_state(), now)
-        heavy = want != have
+        heavy = heavy or want != have
         print(f"Sheet wants {want}; scheduled {have}.", file=sys.stderr)
     except BaseException as err:
         print(f"Quick look failed, will try again next time: {err}", file=sys.stderr)
@@ -433,6 +451,25 @@ def cmd_auto(a):
                 today_row_problem = f"The {label} email is NOT scheduled: {problem}."
             continue
         ep_id = ep[0]
+        if r["status"] == "yes":
+            # Waiting for approval: send one test copy, don't schedule.
+            keep_dates.discard(day)
+            tests = load_tests()
+            if tests.get(day.isoformat()) != ep_id:
+                log(f"Auto: episode {ep_id} for {label} is marked Yes. Sending a test copy for approval "
+                    f"(type Approved in the sheet to schedule it).")
+                cmd_prepare(_argparse.Namespace(episode=ep_id))
+                publish_assets(f"Weekly email assets for episode {ep_id}")
+                cmd_send(_argparse.Namespace(episode=ep_id, mode="test", test_email=a.test_email,
+                                             send_at=r["send_at"], is_new=r["is_new"]))
+                tests[day.isoformat()] = ep_id
+                save_tests(tests)
+            else:
+                log(f"Auto: episode {ep_id} for {label} is waiting for approval (test copy already sent).")
+            if day == now.date():
+                today_row_problem = (f"Today's email (episode {ep_id}) is NOT approved, so it will not go out. "
+                                     f"To send it, type Approved in column F of the tracking sheet before 12:40 PM.")
+            continue
         if day in sched and sched[day][1] == ep_id:
             cid = sched[day][0]
             if cid not in state:
@@ -447,20 +484,21 @@ def cmd_auto(a):
             save_state(state)
             log(f"Auto: the sheet now says episode {ep_id} for {label}, so episode {sched[day][1]}'s email was removed.")
         kind = "new episode" if r["is_new"] else "from the archives"
-        log(f"Auto: the sheet says episode {ep_id} (\"{ep[2]}\", {kind}) is ready for {label}. Scheduling it.")
+        log(f"Auto: episode {ep_id} (\"{ep[2]}\", {kind}) is Approved for {label}. Scheduling it.")
         cmd_prepare(_argparse.Namespace(episode=ep_id))
         publish_assets(f"Weekly email assets for episode {ep_id}")
-        cmd_send(_argparse.Namespace(episode=ep_id, mode="schedule", test_email=a.test_email,
+        # Already approved from the test copy, so no second test copy.
+        cmd_send(_argparse.Namespace(episode=ep_id, mode="schedule", test_email="",
                                      send_at=r["send_at"], is_new=r["is_new"]))
         state = load_state()
 
-    # A scheduled email whose row no longer says Yes comes off the schedule (kept as a draft).
+    # A scheduled email whose row is no longer Approved comes off the schedule (kept as a draft).
     for day, (cid, ep_id, _) in sched.items():
         if day in keep_dates or day < now.date() or (day - now.date()).days > 60:
             continue
         mc("POST", f"/campaigns/{cid}/actions/unschedule")
         state.pop(cid, None)
-        log(f"Auto: {day.strftime('%A, %b %d')} is no longer marked ready, so episode {ep_id}'s email was "
+        log(f"Auto: {day.strftime('%A, %b %d')} is not marked Approved, so episode {ep_id}'s email was "
             f"taken off the schedule. It is saved in Mailchimp as a draft.")
 
     # Forget sends that are in the past.
