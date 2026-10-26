@@ -267,6 +267,18 @@ def next_wednesday_1230_et(after_date=None):
     return target.isoformat()
 
 
+def push_with_retry(attempts=5):
+    """Push, rebasing onto any commits other jobs (e.g. transcript sync)
+    pushed after this run checked out. Without this, a sync landing at the
+    same moment rejects our push and the episode never publishes."""
+    for i in range(attempts):
+        if subprocess.run(["git", "push"], cwd=REPO_ROOT).returncode == 0:
+            return
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True, cwd=REPO_ROOT)
+        time.sleep(3 * (i + 1))
+    raise RuntimeError("git push failed after retries")
+
+
 def write_debug_log(message):
     """Write a failure report straight into the repo and push it, so the
     next failure is diagnosable via a normal git pull — no GitHub Actions
@@ -291,7 +303,7 @@ def write_debug_log(message):
         subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True, cwd=REPO_ROOT)
         subprocess.run(["git", "add", "logs/publish-debug.log"], check=True, cwd=REPO_ROOT)
         subprocess.run(["git", "commit", "-m", f"Publish failure log ({timestamp})"], check=True, cwd=REPO_ROOT)
-        subprocess.run(["git", "push"], check=True, cwd=REPO_ROOT)
+        push_with_retry()
     except Exception as log_push_error:
         # If even the log push fails, at least this shows up in the Actions
         # console output itself.
@@ -382,7 +394,7 @@ def main():
         ["git", "commit", "-m", f"Publish Episode {episode_num}: {topic} (scheduled {schedule_iso})"],
         check=True, cwd=REPO_ROOT,
     )
-    subprocess.run(["git", "push"], check=True, cwd=REPO_ROOT)
+    push_with_retry()
 
     print(f"Done. Episode {episode_num} scheduled to go live {schedule_iso}")
     print(f"  Categories: {categories} ({subs})")
