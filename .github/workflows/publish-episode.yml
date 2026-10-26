@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,4 +28,30 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SPROUTVIDEO_API_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
-        run: python scripts/publish_episode.py
+        run: |
+          set -o pipefail
+          python scripts/publish_episode.py 2>&1 | tee "$RUNNER_TEMP/publish.out"
+
+      - name: Alert Victor if publishing failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WHAPI_TOKEN: ${{ secrets.WHAPI_TOKEN }}
+          WHAPI_ALERT_TO: ${{ secrets.WHAPI_ALERT_TO }}
+          EP: ${{ github.event.client_payload.episode_num }}
+          TOPIC: ${{ github.event.client_payload.topic }}
+        run: |
+          REASON=$(grep -E '^[A-Za-z]*Error|Exception:' "$RUNNER_TEMP/publish.out" 2>/dev/null | tail -1 | cut -c1-300)
+          [ -z "$REASON" ] && REASON="Unknown error (see the run log)."
+          RUN="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MSG="Minhag of the Week: Episode $EP ($TOPIC) did NOT publish. The link will show the homepage until this is fixed.
+
+          Reason: $REASON
+
+          Ask Claude to look at it: $RUN"
+          gh issue create -R ${{ github.repository }} --title "Episode $EP did not publish" --body "$MSG" || true
+          if [ -n "$WHAPI_TOKEN" ] && [ -n "$WHAPI_ALERT_TO" ]; then
+            jq -n --arg to "$WHAPI_ALERT_TO" --arg body "$MSG" '{to:$to, body:$body}' \
+              | curl -sS -X POST https://gate.whapi.cloud/messages/text \
+                  -H "Authorization: Bearer $WHAPI_TOKEN" -H "Content-Type: application/json" -d @-
+          fi
