@@ -11,6 +11,10 @@ on:
         description: "Exact second of the video to use (leave blank to auto-pick a sharp, eyes-open frame)"
         required: false
         default: ""
+      contact_sheet:
+        description: "true = only make a grid of frames to choose from (logs/contact-sheet-N.jpg), don't change the thumbnail"
+        required: false
+        default: "false"
 
 concurrency:
   group: repick-thumbnail
@@ -27,14 +31,20 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg && pip install --quiet opencv-python-headless
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg && pip install --quiet opencv-python-headless pillow
       - name: Re-pick thumbnail
         env:
           SPROUTVIDEO_API_KEY: ${{ secrets.SPROUTVIDEO_API_KEY }}
           EP: ${{ github.event.inputs.episode }}
           AT: ${{ github.event.inputs.at_seconds }}
+          SHEET: ${{ github.event.inputs.contact_sheet }}
         run: |
-          if [ -n "$AT" ]; then
+          if [ "$SHEET" = "true" ]; then
+            python scripts/contact_sheet.py "$EP"
+            git config user.name "minhag-publish-bot"; git config user.email "actions@github.com"
+            git add -f "logs/contact-sheet-$EP.jpg" && git commit -m "Frame grid for episode $EP"
+            for i in 1 2 3 4 5; do git pull --rebase && git push && break; sleep 5; done
+          elif [ -n "$AT" ]; then
             python scripts/repick_thumbnail.py "$EP" --at "$AT"
           else
             python scripts/repick_thumbnail.py "$EP"
