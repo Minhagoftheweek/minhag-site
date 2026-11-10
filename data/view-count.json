@@ -1,12 +1,12 @@
 {
-  "total_views": 432918,
+  "total_views": 432938,
   "breakdown": {
     "youtube": {
-      "views": 132808,
+      "views": 132812,
       "video_count": 311
     },
     "sproutvideo": {
-      "plays": 5465,
+      "plays": 5481,
       "video_count": 317
     },
     "instagram": {
@@ -14,5 +14,5 @@
       "note": "105,764 legacy baseline (pre-2023, API-inaccessible episodes) + 188,881 live API total = 294,645; 131 tagged videos indexed live (0 newly found this run); full history scan complete (walked back to 2015); NEW matches found during backfill this run (by type): {}; matches seen during front-check (mostly re-seeing already-known posts, by type): {'VIDEO': 7}; posts with no view-count available (still counted in the list, contribute 0 views): 2"
     }
   },
-  "updated_at": "2026-11-09T21:42:58.772146+00:00"
+  "updated_at": "2026-11-10T05:04:07.892688+00:00"
 }
