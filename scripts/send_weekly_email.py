@@ -440,7 +440,9 @@ def resolve_episode(row, eps):
 def sent_today(ep_id, day):
     """True if this episode's Minhag email already went out (or is going out) on that day."""
     for status in ("sent", "sending"):
-        data = mc("GET", f"/campaigns?status={status}&count=50&fields=campaigns.send_time,campaigns.settings.title")
+        since = datetime(day.year, day.month, day.day, tzinfo=NY).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        data = mc("GET", f"/campaigns?status={status}&count=100&sort_field=send_time&sort_dir=DESC"
+                         f"&since_send_time={urllib.parse.quote(since)}&fields=campaigns.send_time,campaigns.settings.title")
         for c in data.get("campaigns", []):
             if not (c.get("settings", {}).get("title") or "").startswith(f"{TITLE_PREFIX}: Episode {ep_id} "):
                 continue
