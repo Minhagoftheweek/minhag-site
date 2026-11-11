@@ -286,6 +286,11 @@ def cmd_send(a):
         state[cid] = {"episode": ep_id, "send_time": when_utc, "fp_html": fp_html, "fp_tx": fp_tx,
                       "is_new": is_new}
         save_state(state)
+    elif a.mode == "now":
+        if problems:
+            raise SystemExit("Not sent because Mailchimp's checklist has problems (see above).")
+        mc("POST", f"/campaigns/{cid}/actions/send")
+        log(f"SENT NOW to the list at {datetime.now(NY).strftime('%A, %b %d, %Y at %I:%M %p')} New York time.")
     else:
         log("Test only: nothing was sent to the list. The draft is saved in Mailchimp, unscheduled.")
 
@@ -343,8 +348,12 @@ def ready_rows(now):
         if not r["ready"] or not (0 <= (r["date"] - today).days <= 60):
             continue
         send_at = datetime(r["date"].year, r["date"].month, r["date"].day, SEND_HOUR, 0, tzinfo=NY)
+        is_new = "old" not in r["episode"].lower()
         if send_at > now + timedelta(minutes=20):
-            out.append(dict(r, send_at=send_at, is_new="old" not in r["episode"].lower()))
+            out.append(dict(r, send_at=send_at, is_new=is_new, late=False))
+        elif r["date"] == today:
+            # Past the cutoff on release day: an Approved row goes out right away.
+            out.append(dict(r, send_at=now, is_new=is_new, late=True))
     return out
 
 
@@ -428,6 +437,19 @@ def resolve_episode(row, eps):
     return ep, None
 
 
+def sent_today(ep_id, day):
+    """True if this episode's Minhag email already went out (or is going out) on that day."""
+    for status in ("sent", "sending"):
+        data = mc("GET", f"/campaigns?status={status}&count=50&fields=campaigns.send_time,campaigns.settings.title")
+        for c in data.get("campaigns", []):
+            if not (c.get("settings", {}).get("title") or "").startswith(f"{TITLE_PREFIX}: Episode {ep_id} "):
+                continue
+            st = c.get("send_time")
+            if not st or datetime.fromisoformat(st.replace("Z", "+00:00")).astimezone(NY).date() == day:
+                return True
+    return False
+
+
 def cmd_auto(a):
     """Makes Mailchimp's schedule match the tracking sheet's "Ready" rows."""
     now = datetime.now(NY)
@@ -473,7 +495,7 @@ def cmd_auto(a):
                 log(f"Auto: episode {ep_id} for {label} is waiting for approval (test copy already sent).")
             if day == now.date():
                 today_row_problem = (f"Today's email (episode {ep_id}) is NOT approved, so it will not go out. "
-                                     f"To send it, type Approved in column F of the tracking sheet before 12:40 PM.")
+                                     f"To send it, type Approved in column F of the tracking sheet (after 12:40 PM it goes out right away).")
             continue
         if day in sched and sched[day][1] == ep_id:
             cid = sched[day][0]
@@ -489,6 +511,16 @@ def cmd_auto(a):
             save_state(state)
             log(f"Auto: the sheet now says episode {ep_id} for {label}, so episode {sched[day][1]}'s email was removed.")
         kind = "new episode" if r["is_new"] else "from the archives"
+        if r.get("late"):
+            if sent_today(ep_id, day):
+                log(f"Auto: episode {ep_id} already went out today. Nothing to do.")
+                continue
+            log(f"Auto: episode {ep_id} (\"{ep[2]}\", {kind}) was Approved after the cutoff. Sending it now.")
+            cmd_prepare(_argparse.Namespace(episode=ep_id))
+            publish_assets(f"Weekly email assets for episode {ep_id}")
+            cmd_send(_argparse.Namespace(episode=ep_id, mode="now", test_email="",
+                                         send_at=now, is_new=r["is_new"]))
+            continue
         log(f"Auto: episode {ep_id} (\"{ep[2]}\", {kind}) is Approved for {label}. Scheduling it.")
         cmd_prepare(_argparse.Namespace(episode=ep_id))
         publish_assets(f"Weekly email assets for episode {ep_id}")
