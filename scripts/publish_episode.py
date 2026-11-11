@@ -329,7 +329,7 @@ def main():
     episode_num = str(payload["episode_num"])
     topic = payload["topic"]
     presenter = payload["presenter"]
-    dedication = payload["dedication"]
+    dedication = " ".join(str(payload["dedication"]).split())  # no line breaks: they break index.html
 
     print(f"Publishing episode {episode_num}: {topic}")
 
